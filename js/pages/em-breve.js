@@ -10,7 +10,6 @@ const MODULOS = {
   movimentacoes: { etapa: 4, icone: 'arrow-left-right', titulo: 'Movimentações, compras e vendas', itens: ['Compras com valor por arroba, frete e documentos', 'Vendas com peso de saída e valores', 'Histórico geral de entradas e saídas'], obs: 'Mortes, perdas, transferências e doações já podem ser registradas na ficha do animal.' },
   financeiro: { etapa: 4, icone: 'wallet', titulo: 'Financeiro', itens: ['Receitas e despesas por categoria', 'Fluxo de caixa', 'Custo por cabeça e por lote', 'Separação entre realizado e estimado'] },
   relatorios: { etapa: 5, icone: 'file-text', titulo: 'Relatórios', itens: ['Inventário, matrizes, touros, bezerros', 'Nascimentos, mortalidade, reprodução, desmame', 'Sanidade, pesagens, pastos, suplementos', 'Exportação em PDF e Excel'] },
-  equipe: { etapa: 5, icone: 'users', titulo: 'Funcionários e permissões', itens: ['Convite de funcionários por e-mail', 'Permissões individuais por área', 'Histórico de auditoria'] },
 };
 
 export async function render(el, [chave]) {

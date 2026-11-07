@@ -52,7 +52,7 @@ const CADASTROS = {
 };
 
 export async function render(el) {
-  const abas = [['propriedade', 'Propriedade'], ['parametros', 'Parâmetros de cálculo'], ...Object.entries(CADASTROS).map(([k, c]) => [k, c.titulo]), ['equipe', 'Funcionários e permissões'], ['backup', 'Backup']];
+  const abas = [['propriedade', 'Propriedade'], ['parametros', 'Parâmetros de cálculo'], ...Object.entries(CADASTROS).map(([k, c]) => [k, c.titulo]), ['equipe', 'Equipe e permissões'], ['backup', 'Backup']];
   el.innerHTML = `
     <div class="cabecalho-pagina"><div><h1>Configurações</h1><p>Adapte o sistema à realidade da propriedade.</p></div></div>
     <div class="card"><div class="card-corpo">
@@ -64,7 +64,7 @@ export async function render(el) {
     el.querySelectorAll('.aba').forEach((b) => b.classList.toggle('ativa', b.dataset.aba === k));
     if (k === 'propriedade') abaPropriedade(painel);
     else if (k === 'parametros') abaParametros(painel);
-    else if (k === 'equipe') { painel.innerHTML = `<div class="alerta"><i data-lucide="info"></i><div>O cadastro de funcionários por convite e a definição de permissões individuais serão liberados na <b>etapa 5</b>. A estrutura de segurança já está ativa no banco de dados.</div></div>`; icones(); }
+    else if (k === 'equipe') { painel.innerHTML = `<div class="alerta"><i data-lucide="users"></i><div>Funcionários, convites e níveis de acesso ficam na seção <b>Equipe e permissões</b> do menu lateral.<br><br><a class="btn btn-primario" href="#/equipe">Abrir Equipe e permissões</a></div></div>`; icones(); }
     else if (k === 'backup') { painel.innerHTML = `<div class="alerta"><i data-lucide="info"></i><div>Exportação completa dos dados (backup em JSON/Excel) será liberada nas etapas 5 e 6. Enquanto isso, a lista do rebanho pode ser exportada em CSV, e o Supabase mantém backups automáticos diários do banco (conforme o plano contratado).</div></div>`; icones(); }
     else abaCadastro(painel, CADASTROS[k]);
   };

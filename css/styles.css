@@ -347,7 +347,7 @@ table.tabela { width: 100%; border-collapse: collapse; font-size: .9rem; }
   table.tabela.responsiva tr { display: block; border-bottom: 1px solid var(--borda); padding: 10px 14px; }
   table.tabela.responsiva td { display: flex; justify-content: space-between; gap: 12px; border: 0; padding: 3px 0; text-align: right; }
   table.tabela.responsiva td::before { content: attr(data-rotulo); color: var(--texto-3); font-size: .8rem; text-align: left; }
-  table.tabela.responsiva td.primaria { font-size: 1.02rem; font-weight: 700; }
+  table.tabela.responsiva td.primaria { display: block; text-align: left; font-size: 1.02rem; font-weight: 700; padding-bottom: 6px; }
   table.tabela.responsiva td.primaria::before { content: none; }
   .fab { display: grid; place-items: center; position: fixed; right: 16px; bottom: 18px; width: 58px; height: 58px; border-radius: 50%; background: var(--verde-700); color: #fff; border: 0; box-shadow: var(--sombra-forte); z-index: 50; }
   .fab svg { width: 26px; height: 26px; }

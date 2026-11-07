@@ -23,7 +23,7 @@ const MENU = [
   { grupo: 'Gestão' },
   { rota: 'financeiro', titulo: 'Financeiro', icone: 'wallet', etapa: 4, perm: 'financeiro' },
   { rota: 'relatorios', titulo: 'Relatórios', icone: 'file-text', etapa: 5 },
-  { rota: 'equipe', titulo: 'Equipe e permissões', icone: 'users', etapa: 5, dono: true },
+  { rota: 'equipe', titulo: 'Equipe e permissões', icone: 'users', dono: true },
   { rota: 'configuracoes', titulo: 'Configurações', icone: 'settings', perm: 'configuracoes' },
 ];
 
@@ -34,8 +34,9 @@ const ROTAS = [
   { re: /^animais\/novo$/, pagina: () => import('./pages/animal-form.js'), titulo: 'Cadastrar animal', perm: 'rebanho_editar' },
   { re: /^animais\/([0-9a-f-]{36})\/editar$/, pagina: () => import('./pages/animal-form.js'), titulo: 'Editar animal', perm: 'rebanho_editar' },
   { re: /^animais\/([0-9a-f-]{36})$/, pagina: () => import('./pages/animal-ficha.js'), titulo: 'Ficha do animal' },
+  { re: /^equipe$/, pagina: () => import('./pages/equipe.js'), titulo: 'Equipe e permissões', dono: true },
   { re: /^configuracoes$/, pagina: () => import('./pages/configuracoes.js'), titulo: 'Configurações', perm: 'configuracoes' },
-  { re: /^(reproducao|sanidade|pastagens|alimentacao|pesagens|movimentacoes|financeiro|relatorios|equipe)$/, pagina: () => import('./pages/em-breve.js'), titulo: null },
+  { re: /^(reproducao|sanidade|pastagens|alimentacao|pesagens|movimentacoes|financeiro|relatorios)$/, pagina: () => import('./pages/em-breve.js'), titulo: null },
 ];
 
 export function navegar(rota) { location.hash = `#/${rota}`; }
@@ -49,7 +50,7 @@ async function rotear() {
   document.querySelectorAll('.nav-item').forEach((a) => a.classList.toggle('ativo', caminho === a.dataset.rota || caminho.startsWith(`${a.dataset.rota}/`)));
 
   if (!rota) { conteudo.innerHTML = `<div class="alerta aviso">Página não encontrada. <a href="#/painel">Voltar ao painel</a></div>`; return; }
-  if (rota.perm && !pode(rota.perm)) {
+  if ((rota.perm && !pode(rota.perm)) || (rota.dono && !ehProprietario())) {
     conteudo.innerHTML = `<div class="alerta aviso"><i data-lucide="lock"></i><div>Você não tem permissão para acessar esta área. Fale com o proprietário.</div></div>`;
     icones(); return;
   }
