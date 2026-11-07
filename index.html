@@ -8,16 +8,61 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js" defer></script>
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js" defer></script>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #f5f6f3; color: #56615a; }
+    .carregando-inicial { min-height: 100vh; display: grid; place-items: center; }
+  </style>
 </head>
 <body>
   <div id="raiz">
-    <div class="carregando"><div class="spinner"></div> Carregando…</div>
+    <div class="carregando-inicial">Carregando…</div>
   </div>
   <div class="toasts" id="toasts" aria-live="polite"></div>
   <noscript>Este sistema precisa do JavaScript habilitado no navegador.</noscript>
-  <script type="module" src="js/app.js"></script>
+
+  <!--
+    Carregador com versão: busca "versao.json" sempre direto do servidor
+    (sem memória do navegador) e acrescenta ?v=<versão> a cada arquivo.
+    Assim, toda publicação nova é carregada na hora por todos.
+    Sem internet ou sem versao.json (uso local), carrega os arquivos normalmente.
+  -->
+  <script>
+    (function () {
+      var abs = function (p) { return new URL(p, document.baseURI).href; };
+
+      function iniciar(arquivos) {
+        arquivos = arquivos || {};
+        var css = document.createElement('link');
+        css.rel = 'stylesheet';
+        css.href = 'css/styles.css' + (arquivos['css/styles.css'] ? '?v=' + arquivos['css/styles.css'] : '');
+        document.head.appendChild(css);
+
+        var mapa = {};
+        Object.keys(arquivos).forEach(function (p) {
+          if (/\.js$/.test(p)) mapa[abs(p)] = abs(p) + '?v=' + arquivos[p];
+        });
+        var im = document.createElement('script');
+        im.type = 'importmap';
+        im.textContent = JSON.stringify({ imports: mapa });
+        document.head.appendChild(im);
+
+        import('./js/app.js').catch(function (e) {
+          console.error(e);
+          document.getElementById('raiz').innerHTML =
+            '<p style="padding:24px">Não foi possível carregar o sistema. Verifique a internet e recarregue a página.</p>';
+        });
+      }
+
+      var pronto = false;
+      var seguir = function (a) { if (!pronto) { pronto = true; iniciar(a); } };
+      setTimeout(function () { seguir(null); }, 5000); // internet lenta: não trava a abertura
+      fetch('versao.json?t=' + Date.now(), { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (v) { seguir(v && v.arquivos); })
+        .catch(function () { seguir(null); });
+    })();
+  </script>
 </body>
 </html>
