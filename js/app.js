@@ -195,11 +195,12 @@ function telaLogin(modo = 'entrar') {
           ${modo === 'entrar' ? '<button type="button" class="btn btn-texto" data-modo="recuperar">Esqueci minha senha</button>' : ''}
           ${modo === 'recuperar' ? '<button type="button" class="btn btn-texto" data-modo="entrar">Voltar para o login</button>' : ''}
         </form>
-        ${modo === 'cadastrar' ? '<p class="small muted" style="margin:0">Funcionário: use o mesmo e-mail que o proprietário cadastrou no convite.</p>' : ''}
+        ${modo === 'cadastrar' ? '<div class="alerta small"><i data-lucide="info"></i><div>Acesso somente para pessoas liberadas pelo proprietário. Use o <b>mesmo e-mail</b> que foi cadastrado em Equipe e permissões.</div></div>' : ''}
       </div></div>
     </section>
   </div>`;
   raiz.querySelectorAll('[data-modo]').forEach((b) => b.addEventListener('click', () => telaLogin(b.dataset.modo)));
+  icones();
   const form = document.getElementById('form-acesso');
   const msg = document.getElementById('msg-acesso');
   form.addEventListener('submit', async (e) => {
@@ -248,40 +249,26 @@ function telaNovaSenha() {
   });
 }
 
+let verificadorConvite = null;
 function telaSemPropriedade() {
-  raiz.innerHTML = `<div class="acesso-form" style="min-height:100vh"><div class="card acesso-caixa" style="max-width:520px"><div class="card-corpo">
-    <h1>Bem-vindo(a)!</h1>
-    <p class="muted" style="margin:0">Sua conta ainda não está vinculada a nenhuma propriedade.</p>
-    <div class="alerta"><i data-lucide="info"></i><div><b>É funcionário?</b> Peça ao proprietário para cadastrar o e-mail <b>${esc(store.usuario.email)}</b> na equipe e depois clique em “Verificar convites”.</div></div>
-    <button class="btn" id="btn-convites"><i data-lucide="refresh-cw"></i> Verificar convites</button>
-    <hr style="border:0;border-top:1px solid var(--borda);width:100%">
-    <h2>Sou o proprietário: cadastrar propriedade</h2>
-    <form id="f-prop" class="grade" style="gap:12px">
-      <div class="campo"><label for="pn">Nome da propriedade <span class="obrig">*</span></label><input id="pn" name="nome" required></div>
-      <div class="grade grade-2" style="gap:12px">
-        <div class="campo"><label for="pm">Município</label><input id="pm" name="municipio"></div>
-        <div class="campo"><label for="pu">UF</label><input id="pu" name="uf" maxlength="2" style="text-transform:uppercase"></div>
-      </div>
-      <div class="campo"><label for="pa">Área total (ha)</label><input id="pa" name="area_total_ha" inputmode="decimal"></div>
-      <button class="btn btn-primario" type="submit">Criar propriedade</button>
-    </form>
+  raiz.innerHTML = `<div class="acesso-form" style="min-height:100vh"><div class="card acesso-caixa" style="max-width:480px"><div class="card-corpo">
+    <div class="marca-logo" style="width:44px;height:44px">GR</div>
+    <h1>Aguardando liberação</h1>
+    <p style="margin:0">Sua conta foi criada, mas o acesso ao sistema ainda não foi liberado.</p>
+    <div class="alerta"><i data-lucide="info"></i><div>Peça ao proprietário para liberar o e-mail <b>${esc(store.usuario.email)}</b> em <b>Equipe e permissões</b>. Assim que for liberado, você entra automaticamente.</div></div>
+    <button class="btn btn-primario" id="btn-convites"><i data-lucide="refresh-cw"></i> Já fui liberado(a) — entrar</button>
     <button class="btn btn-texto" id="btn-sair2"><i data-lucide="log-out"></i> Sair</button>
   </div></div></div>`;
   icones();
-  document.getElementById('btn-sair2').onclick = () => sb.auth.signOut();
-  document.getElementById('btn-convites').onclick = () => iniciarSessao();
-  document.getElementById('f-prop').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    sync.exigirConexao();
-    const d = Object.fromEntries(new FormData(e.target));
-    d.area_total_ha = d.area_total_ha ? d.area_total_ha.replace(',', '.') : '';
-    const btn = e.target.querySelector('button'); btn.disabled = true;
-    const { error } = await sb.rpc('criar_propriedade', { p_nome: d.nome, p_dados: d });
-    btn.disabled = false;
-    if (error) return toast(traduzirErro(error), 'erro');
-    toast('Propriedade criada com sucesso.');
-    iniciarSessao();
-  });
+  document.getElementById('btn-sair2').onclick = () => { clearInterval(verificadorConvite); sb.auth.signOut(); };
+  document.getElementById('btn-convites').onclick = () => { clearInterval(verificadorConvite); iniciarSessao(); };
+  // Confere sozinho a cada 30 segundos se o acesso já foi liberado
+  clearInterval(verificadorConvite);
+  verificadorConvite = setInterval(async () => {
+    if (!navigator.onLine) return;
+    const { data } = await sb.rpc('aceitar_convites');
+    if (data > 0) { clearInterval(verificadorConvite); iniciarSessao(); }
+  }, 30000);
 }
 
 // ---------- Sessão ----------
