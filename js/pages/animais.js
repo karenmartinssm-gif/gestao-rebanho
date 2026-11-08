@@ -1,7 +1,7 @@
 // =====================================================================
 // REBANHO — lista com filtros
 // =====================================================================
-import { store, pode, nomePasto } from '../store.js';
+import { store, pode, nomePasto, podeExcluir } from '../store.js';
 import { esc, icones, fmtKg, idadeTexto, montarTabela, vazio, erroCarga, badgeStatus, baixarCSV, opcoes, fmtData, hojeISO, ROTULO_SEXO } from '../ui.js';
 import { listarAnimais } from '../components/animais-comum.js';
 
@@ -67,6 +67,7 @@ export async function render(el) {
     { chave: 'pasto_codigo', titulo: 'Pasto', render: (a) => esc(a.pasto_codigo || '—') },
     { chave: 'lote_nome', titulo: 'Lote', render: (a) => esc(a.lote_nome || '—') },
     { chave: 'status_nome', titulo: 'Status', render: badgeStatus },
+    ...(podeExcluir('rebanho_editar') ? [{ chave: 'acoes', titulo: '', render: (a) => `<button class="btn btn-sm btn-texto" data-excluir-animal="${a.id}" title="Excluir animal" aria-label="Excluir o animal ${esc(a.brinco)}"><i data-lucide="trash-2"></i></button>`, csv: () => '' }] : []),
   ];
 
   const filtrar = () => {
@@ -102,11 +103,16 @@ export async function render(el) {
     aoClicar: (id) => { location.hash = `#/animais/${id}`; },
   });
   form.addEventListener('input', () => tabela.atualizar(filtrar()));
+  el.querySelector('#tabela').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-excluir-animal]'); if (!b) return;
+    const a = animais.find((x) => x.id === b.dataset.excluirAnimal);
+    import('../components/excluir-animal.js').then((m) => m.excluirAnimal(a, () => window.dispatchEvent(new HashChangeEvent('hashchange'))));
+  });
   form.addEventListener('submit', (e) => e.preventDefault());
 
   el.querySelector('#btn-csv').addEventListener('click', () => {
     const cols = [
-      ...colunas.filter((c) => c.chave !== 'peso_atual' && c.chave !== 'status_nome'),
+      ...colunas.filter((c) => !['peso_atual', 'status_nome', 'acoes'].includes(c.chave)),
       { chave: 'peso_atual', titulo: 'Peso atual (kg)' }, { chave: 'data_ultima_pesagem', titulo: 'Data últ. pesagem', csv: (a) => fmtData(a.data_ultima_pesagem) },
       { chave: 'data_nascimento', titulo: 'Nascimento', csv: (a) => fmtData(a.data_nascimento) },
       { chave: 'mae_brinco', titulo: 'Mãe', csv: (a) => a.mae_brinco || a.mae_externa }, { chave: 'pai_identificacao', titulo: 'Pai', csv: (a) => a.pai_identificacao || a.pai_externo },

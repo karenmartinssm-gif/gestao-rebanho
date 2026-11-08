@@ -2,7 +2,7 @@
 // FICHA INDIVIDUAL DO ANIMAL
 // =====================================================================
 import { sb, BUCKET } from '../supabase.js';
-import { store, pode, ehProprietario, nomePasto } from '../store.js';
+import { store, pode, ehProprietario, nomePasto, podeExcluir } from '../store.js';
 import {
   esc, icones, toast, traduzirErro, fmtData, fmtDataHora, fmtKg, fmtNum, fmtMoeda, idadeTexto, diasEntre, hojeISO,
   vazio, erroCarga, badgeStatus, montarTabela, confirmar, ROTULO_SEXO, ROTULO_ORIGEM, ROTULO_MOV, ROTULO_SITUACAO_REPRO,
@@ -111,6 +111,7 @@ export async function render(el, [id]) {
           ${ativo && pode('comercial') ? '<button class="btn" data-acao="venda"><i data-lucide="hand-coins"></i> Vender</button>' : ''}
           ${ativo && pode('movimentacoes') ? '<button class="btn btn-perigo" data-acao="saida"><i data-lucide="log-out"></i> Registrar saída</button>' : ''}
           ${!ativo && ehProprietario() ? '<button class="btn" data-acao="corrigir"><i data-lucide="undo-2"></i> Corrigir status</button>' : ''}
+          ${podeExcluir('rebanho_editar') ? '<button class="btn btn-texto" data-acao="excluir" title="Excluir animal cadastrado por engano"><i data-lucide="trash-2"></i> Excluir</button>' : ''}
         </div>
       </div>
       <div class="abas" role="tablist">${abas.map(([k, t], i) => `<button class="aba ${i === 0 ? 'ativa' : ''}" role="tab" data-aba="${k}">${t}</button>`).join('')}</div>
@@ -123,6 +124,7 @@ export async function render(el, [id]) {
   el.querySelector('[data-acao=saida]')?.addEventListener('click', () => import('../components/saida.js').then((m) => m.abrirSaida(a, { aoSalvar: recarregar })));
   el.querySelector('[data-acao=venda]')?.addEventListener('click', () => import('../components/comercial-forms.js').then((m) => m.abrirVenda({ animais: [a.id] }, recarregar)));
   el.querySelector('[data-acao=desmame]')?.addEventListener('click', () => import('../components/reproducao-forms.js').then((m) => m.abrirDesmame(a, recarregar)));
+  el.querySelector('[data-acao=excluir]')?.addEventListener('click', () => import('../components/excluir-animal.js').then((m) => m.excluirAnimal(a, () => { location.hash = '#/animais'; })));
   el.querySelector('[data-acao=corrigir]')?.addEventListener('click', () => import('../components/saida.js').then((m) => m.abrirCorrecaoStatus(a, recarregar)));
 
   const painel = el.querySelector('#painel-aba');
