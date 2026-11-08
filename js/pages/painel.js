@@ -95,12 +95,13 @@ export async function render(el) {
     { titulo: 'Suplementos com estoque baixo', icone: 'package-open', itens: estq.data.filter((s) => Number(s.estoque_minimo) > 0 && Number(s.saldo) <= Number(s.estoque_minimo)).map((s) => [s.nome, `<span class="badge perigo">${fmtNum(s.saldo, 1)} ${esc(s.unidade)}</span>`]) },
   ];
 
-  const kpi = (rotulo, valor, icone, detalhe = '', destaque = false, link = '') => `
+  // Quadros zerados ficam ocultos (aparecem quando houver registro). O quadro em destaque sempre aparece.
+  const kpi = (rotulo, valor, icone, detalhe = '', destaque = false, link = '') => (!destaque && !Number(valor) ? '' : `
     <${link ? `a href="${link}"` : 'div'} class="card kpi ${destaque ? 'destaque' : ''}">
       <span class="rotulo"><i data-lucide="${icone}"></i>${esc(rotulo)}</span>
       <span class="valor">${fmtNum(valor)}</span>
       ${detalhe ? `<span class="detalhe">${detalhe}</span>` : ''}
-    </${link ? 'a' : 'div'}>`;
+    </${link ? 'a' : 'div'}>`);
 
   const nomeMes = new Date().toLocaleDateString('pt-BR', { month: 'long' });
 
