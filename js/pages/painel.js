@@ -55,7 +55,7 @@ export async function render(el) {
   const novilhasPrenhes = contaSit(doGrupo('novilha'), ['prenhe', 'proxima_parto']);
 
   const { pend, emTratamento, manejosPend } = montarPendencias({ animais, manejos, cobs, desm, estq });
-  const comPendencia = pend.filter((b) => b.itens.length);
+  const comPendencia = pend.filter((b) => b.itens.length).sort((x, y) => y.itens.length - x.itens.length);
 
   // Link para o Rebanho com as categorias do grupo já marcadas (ex.: Matrizes = Vaca, Primípara, Matriz)
   const linkCats = (...grupos) => `#/animais?categoria=${store.base.categorias.filter((c) => grupos.includes(c.grupo)).map((c) => c.id).join(',')}`;

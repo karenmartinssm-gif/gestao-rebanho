@@ -52,7 +52,7 @@ export async function render(el) {
 
   // Pizza com a porcentagem ao lado de cada cor na legenda (ex.: "Novilha · 33%")
   const pizza = (id, itens, cores = CORES) => {
-    const lista = itens.filter((x) => x.n);
+    const lista = itens.filter((x) => x.n).sort((x, y) => y.n - x.n);   // sempre do maior para o menor
     if (!lista.length) { el.querySelector(`#w-${id}`).innerHTML = semDados('Nenhum animal ativo.'); return; }
     const total = lista.reduce((s, x) => s + x.n, 0);
     const pct = (n) => { const v = (n / total) * 100; return v > 0 && v < 1 ? '<1' : String(Math.round(v)); };
@@ -76,8 +76,10 @@ export async function render(el) {
 
   pizza('sexo', maiorPrimeiro([{ nome: 'Fêmeas', n: conta((a) => a.sexo === 'F'), cor: CORES[1] }, { nome: 'Machos', n: conta((a) => a.sexo === 'M'), cor: CORES[3] }]));
 
-  const pastos = store.base.pastos.map((pt) => ({ nome: nomePasto(pt), n: ativos.filter((a) => a.pasto_id === pt.id).length })).filter((x) => x.n);
-  const semPasto = conta((a) => !a.pasto_id);
+  const semPastoN = conta((a) => !a.pasto_id);
+  const pastos = [...store.base.pastos.map((pt) => ({ nome: nomePasto(pt), n: ativos.filter((a) => a.pasto_id === pt.id).length })),
+    { nome: 'Sem pasto definido', n: semPastoN }].filter((x) => x.n).sort((x, y) => y.n - x.n);
+  const semPasto = 0;
   if (pastos.length || semPasto) grafico(el.querySelector('#g-pasto'), { type: 'bar', data: { labels: [...pastos.map((x) => x.nome), ...(semPasto ? ['Sem pasto definido'] : [])], datasets: [{ label: 'Animais', data: [...pastos.map((x) => x.n), ...(semPasto ? [semPasto] : [])], backgroundColor: CORES[0], borderRadius: 4 }] }, options: { indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { grid: { display: false } } } } });
   else el.querySelector('#w-pasto').innerHTML = semDados();
 

@@ -139,7 +139,7 @@ export async function render(el) {
           { chave: 'qtd', titulo: 'Total', classe: 'dir', render: (l) => `${fmtNum(l.qtd, 2)} ${esc(l.x?.unidade || '')}` },
           { chave: 'custo', titulo: 'Custo', classe: 'dir', render: (l) => (l.custo ? fmtMoeda(l.custo) : '—') },
         ],
-        linhas: Object.values(porLote), idLinha: (l) => `${l.destino}${l.x?.id}`, busca: false,
+        linhas: Object.values(porLote).sort((a, b) => b.custo - a.custo || b.qtd - a.qtd), idLinha: (l) => `${l.destino}${l.x?.id}`, busca: false,
       });
     }
     if (ativosP.length) {

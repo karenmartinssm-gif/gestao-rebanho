@@ -116,7 +116,7 @@ export async function render(el) {
       return { k, t, real: soma(l.filter((x) => x.situacao === 'realizado')), pend: soma(l.filter((x) => x.situacao !== 'realizado')), n: l.length };
     }).filter((x) => x.n);
     const cd = linhasCat('despesa', CAT_DESPESA).sort((a, b) => b.real - a.real);
-    const cr = linhasCat('receita', CAT_RECEITA);
+    const cr = linhasCat('receita', CAT_RECEITA).sort((a, b) => b.real - a.real);
     const totD = cd.reduce((s, x) => s + x.real, 0);
     const tabela = (linhas, tipo, total) => `<div class="tabela-wrap"><table class="tabela responsiva"><thead><tr><th>Categoria</th><th class="dir">${tipo === 'receita' ? 'Recebido' : 'Pago'}</th><th class="dir">${tipo === 'receita' ? 'A receber' : 'A pagar'}</th><th class="dir">Total</th>${total ? '<th class="dir">% do pago</th>' : ''}</tr></thead><tbody>
       ${linhas.map((x) => `<tr><td class="primaria" data-rotulo="Categoria">${esc(x.t)}</td><td class="dir" data-rotulo="${tipo === 'receita' ? 'Recebido' : 'Pago'}"><b>${fmtMoeda(x.real)}</b></td><td class="dir" data-rotulo="${tipo === 'receita' ? 'A receber' : 'A pagar'}">${x.pend ? fmtMoeda(x.pend) : '—'}</td><td class="dir" data-rotulo="Total">${fmtMoeda(x.real + x.pend)}</td>${total ? `<td class="dir" data-rotulo="% do pago">${fmtPct(x.real / total * 100)}</td>` : ''}</tr>`).join('')}

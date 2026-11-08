@@ -70,8 +70,8 @@ export const RELATORIOS = [
       const lista = animais.filter((a) => a.conta_no_rebanho && filtraAnimal(a, f));
       const pesos = lista.filter((a) => a.peso_atual).map((a) => Number(a.peso_atual));
       const porCat = store.base.categorias.map((c) => { const l = lista.filter((a) => a.categoria_id === c.id); const ps = l.filter((a) => a.peso_atual).map((a) => Number(a.peso_atual));
-        return [c.nome, l.filter((a) => a.sexo === 'M').length, l.filter((a) => a.sexo === 'F').length, l.length, media(ps)]; }).filter((r) => r[3]);
-      const lotes = [...new Set(lista.map((a) => a.lote_id || ''))].map((id) => { const l = lista.filter((a) => (a.lote_id || '') === id); return [id ? nomeLote(id) : 'Sem lote', l.length, media(l.filter((a) => a.peso_atual).map((a) => Number(a.peso_atual)))]; });
+        return [c.nome, l.filter((a) => a.sexo === 'M').length, l.filter((a) => a.sexo === 'F').length, l.length, media(ps)]; }).filter((r) => r[3]).sort((x, y) => y[3] - x[3]);
+      const lotes = [...new Set(lista.map((a) => a.lote_id || ''))].map((id) => { const l = lista.filter((a) => (a.lote_id || '') === id); return [id ? nomeLote(id) : 'Sem lote', l.length, media(l.filter((a) => a.peso_atual).map((a) => Number(a.peso_atual)))]; }).sort((x, y) => y[1] - x[1]);
       return {
         resumo: [['Animais ativos', fmtNum(lista.length)], ['Machos', fmtNum(lista.filter((a) => a.sexo === 'M').length)], ['Fêmeas', fmtNum(lista.filter((a) => a.sexo === 'F').length)],
           ['Peso médio', pesos.length ? `${fmtKg(media(pesos))} (${pesos.length} com peso)` : '—'], ['Peso vivo total registrado', pesos.length ? fmtKg(pesos.reduce((s, x) => s + x, 0)) : '—']],
@@ -114,7 +114,7 @@ export const RELATORIOS = [
         const pren = diag.filter((c) => c.situacao !== 'vazia');
         const bez = nascimentos.filter((n) => n.reprodutor_id === r.id && no(n.data_nascimento, f) && n.resultado === 'vivo');
         return [r.identificacao, r.tipo === 'semen' ? 'Sêmen (IA)' : 'Touro', r.ativo ? 'Sim' : 'Não', cobs.length, diag.length, pren.length, diag.length ? (pren.length / diag.length) * 100 : null, bez.length];
-      }).filter((l) => l[2] === 'Sim' || l[3] || l[7]);
+      }).filter((l) => l[2] === 'Sim' || l[3] || l[7]).sort((x, y) => y[3] - x[3] || y[7] - x[7]);
       return { resumo: [['Reprodutores listados', fmtNum(linhas.length)]],
         secoes: [{ titulo: 'Reprodutores', colunas: [C('Identificação'), C('Tipo'), C('Ativo'), C('Coberturas', 'num'), C('Diagnosticadas', 'num'), C('Prenhezes', 'num'), C('Taxa de prenhez', 'pct'), C('Bezerros vivos nascidos', 'num')], linhas }],
         notas: ['Taxa de prenhez = coberturas com resultado prenhe (inclui paridas e abortos) ÷ coberturas já diagnosticadas no período.'] };
@@ -220,7 +220,7 @@ export const RELATORIOS = [
       const lista = manejos.filter((m) => no(m.data_aplicacao, f) && m.situacao !== 'cancelado' && (!f.lote || m.lote_id === f.lote));
       const alvo = (m) => { const ids = (m.manejo_animais || []).map((x) => x.animal_id); return m.lote_id ? `Lote ${nomeLote(m.lote_id)} (${ids.length})` : ids.length === 1 ? `Animal ${porId.get(ids[0])?.brinco || ''}` : `${ids.length} animais`; };
       const porTipo = [...new Set(lista.map((m) => m.tipo_manejo_id))].map((t) => { const l = lista.filter((m) => m.tipo_manejo_id === t);
-        return [tipos.get(t)?.nome, l.length, l.reduce((s, m) => s + (m.manejo_animais || []).length, 0), l.reduce((s, m) => s + Number(m.custo || 0), 0)]; });
+        return [tipos.get(t)?.nome, l.length, l.reduce((s, m) => s + (m.manejo_animais || []).length, 0), l.reduce((s, m) => s + Number(m.custo || 0), 0)]; }).sort((x, y) => y[2] - x[2] || y[1] - x[1]);
       return {
         resumo: [['Manejos', fmtNum(lista.length)], ['Aplicações em animais', fmtNum(lista.reduce((s, m) => s + (m.manejo_animais || []).length, 0))], ['Custo registrado', fmtMoeda(lista.reduce((s, m) => s + Number(m.custo || 0), 0))]],
         secoes: [
@@ -281,7 +281,7 @@ export const RELATORIOS = [
       const prods = new Map(produtos.map((x) => [x.id, x]));
       const porProd = produtos.map((x) => { const l = lista.filter((y) => y.produto_id === x.id);
         return [x.nome, x.unidade, l.length, l.reduce((s, y) => s + Number(y.quantidade), 0), l.reduce((s, y) => s + (y.num_cabecas ? y.quantidade / y.num_cabecas : 0), 0), l.reduce((s, y) => s + Number(y.custo || 0), 0), Number(x.saldo), Number(x.estoque_minimo) || null]; })
-        .filter((l) => l[2] || l[6]);
+        .filter((l) => l[2] || l[6]).sort((x, y) => y[5] - x[5] || y[2] - x[2] || y[6] - x[6]);
       return {
         resumo: [['Fornecimentos', fmtNum(lista.length)], ['Custo registrado', fmtMoeda(lista.reduce((s, y) => s + Number(y.custo || 0), 0))]],
         secoes: [
@@ -302,7 +302,7 @@ export const RELATORIOS = [
       return {
         resumo: [['Movimentações', fmtNum(lista.length)], ['Cabeças movimentadas', fmtNum(lista.reduce((s, m) => s + (m.movimentacao_animais || []).length, 0))]],
         secoes: [
-          { titulo: 'Por tipo', colunas: [C('Tipo'), C('Registros', 'num'), C('Cabeças', 'num')], linhas: tipos.map((t) => { const l = lista.filter((m) => m.tipo === t); return [ROTULO_MOV[t] || t, l.length, l.reduce((s, m) => s + (m.movimentacao_animais || []).length, 0)]; }) },
+          { titulo: 'Por tipo', colunas: [C('Tipo'), C('Registros', 'num'), C('Cabeças', 'num')], linhas: tipos.map((t) => { const l = lista.filter((m) => m.tipo === t); return [ROTULO_MOV[t] || t, l.length, l.reduce((s, m) => s + (m.movimentacao_animais || []).length, 0)]; }).sort((x, y) => y[2] - x[2] || y[1] - x[1]) },
           { titulo: 'Movimentações', colunas: [C('Data', 'data'), C('Tipo'), C('Cabeças', 'num'), C('Animais'), C('Destino / motivo'), C('Responsável')],
             linhas: lista.map((m) => [m.data_movimentacao, ROTULO_MOV[m.tipo] || m.tipo, (m.movimentacao_animais || []).length, (m.movimentacao_animais || []).map((x) => porId.get(x.animal_id)?.brinco).join(', '),
               [m.pasto_destino_id && `Pasto ${nomePastoId(m.pasto_destino_id)}`, m.lote_destino_id && `Lote ${nomeLote(m.lote_destino_id)}`, m.motivo, m.causa].filter(Boolean).join(' · '), m.responsavel_nome]) },
@@ -343,7 +343,7 @@ export const RELATORIOS = [
       const real = (t) => todosL.filter((x) => x._t === t && x.situacao === 'realizado');
       const pend = (t) => todosL.filter((x) => x._t === t && x.situacao !== 'realizado');
       const porCat = (t, cats) => Object.entries(cats).map(([k, nome]) => { const l = todosL.filter((x) => x._t === t && x.categoria === k);
-        return [nome, soma(l.filter((x) => x.situacao === 'realizado')), soma(l.filter((x) => x.situacao !== 'realizado'))]; }).filter((l) => l[1] || l[2]);
+        return [nome, soma(l.filter((x) => x.situacao === 'realizado')), soma(l.filter((x) => x.situacao !== 'realizado'))]; }).filter((l) => l[1] || l[2]).sort((x, y) => (y[1] + y[2]) - (x[1] + x[2]));
       const rotCat = (x) => (x._t === 'Receita' ? CAT_RECEITA : CAT_DESPESA)[x.categoria] || x.categoria;
       return {
         resumo: [['Receitas recebidas', fmtMoeda(soma(real('Receita')))], ['Despesas pagas', fmtMoeda(soma(real('Despesa')))], ['Resultado (recebido − pago)', fmtMoeda(soma(real('Receita')) - soma(real('Despesa')))],
