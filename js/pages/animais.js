@@ -115,6 +115,8 @@ export async function render(el) {
       ...colunas.filter((c) => !['peso_atual', 'status_nome', 'acoes'].includes(c.chave)),
       { chave: 'peso_atual', titulo: 'Peso atual (kg)' }, { chave: 'data_ultima_pesagem', titulo: 'Data últ. pesagem', csv: (a) => fmtData(a.data_ultima_pesagem) },
       { chave: 'data_nascimento', titulo: 'Nascimento', csv: (a) => fmtData(a.data_nascimento) },
+      { chave: 'grau_pureza', titulo: 'Grau de pureza', csv: (a) => a.grau_pureza || '' },
+      { chave: 'registrado', titulo: 'Registro', csv: (a) => (a.registrado ? `Sim${a.numero_registro ? ` (${a.numero_registro})` : ''}` : 'Não') },
       { chave: 'mae_brinco', titulo: 'Mãe', csv: (a) => a.mae_brinco || a.mae_externa }, { chave: 'pai_identificacao', titulo: 'Pai', csv: (a) => a.pai_identificacao || a.pai_externo },
       { chave: 'status_nome', titulo: 'Status' }, { chave: 'data_saida', titulo: 'Data de saída', csv: (a) => fmtData(a.data_saida) },
     ];

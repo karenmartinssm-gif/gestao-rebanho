@@ -120,6 +120,7 @@ export async function render(el) {
       ${kpi('Animais ativos', ativos.length, 'tag', `${plural(conta((a) => a.sexo === 'M'), 'macho', 'machos')} · ${plural(conta((a) => a.sexo === 'F'), 'fêmea', 'fêmeas')}`, true, '#/animais')}
       ${kpi('Matrizes', grupo('matriz'), 'heart', [plural(prenhes, 'prenhe', 'prenhes'), posParto && `${fmtNum(posParto)} pós-parto`, cobertas && `${fmtNum(cobertas)} aguardando diagnóstico`, plural(vazias, 'vazia', 'vazias')].filter(Boolean).join(' · '))}
       ${kpi('Touros', grupo('touro'), 'shield')}
+      ${kpi('Animais registrados', conta((a) => a.registrado), 'badge-check', `de ${fmtNum(ativos.length)} ativos`)}
       ${kpi('Novilhas', grupo('novilha'), 'sprout', novilhasPrenhes ? plural(novilhasPrenhes, 'prenhe', 'prenhes') : '')}
       ${kpi('Bezerros', grupo('bezerro'), 'baby', `${fmtNum(conta((a) => a.categoria_grupo === 'bezerro' && a.sexo === 'M'))} M · ${fmtNum(conta((a) => a.categoria_grupo === 'bezerro' && a.sexo === 'F'))} F`)}
       ${kpi('Outros (garrotes, bois…)', conta((a) => ['garrote', 'boi', 'outro'].includes(a.categoria_grupo)), 'layers')}

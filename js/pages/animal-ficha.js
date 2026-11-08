@@ -12,7 +12,7 @@ import { grafico, CORES } from '../components/graficos.js';
 import { exigirConexao } from '../sync.js';
 
 const ROTULO_CAMPO = {
-  brinco: 'Brinco', nome: 'Nome', sexo: 'Sexo', raca_id: 'Raça', data_nascimento: 'Nascimento', nascimento_estimado: 'Nascimento estimado',
+  brinco: 'Brinco', nome: 'Nome', sexo: 'Sexo', raca_id: 'Raça', grau_pureza: 'Grau de pureza', registrado: 'Registrado', numero_registro: 'Número do registro', data_nascimento: 'Nascimento', nascimento_estimado: 'Nascimento estimado',
   categoria_id: 'Categoria', foto_path: 'Foto', origem: 'Origem', mae_id: 'Mãe', pai_id: 'Pai', mae_externa: 'Mãe (externa)',
   pai_externo: 'Pai (externo)', data_aquisicao: 'Data de aquisição', valor_aquisicao: 'Valor de aquisição', peso_nascimento: 'Peso ao nascer',
   peso_atual: 'Peso atual', data_ultima_pesagem: 'Última pesagem', pasto_id: 'Pasto', lote_id: 'Lote', status: 'Status',
@@ -145,7 +145,7 @@ export async function render(el, [id]) {
   const conteudos = {
     dados: () => `<div class="dados-lista">
         ${dado('Brinco', esc(a.brinco))}${dado('Nome/apelido', esc(a.nome || '—'))}${dado('Sexo', ROTULO_SEXO[a.sexo])}
-        ${dado('Raça', esc(a.raca_nome || '—'))}${dado('Categoria', esc(a.categoria_nome))}
+        ${dado('Raça', esc(a.raca_nome || '—'))}${dado('Grau de pureza', esc(a.grau_pureza || '—'))}${dado('Registro', a.registrado ? `Sim${a.numero_registro ? ` — nº ${esc(a.numero_registro)}` : ''}` : 'Não')}${dado('Categoria', esc(a.categoria_nome))}
         ${dado('Nascimento', `${fmtData(a.data_nascimento)}${a.nascimento_estimado ? ' <span class="badge">estimada</span>' : ''}`)}
         ${dado('Idade', idadeTexto(a.data_nascimento, ref))}${dado('Origem', ROTULO_ORIGEM[a.origem])}
         ${a.origem === 'comprado' ? dado('Data de aquisição', fmtData(a.data_aquisicao)) + dado('Valor de aquisição', fmtMoeda(a.valor_aquisicao)) : ''}

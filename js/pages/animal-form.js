@@ -47,6 +47,14 @@ export async function render(el, [id]) {
               <label><input type="radio" name="sexo" value="F" required ${a.sexo === 'F' ? 'checked' : ''}> Fêmea</label>
               <label><input type="radio" name="sexo" value="M" ${a.sexo === 'M' ? 'checked' : ''}> Macho</label></div></div>
           <div class="campo"><label for="raca_id">Raça</label><select id="raca_id" name="raca_id">${opcoes(b.racas.filter((r) => r.ativo || r.id === a.raca_id), { selecionado: a.raca_id ?? b.racas.find((r) => /nelore/i.test(r.nome))?.id, vazio: 'Não informada' })}</select></div>
+          <div class="campo"><label for="grau_pureza">Grau de pureza</label><select id="grau_pureza" name="grau_pureza">
+            <option value="">Não informado</option>${['PC', 'PO'].map((g) => `<option value="${g}" ${a.grau_pureza === g ? 'selected' : ''}>${g}</option>`).join('')}</select></div>
+          <div class="campo"><label>Registro</label>
+            <div class="opcoes-radio">
+              <label><input type="radio" name="registrado" value="sim" ${a.registrado ? 'checked' : ''}> Sim</label>
+              <label><input type="radio" name="registrado" value="nao" ${a.registrado ? '' : 'checked'}> Não</label></div></div>
+          <div class="campo ${a.registrado ? '' : 'oculto'}" id="campo-registro"><label for="numero_registro">Número do registro <span class="obrig">*</span></label>
+            <input id="numero_registro" name="numero_registro" maxlength="40" value="${esc(a.numero_registro || '')}" autocomplete="off"></div>
           <div class="campo"><label for="data_nascimento">Data de nascimento</label><input id="data_nascimento" name="data_nascimento" type="date" max="${hojeISO()}" value="${esc(a.data_nascimento || '')}">
             <label class="check small"><input type="checkbox" name="nascimento_estimado" ${a.nascimento_estimado ? 'checked' : ''}> Data aproximada (estimada)</label></div>
           <div class="campo"><label for="categoria_id">Categoria <span class="obrig">*</span></label>
@@ -103,6 +111,11 @@ export async function render(el, [id]) {
   const form = el.querySelector('#f-animal');
   if (window.matchMedia('(max-width: 720px)').matches) ativarWizard(form);
   const $ = (n) => form.elements[n];
+  const registrado = () => form.querySelector('input[name=registrado]:checked')?.value === 'sim';
+  form.querySelectorAll('input[name=registrado]').forEach((r) => r.addEventListener('change', () => {
+    document.getElementById('campo-registro').classList.toggle('oculto', !registrado());
+    if (registrado()) document.getElementById('numero_registro').focus();
+  }));
 
   // Mostrar campos de compra só quando "Comprado"
   const ajustarOrigem = () => {
@@ -165,11 +178,15 @@ export async function render(el, [id]) {
     for (const n of nums) {
       if ($(n).value && numOuNulo($(n).value) === null) { $(n).focus(); return toast('Confira os valores numéricos (use vírgula para decimais).', 'erro'); }
     }
+    if (registrado() && !$('numero_registro').value.trim()) { $('numero_registro').focus(); return toast('Informe o número do registro (ou marque "Não" em Registro).', 'erro'); }
     const dados = {
       brinco: $('brinco').value.trim(),
       nome: textoOuNulo($('nome').value),
       sexo,
       raca_id: $('raca_id').value || null,
+      grau_pureza: $('grau_pureza').value || null,
+      registrado: registrado(),
+      numero_registro: registrado() ? textoOuNulo($('numero_registro').value) : null,
       data_nascimento: $('data_nascimento').value || null,
       nascimento_estimado: $('nascimento_estimado').checked,
       categoria_id: $('categoria_id').value,
