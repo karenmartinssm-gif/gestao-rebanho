@@ -1,6 +1,6 @@
 // Registro rápido de pesagem individual (funciona sem internet: fica na fila)
 import { sb } from '../supabase.js';
-import { store, pode, nomePasto } from '../store.js';
+import { store, pode, nomePasto, podeExcluir } from '../store.js';
 import { esc, abrirModal, toast, traduzirErro, hojeISO, fmtKg, fmtData, fmtNum, diasEntre, numOuNulo, textoOuNulo, icones, confirmar } from '../ui.js';
 import { incluir, chamar, exigirConexao } from '../sync.js';
 import { listarAnimais, campoAnimal } from './animais-comum.js';
@@ -215,7 +215,7 @@ export async function abrirPesagemColetiva(pre = {}, aoSalvar) {
 
 /** Corrigir ou excluir uma pesagem já registrada (exige internet). */
 export function abrirEdicaoPesagem(p, animal, aoSalvar) {
-  const dono = store.papel === 'proprietario';
+  const dono = podeExcluir('pesagens');
   const { el, fechar } = abrirModal({
     titulo: `Pesagem do animal ${animal?.brinco || ''}`,
     html: `<form id="f-ep" class="grade" style="gap:14px">

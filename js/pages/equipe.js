@@ -20,12 +20,13 @@ export const AREAS = [
   ['financeiro', 'Financeiro (receitas e despesas)'],
   ['relatorios', 'Relatórios'],
   ['configuracoes', 'Configurações do sistema'],
+  ['excluir', 'Excluir lançamentos feitos por engano (sêmen, pesagens e financeiro)'],
 ];
 const todas = (v) => Object.fromEntries(AREAS.map(([k]) => [k, v]));
 
 // Níveis prontos (atalhos para marcar as áreas)
 const NIVEIS = {
-  gerente: { nome: 'Gerente', desc: 'Quase tudo, inclusive financeiro e relatórios. Não altera configurações nem a equipe.', perms: { ...todas(true), configuracoes: false } },
+  gerente: { nome: 'Gerente', desc: 'Quase tudo, inclusive financeiro e relatórios, e pode excluir lançamentos feitos por engano. Não altera configurações nem a equipe.', perms: { ...todas(true), configuracoes: false } },
   campo: { nome: 'Funcionário de campo', desc: 'Animais, pesagens, reprodução, sanidade, movimentações e suplementação. Sem financeiro nem compras/vendas.',
     perms: { ...todas(false), rebanho_editar: true, pesagens: true, reproducao: true, sanidade: true, movimentacoes: true, suplementacao: true } },
   consulta: { nome: 'Somente consulta', desc: 'Só visualiza o rebanho e as pendências. Não registra nada.', perms: todas(false) },

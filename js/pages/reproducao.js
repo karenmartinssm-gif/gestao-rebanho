@@ -251,7 +251,7 @@ export async function render(el) {
     });
     painel.innerHTML = `${editar ? '<div class="acoes" style="margin-bottom:12px"><button class="btn btn-primario" data-semen><i data-lucide="plus"></i> Cadastrar sêmen</button></div>' : ''}
       <div class="card">${linhas.length ? '<div id="t-rep"></div>' : vazio({ icone: 'shield', titulo: 'Nenhum reprodutor', texto: 'Touros do rebanho aparecem aqui automaticamente quando cadastrados na categoria Touro. Para inseminação, cadastre o sêmen.' })}</div>
-      <p class="small muted">Taxa de prenhez por reprodutor = coberturas que resultaram em prenhez ÷ coberturas com resultado conhecido.</p>`;
+      <p class="small muted">Taxa de prenhez por reprodutor = coberturas que resultaram em prenhez ÷ coberturas com resultado conhecido. Toque em um sêmen para editar, desativar ou excluir; touros do rebanho abrem a ficha do animal.</p>`;
     painel.querySelector('[data-semen]')?.addEventListener('click', () => F.abrirSemen(null, recarregar));
     if (!linhas.length) return;
     montarTabela(painel.querySelector('#t-rep'), {

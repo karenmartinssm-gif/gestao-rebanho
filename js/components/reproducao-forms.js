@@ -4,10 +4,10 @@
 // desmames funcionam sem internet (ficam na fila do aparelho).
 // =====================================================================
 import { sb } from '../supabase.js';
-import { store, pode, param, carregarBase } from '../store.js';
+import { store, pode, param, carregarBase, podeExcluir } from '../store.js';
 import {
   esc, abrirModal, toast, traduzirErro, hojeISO, addDias, fmtData, fmtKg, idadeTexto, diasEntre,
-  numOuNulo, textoOuNulo, opcoes, ativarWizard, icones, ROTULO_SITUACAO_REPRO,
+  numOuNulo, textoOuNulo, opcoes, ativarWizard, icones, ROTULO_SITUACAO_REPRO, confirmar,
 } from '../ui.js';
 import { incluir, chamar, exigirConexao } from '../sync.js';
 import { listarAnimais, campoAnimal } from './animais-comum.js';
@@ -397,7 +397,22 @@ export function abrirSemen(registro = null, aoSalvar) {
       <div class="campo"><label for="s-obs">Observações</label><textarea id="s-obs" rows="2">${esc(r.observacoes || '')}</textarea></div>
       ${registro ? `<label class="check"><input type="checkbox" id="s-ativo" ${r.ativo ? 'checked' : ''}> Ativo (aparece nos formulários)</label>` : ''}
     </form>`,
-    rodape: '<button class="btn" data-fechar>Cancelar</button><button class="btn btn-primario" type="submit" form="f-sem">Salvar</button>',
+    rodape: `${registro && podeExcluir('reproducao') ? '<button class="btn btn-perigo" data-excluir style="margin-right:auto">Excluir</button>' : ''}<button class="btn" data-fechar>Cancelar</button><button class="btn btn-primario" type="submit" form="f-sem">Salvar</button>`,
+  });
+  el.querySelector('[data-excluir]')?.addEventListener('click', async () => {
+    const ok = await confirmar({ titulo: 'Excluir reprodutor', mensagem: `Excluir <b>${esc(registro.identificacao)}</b>? Esta ação não pode ser desfeita.`, botao: 'Excluir', perigo: true });
+    if (!ok) return;
+    try {
+      exigirConexao();
+      const { error } = await sb.from('reprodutores').delete().eq('id', registro.id);
+      if (error) throw error;
+      await carregarBase();
+      toast('Reprodutor excluído.');
+      fechar(); aoSalvar?.();
+    } catch (err) {
+      if (err?.code === '23503') toast('Este reprodutor já foi usado em coberturas, nascimentos ou como pai de algum animal, por isso não pode ser excluído. Para tirá-lo das listas, desmarque "Ativo" e salve.', 'aviso', 10000);
+      else toast(traduzirErro(err), 'erro', 7000);
+    }
   });
   el.querySelector('form').addEventListener('submit', async (e) => {
     e.preventDefault();

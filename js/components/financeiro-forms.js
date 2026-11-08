@@ -4,7 +4,7 @@
 // alterações e exclusões exigem conexão.
 // =====================================================================
 import { sb } from '../supabase.js';
-import { store, pode } from '../store.js';
+import { store, pode, podeExcluir } from '../store.js';
 import { esc, abrirModal, toast, traduzirErro, hojeISO, fmtMoeda, fmtData, numOuNulo, textoOuNulo, opcoes, confirmar } from '../ui.js';
 import { incluir, exigirConexao } from '../sync.js';
 import { FORMAS_PAGAMENTO } from './comercial-forms.js';
@@ -22,7 +22,7 @@ export async function abrirLancamento(l, aoSalvar, padrao = {}) {
   if (!pode('financeiro')) return toast('Você não tem permissão para o financeiro.', 'erro');
   const novo = !l;
   let tipo = l?._tipo || padrao.tipo || 'despesa';
-  const dono = store.papel === 'proprietario';
+  const dono = podeExcluir('financeiro');
   const lotes = store.base.lotes.filter((x) => x.ativo || x.id === l?.lote_id);
   const vinculo = l && (l.venda_id || l.compra_id || l.manejo_id || l.fornecimento_id);
 

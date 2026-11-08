@@ -37,6 +37,8 @@ export const store = {
 
 export const pode = (perm) => store.papel === 'proprietario' || store.permissoes?.[perm] === true;
 export const ehProprietario = () => store.papel === 'proprietario';
+// Excluir: proprietário sempre; gerente com a permissão "excluir" + a permissão da área (o banco confere o mesmo)
+export const podeExcluir = (area) => ehProprietario() || (pode('excluir') && pode(area));
 export const param = (chave) => ({ ...PARAMETROS_PADRAO, ...(store.prop?.parametros || {}) })[chave];
 
 const CHAVE_PROP = 'rebanho.propriedade';
