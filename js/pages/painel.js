@@ -126,8 +126,6 @@ export async function render(el) {
       ${kpi(`Nascimentos em ${nomeMes}`, nascMes, 'sunrise')}
       ${kpi(`Mortes em ${nomeMes}`, mortesMes, 'circle-x')}
       ${kpi(`Vendidos em ${nomeMes}`, vendMes, 'handshake', `${fmtNum(vendAno)} no ano`)}
-      ${kpi('Matrizes prenhes', prenhes, 'heart-pulse')}
-      ${kpi('Matrizes vazias', vazias, 'heart-off')}
       ${kpi('Em tratamento', emTratamento.size, 'stethoscope')}
       ${kpi('Manejos pendentes', manejosPend.length, 'calendar-clock', `próximos ${param('dias_alerta_manejo')} dias e atrasados`)}
     </div>
