@@ -95,6 +95,12 @@ export async function render(el) {
     { titulo: 'Suplementos com estoque baixo', icone: 'package-open', itens: estq.data.filter((s) => Number(s.estoque_minimo) > 0 && Number(s.saldo) <= Number(s.estoque_minimo)).map((s) => [s.nome, `<span class="badge perigo">${fmtNum(s.saldo, 1)} ${esc(s.unidade)}</span>`]) },
   ];
 
+  // Separação por sexo, sempre com o número maior primeiro (ex.: "80 fêmeas · 3 machos")
+  const porSexo = (filtro) => {
+    const f = conta((a) => filtro(a) && a.sexo === 'F'), m = conta((a) => filtro(a) && a.sexo === 'M');
+    const partes = [[f, plural(f, 'fêmea', 'fêmeas')], [m, plural(m, 'macho', 'machos')]];
+    return partes.sort((x, y) => y[0] - x[0]).map((p) => p[1]).join(' · ');
+  };
   // Quadros zerados ficam ocultos (aparecem quando houver registro). O quadro em destaque sempre aparece.
   const kpi = (rotulo, valor, icone, detalhe = '', destaque = false, link = '') => (!destaque && !Number(valor) ? '' : `
     <${link ? `a href="${link}"` : 'div'} class="card kpi ${destaque ? 'destaque' : ''}">
@@ -118,12 +124,12 @@ export async function render(el) {
 
     ${htmlInstalar()}
     <div class="grade grade-kpi">
-      ${kpi('Animais ativos', ativos.length, 'tag', `${plural(conta((a) => a.sexo === 'M'), 'macho', 'machos')} · ${plural(conta((a) => a.sexo === 'F'), 'fêmea', 'fêmeas')}`, true, '#/animais')}
+      ${kpi('Animais ativos', ativos.length, 'tag', porSexo(() => true), true, '#/animais')}
       ${kpi('Matrizes', grupo('matriz'), 'heart', [plural(prenhes, 'prenhe', 'prenhes'), posParto && `${fmtNum(posParto)} pós-parto`, cobertas && `${fmtNum(cobertas)} aguardando diagnóstico`, plural(vazias, 'vazia', 'vazias')].filter(Boolean).join(' · '))}
       ${kpi('Touros', grupo('touro'), 'shield')}
       ${kpi('Animais registrados', conta((a) => a.registrado), 'badge-check', `de ${fmtNum(ativos.length)} ativos`)}
       ${kpi('Novilhas', grupo('novilha'), 'sprout', novilhasPrenhes ? plural(novilhasPrenhes, 'prenhe', 'prenhes') : '')}
-      ${kpi('Bezerros', grupo('bezerro'), 'baby', `${fmtNum(conta((a) => a.categoria_grupo === 'bezerro' && a.sexo === 'M'))} M · ${fmtNum(conta((a) => a.categoria_grupo === 'bezerro' && a.sexo === 'F'))} F`)}
+      ${kpi('Bezerros', grupo('bezerro'), 'baby', porSexo((a) => a.categoria_grupo === 'bezerro'))}
       ${kpi('Outros (garrotes, bois…)', conta((a) => ['garrote', 'boi', 'outro'].includes(a.categoria_grupo)), 'layers')}
       ${kpi(`Nascimentos em ${nomeMes}`, nascMes, 'sunrise')}
       ${kpi(`Mortes em ${nomeMes}`, mortesMes, 'circle-x')}
