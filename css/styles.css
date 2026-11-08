@@ -457,3 +457,6 @@ button.pend-card .rotulo { padding-right: 26px; }
 }
 .contagem-lista { padding: 10px 18px; border-bottom: 1px solid var(--borda); font-size: .92rem; }
 .contagem-lista:empty { display: none; }
+/* Faixa do total de animais em verde escuro */
+.contagem-lista { background: var(--verde-800); color: #fff; border-bottom: 0; }
+.contagem-lista .muted { color: rgba(255, 255, 255, .75); }
