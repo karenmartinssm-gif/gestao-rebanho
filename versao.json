@@ -1,7 +1,7 @@
 {
-  "gerado_em": "2026-11-08T14:57:14",
+  "gerado_em": "2026-11-08T15:05:47",
   "arquivos": {
-    "css/styles.css": "aa4735341b",
+    "css/styles.css": "b7e3d4f7f0",
     "js/app.js": "1b07257a8c",
     "js/components/alimentacao-forms.js": "0dcbfee3f9",
     "js/components/animais-comum.js": "7187a29917",
@@ -26,7 +26,7 @@
     "js/components/transferencia.js": "636d139989",
     "js/config.js": "abc61473f7",
     "js/pages/alimentacao.js": "4a3bb201fa",
-    "js/pages/animais.js": "6fb0e288f9",
+    "js/pages/animais.js": "de57e4495d",
     "js/pages/animal-ficha.js": "863a55770f",
     "js/pages/animal-form.js": "12c151aedc",
     "js/pages/configuracoes.js": "9a85a0ffab",
@@ -34,7 +34,7 @@
     "js/pages/financeiro.js": "a70f02e88a",
     "js/pages/graficos.js": "13e21d650d",
     "js/pages/movimentacoes.js": "529d81e5ba",
-    "js/pages/painel.js": "3b843c864c",
+    "js/pages/painel.js": "5658d29637",
     "js/pages/pastagens.js": "ff98c5b91d",
     "js/pages/pendencias.js": "8554f3e988",
     "js/pages/pesagens.js": "2df6f8ba31",

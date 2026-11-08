@@ -14,14 +14,6 @@ const FAIXAS = [
 ];
 
 const CHAVE_FILTROS = 'rebanho.filtros.animais';
-// Grupos de categorias (os mesmos dos quadros do Painel)
-const GRUPOS = {
-  matriz: { nome: 'Matrizes (vacas, primíparas, matrizes)', grupos: ['matriz'] },
-  novilha: { nome: 'Novilhas', grupos: ['novilha'] },
-  bezerro: { nome: 'Bezerros e bezerras', grupos: ['bezerro'] },
-  touro: { nome: 'Touros', grupos: ['touro'] },
-  outros: { nome: 'Outros (garrotes, bois…)', grupos: ['garrote', 'boi', 'outro'] },
-};
 
 export async function render(el) {
   let animais;
@@ -52,9 +44,13 @@ export async function render(el) {
           <option value="ativos">Ativos no rebanho</option><option value="inativos">Fora do rebanho</option><option value="todos">Todos</option>
           ${b.status.map((s) => `<option value="st:${esc(s.codigo)}">Status: ${esc(s.nome)}</option>`).join('')}</select></div>
         <div class="campo"><label for="f-sexo">Sexo</label><select id="f-sexo" name="sexo"><option value="">Todos</option><option value="M">Macho</option><option value="F">Fêmea</option></select></div>
-        <div class="campo"><label for="f-cat">Categoria</label><select id="f-cat" name="categoria"><option value="">Todas</option>
-          <optgroup label="Grupos">${Object.entries(GRUPOS).map(([k, g]) => `<option value="g:${k}">${esc(g.nome)}</option>`).join('')}</optgroup>
-          <optgroup label="Categorias">${opcoes(b.categorias, { vazio: null })}</optgroup></select></div>
+        <div class="campo"><label for="f-cat-botao">Categoria</label>
+          <div class="multi" id="f-cat-multi"><input type="hidden" name="categoria" id="f-cat">
+            <button type="button" class="multi-botao" id="f-cat-botao" aria-haspopup="true" aria-expanded="false"><span class="multi-texto">Todas</span></button>
+            <div class="multi-lista oculto" role="group" aria-label="Categorias">
+              ${b.categorias.map((c) => `<label class="check"><input type="checkbox" value="${esc(c.id)}"> ${esc(c.nome)}</label>`).join('')}
+              <button type="button" class="btn btn-sm btn-texto" data-cat-todas>Todas as categorias</button>
+            </div></div></div>
         <div class="campo"><label for="f-raca">Raça</label><select id="f-raca" name="raca">${opcoes(b.racas, { vazio: 'Todas' })}<option value="__sem">Sem raça informada</option></select></div>
         <div class="campo"><label for="f-reg">Registro</label><select id="f-reg" name="registro"><option value="">Todos</option><option value="sim">Registrados</option><option value="nao">Não registrados</option></select></div>
         <div class="campo"><label for="f-idade">Idade</label><select id="f-idade" name="idade"><option value="">Todas</option>${FAIXAS.map((x) => `<option value="${x.v}">${x.r}</option>`).join('')}</select></div>
@@ -70,7 +66,44 @@ export async function render(el) {
     const aberto = form.classList.toggle('aberto');
     e.currentTarget.setAttribute('aria-expanded', String(aberto));
   });
-  for (const [k, v] of Object.entries(f)) { const c = form.elements[k]; if (c && c.tagName === 'SELECT') c.value = v; }
+  // Filtro antigo por grupo ("g:matriz") vira a lista de categorias desse grupo
+  if (f.categoria?.startsWith('g:')) {
+    const g = f.categoria.slice(2); const grupos = g === 'outros' ? ['garrote', 'boi', 'outro'] : [g];
+    f.categoria = b.categorias.filter((c) => grupos.includes(c.grupo)).map((c) => c.id).join(',');
+  }
+  for (const [k, v] of Object.entries(f)) { const c = form.elements[k]; if (c && (c.tagName === 'SELECT' || c.type === 'hidden')) c.value = v; }
+
+  // Categoria: várias opções marcáveis
+  const multi = el.querySelector('#f-cat-multi');
+  const campoCat = multi.querySelector('#f-cat');
+  const botaoCat = multi.querySelector('.multi-botao');
+  const listaCat = multi.querySelector('.multi-lista');
+  const marcadas = () => [...listaCat.querySelectorAll('input:checked')].map((x) => x.value);
+  const textoCat = (ids) => {
+    if (!ids.length) return 'Todas';
+    const nomes = ids.map((id) => b.categorias.find((c) => c.id === id)?.nome).filter(Boolean);
+    return nomes.length <= 2 ? nomes.join(', ') : `${nomes.length} categorias`;
+  };
+  const sincronizarCat = () => {
+    const ids = campoCat.value ? campoCat.value.split(',') : [];
+    listaCat.querySelectorAll('input').forEach((x) => { x.checked = ids.includes(x.value); });
+    botaoCat.querySelector('.multi-texto').textContent = textoCat(ids);
+  };
+  const abrirCat = (sim) => { listaCat.classList.toggle('oculto', !sim); botaoCat.setAttribute('aria-expanded', String(sim)); };
+  botaoCat.addEventListener('click', () => abrirCat(listaCat.classList.contains('oculto')));
+  listaCat.addEventListener('change', (e) => {
+    e.stopPropagation();
+    campoCat.value = marcadas().join(',');
+    botaoCat.querySelector('.multi-texto').textContent = textoCat(marcadas());
+    form.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  listaCat.querySelector('[data-cat-todas]').addEventListener('click', () => {
+    campoCat.value = ''; sincronizarCat(); abrirCat(false);
+    form.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  const fecharFora = (e) => { if (!el.isConnected) return document.removeEventListener('click', fecharFora); if (!multi.contains(e.target)) abrirCat(false); };
+  document.addEventListener('click', fecharFora);
+  sincronizarCat();
   if ([...doLink.keys()].length) { form.classList.add('aberto'); el.querySelector('#btn-filtros').setAttribute('aria-expanded', 'true'); }
 
   const colunas = [
@@ -97,7 +130,7 @@ export async function render(el) {
       if (d.situacao?.startsWith('st:') && a.status !== d.situacao.slice(3)) return false;
       if (t && !a.brinco.toUpperCase().includes(t) && !(a.nome || '').toUpperCase().includes(t)) return false;
       if (d.sexo && a.sexo !== d.sexo) return false;
-      if (d.categoria && (d.categoria.startsWith('g:') ? !GRUPOS[d.categoria.slice(2)]?.grupos.includes(a.categoria_grupo) : a.categoria_id !== d.categoria)) return false;
+      if (d.categoria && !d.categoria.split(',').includes(a.categoria_id)) return false;
       if (d.raca && (d.raca === '__sem' ? a.raca_id : a.raca_id !== d.raca)) return false;
       if (d.registro && !!a.registrado !== (d.registro === 'sim')) return false;
       if (d.pasto && (d.pasto === '__sem' ? a.pasto_id : a.pasto_id !== d.pasto)) return false;
@@ -128,7 +161,8 @@ export async function render(el) {
       const c = form.elements[k]; if (!c) return null;
       const v = c.value.trim();
       if (!v || v === (PADRAO[k] || '')) return null;
-      const texto = c.tagName === 'SELECT' ? c.options[c.selectedIndex]?.text : `“${v}”`;
+      const texto = k === 'categoria' ? v.split(',').map((id) => b.categorias.find((x) => x.id === id)?.nome).filter(Boolean).join(', ')
+        : c.tagName === 'SELECT' ? c.options[c.selectedIndex]?.text : `“${v}”`;
       return { k, texto };
     }).filter(Boolean);
     barra.classList.toggle('oculto', !ativosF.length);
@@ -144,9 +178,10 @@ export async function render(el) {
   };
   barra.addEventListener('click', (e) => {
     const t = e.target.closest('[data-tirar]');
-    if (t) { form.elements[t.dataset.tirar].value = PADRAO[t.dataset.tirar] || ''; aplicar(); return; }
+    if (t) { form.elements[t.dataset.tirar].value = PADRAO[t.dataset.tirar] || ''; sincronizarCat(); aplicar(); return; }
     if (e.target.closest('[data-limpar]')) {
       Object.keys(NOMES).forEach((k) => { if (form.elements[k]) form.elements[k].value = PADRAO[k] || ''; });
+      sincronizarCat();
       aplicar();
     }
   });
