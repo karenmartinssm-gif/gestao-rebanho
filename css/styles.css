@@ -432,3 +432,9 @@ button.pend-card.tem:hover { box-shadow: 0 3px 12px rgba(30, 60, 40, .14); trans
 button.pend-card.atrasado .pend-sinal { background: var(--perigo); }
 button.pend-card { display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; }
 button.pend-card .rotulo { padding-right: 26px; }
+/* Rebanho: filtros ativos */
+.filtros-ativos { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 12px 16px 0; }
+.filtros-ativos .small svg { width: 14px; height: 14px; vertical-align: -2px; }
+.chip-filtro { cursor: pointer; font: inherit; font-size: .85rem; background: var(--verde-50, #e8f0ea); border-color: var(--verde-700); color: var(--texto); }
+.chip-filtro svg { width: 13px; height: 13px; }
+.chip-filtro:hover { background: #fff; }

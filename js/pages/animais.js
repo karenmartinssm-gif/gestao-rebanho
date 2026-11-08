@@ -43,6 +43,7 @@ export async function render(el) {
       </div>
     </div>
     <div class="card">
+      <div class="filtros-ativos oculto" id="filtros-ativos" aria-live="polite"></div>
       <form class="filtros" id="filtros" role="search">
         <div class="campo busca"><label for="f-busca">Brinco ou nome</label>
           <div class="busca-wrap"><i data-lucide="search"></i><input id="f-busca" name="busca" type="search" placeholder="Ex.: 1234" value="${esc(f.busca || '')}"></div></div>
@@ -118,7 +119,39 @@ export async function render(el) {
     colunas, linhas: filtrar(), busca: false, vazioHtml,
     aoClicar: (id) => { location.hash = `#/animais/${id}`; },
   });
-  form.addEventListener('input', () => tabela.atualizar(filtrar()));
+  // Filtros ativos (acima dos filtros) e "Limpar filtros"
+  const PADRAO = { situacao: 'ativos' };
+  const NOMES = { busca: 'Busca', situacao: 'Situação', sexo: 'Sexo', categoria: 'Categoria', raca: 'Raça', registro: 'Registro', idade: 'Idade', pasto: 'Pasto', lote: 'Lote' };
+  const barra = el.querySelector('#filtros-ativos');
+  const desenharAtivos = () => {
+    const ativosF = Object.keys(NOMES).map((k) => {
+      const c = form.elements[k]; if (!c) return null;
+      const v = c.value.trim();
+      if (!v || v === (PADRAO[k] || '')) return null;
+      const texto = c.tagName === 'SELECT' ? c.options[c.selectedIndex]?.text : `“${v}”`;
+      return { k, texto };
+    }).filter(Boolean);
+    barra.classList.toggle('oculto', !ativosF.length);
+    barra.innerHTML = ativosF.length ? `<span class="small muted"><i data-lucide="filter"></i> Filtros ativos:</span>
+      ${ativosF.map((x) => `<button type="button" class="chip chip-filtro" data-tirar="${x.k}" title="Tirar este filtro">${esc(NOMES[x.k])}: <b>${esc(x.texto)}</b> <i data-lucide="x"></i></button>`).join('')}
+      <button type="button" class="btn btn-sm" data-limpar><i data-lucide="filter-x"></i> Limpar filtros</button>` : '';
+    icones();
+  };
+  const aplicar = () => {
+    if (location.hash.includes('?')) history.replaceState(null, '', '#/animais');   // o link do Painel vale só na entrada
+    tabela.atualizar(filtrar());
+    desenharAtivos();
+  };
+  barra.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-tirar]');
+    if (t) { form.elements[t.dataset.tirar].value = PADRAO[t.dataset.tirar] || ''; aplicar(); return; }
+    if (e.target.closest('[data-limpar]')) {
+      Object.keys(NOMES).forEach((k) => { if (form.elements[k]) form.elements[k].value = PADRAO[k] || ''; });
+      aplicar();
+    }
+  });
+  form.addEventListener('input', aplicar);
+  desenharAtivos();
   el.querySelector('#tabela').addEventListener('click', (e) => {
     const b = e.target.closest('[data-excluir-animal]'); if (!b) return;
     const a = animais.find((x) => x.id === b.dataset.excluirAnimal);

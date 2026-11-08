@@ -353,7 +353,10 @@ export async function render(el, [id]) {
     icones();
   };
   el.querySelector('.abas').addEventListener('click', (e) => { const b = e.target.closest('[data-aba]'); if (b) mostrar(b.dataset.aba); });
-  mostrar('dados');
+  // "#/animais/<id>?aba=reprodutivo" abre direto na aba pedida (ex.: vindo de Pendências › Previsões de parto)
+  const abaPedida = new URLSearchParams(location.hash.split('?')[1] || '').get('aba');
+  mostrar(abas.some(([k]) => k === abaPedida) ? abaPedida : 'dados');
+  if (abaPedida) el.querySelector(`[data-aba="${abaPedida}"]`)?.scrollIntoView({ block: 'nearest', inline: 'center' });
 }
 
 function valorHist(campo, v, nomeCat, nomeRaca) {
