@@ -495,3 +495,9 @@ button.pend-card .rotulo { padding-right: 26px; }
   .mais-filtros { grid-template-columns: 1fr 1fr; }
   .menu-suspenso .menu { right: auto; left: 0; }
 }
+/* Barra de rolagem do menu lateral em verde (monitores menores) */
+.lateral, .lateral nav { scrollbar-width: thin; scrollbar-color: var(--verde-600) var(--verde-900); }
+.lateral::-webkit-scrollbar, .lateral nav::-webkit-scrollbar { width: 8px; }
+.lateral::-webkit-scrollbar-track, .lateral nav::-webkit-scrollbar-track { background: var(--verde-900); }
+.lateral::-webkit-scrollbar-thumb, .lateral nav::-webkit-scrollbar-thumb { background: var(--verde-600); border-radius: 8px; border: 2px solid var(--verde-900); }
+.lateral::-webkit-scrollbar-thumb:hover, .lateral nav::-webkit-scrollbar-thumb:hover { background: var(--verde-500, #5a8f6c); }
