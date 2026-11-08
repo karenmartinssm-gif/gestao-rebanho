@@ -1,5 +1,5 @@
 {
-  "gerado_em": "2026-11-08T09:24:08",
+  "gerado_em": "2026-11-08T09:37:41",
   "arquivos": {
     "css/styles.css": "3d87c6607c",
     "js/app.js": "3dd3cdcd19",
@@ -8,7 +8,7 @@
     "js/components/atalhos.js": "03c61f6af5",
     "js/components/avisos.js": "902269568a",
     "js/components/backup.js": "faba927809",
-    "js/components/comercial-forms.js": "b59844f471",
+    "js/components/comercial-forms.js": "e107176996",
     "js/components/consulta.js": "7a672ae203",
     "js/components/desempenho.js": "610c90ea81",
     "js/components/exportar.js": "76e06417f9",

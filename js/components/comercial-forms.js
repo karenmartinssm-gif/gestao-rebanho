@@ -57,7 +57,7 @@ export function abrirCompra(aoSalvar) {
             <div class="campo"><label for="g-brinco">Primeiro brinco</label><input id="g-brinco" placeholder="Ex.: C-001"><span class="ajuda">Os próximos seguem a numeração.</span></div>
             <div class="campo"><label for="g-sexo">Sexo</label><select id="g-sexo"><option value="M">Macho</option><option value="F">Fêmea</option></select></div>
             <div class="campo"><label for="g-cat">Categoria</label><select id="g-cat">${opcoes(cats, { vazio: null })}</select></div>
-            <div class="campo"><label for="g-raca">Raça</label><select id="g-raca">${opcoes(racas, { vazio: '—', selecionado: racas[0]?.id })}</select></div>
+            <div class="campo"><label for="g-raca">Raça</label><select id="g-raca">${opcoes(racas, { vazio: '—', selecionado: (racas.find((r) => /nelore/i.test(r.nome)) || racas[0])?.id })}</select></div>
             <div class="campo"><label for="g-nasc">Nascimento (aproximado)</label><input id="g-nasc" type="date" max="${hojeISO()}"></div>
           </div>
           <button type="button" class="btn" id="g-gerar"><i data-lucide="list-plus"></i> Gerar lista</button></div>
