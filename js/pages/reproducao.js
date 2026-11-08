@@ -2,7 +2,7 @@
 // REPRODUÇÃO E CRIA
 // =====================================================================
 import { sb } from '../supabase.js';
-import { store, pode, param, carregarBase } from '../store.js';
+import { store, pode, param, carregarBase, podeExcluir } from '../store.js';
 import {
   esc, icones, fmtData, fmtNum, fmtKg, fmtPct, idadeTexto, hojeISO, addDias, montarTabela, vazio, erroCarga, baixarCSV, ROTULO_SITUACAO_REPRO, ROTULO_SEXO,
 } from '../ui.js';
@@ -174,6 +174,7 @@ export async function render(el) {
 
   // ---------------- COBERTURAS ----------------
   function abaCoberturas() {
+    const excluir = podeExcluir('reproducao');
     painel.innerHTML = `<div class="card">${coberturas.length ? '<div id="t-cob"></div>' : vazio({ icone: 'heart', titulo: 'Nenhuma cobertura registrada', texto: 'Registre montas naturais, inseminações e IATF para acompanhar a previsão de parto e a taxa de prenhez.', acao: editar ? '<button class="btn btn-primario" data-novo>Registrar cobertura</button>' : '' })}</div>`;
     painel.querySelector('[data-novo]')?.addEventListener('click', () => F.abrirCobertura(null, recarregar));
     if (!coberturas.length) return;
@@ -186,11 +187,13 @@ export async function render(el) {
         { chave: 'prev', titulo: 'Previsão de parto', valor: (c) => c.data_prevista_parto, render: (c) => `${fmtData(c.data_prevista_parto)}${c.previsao_manual ? ' <span class="badge" title="Corrigida manualmente ou pelo diagnóstico">ajustada</span>' : ''}` },
         { chave: 'situacao', titulo: 'Situação', valor: (c) => F.ROTULO_SIT_COB[c.situacao], render: (c) => `<span class="badge ${{ prenhe: 'ativo', vazia: 'inativo', parida: 'sucesso', aborto: 'perigo', aguardando_diagnostico: 'info' }[c.situacao] ?? ''}">${esc(F.ROTULO_SIT_COB[c.situacao])}</span>` },
         { chave: 'resp', titulo: 'Responsável', render: (c) => esc(c.responsavel_nome || '—') },
-        ...(editar ? [{ chave: 'acao', titulo: '', render: (c) => (c.situacao === 'aguardando_diagnostico' && porId.get(c.matriz_id)?.conta_no_rebanho ? `<button class="btn btn-sm" data-diag="${c.matriz_id}">Diagnóstico</button>` : '') }] : []),
+        ...(editar || excluir ? [{ chave: 'acao', titulo: '', render: (c) => `<span class="acoes">${editar && c.situacao === 'aguardando_diagnostico' && porId.get(c.matriz_id)?.conta_no_rebanho ? `<button class="btn btn-sm" data-diag="${c.matriz_id}">Diagnóstico</button>` : ''}${excluir && !['parida', 'aborto'].includes(c.situacao) ? `<button class="btn btn-sm btn-texto" data-excluir-cob="${c.id}" title="Excluir cobertura" aria-label="Excluir cobertura"><i data-lucide="trash-2"></i></button>` : ''}</span>` }] : []),
       ],
       linhas: coberturas,
     });
     painel.querySelector('#t-cob').addEventListener('click', (e) => {
+      const x = e.target.closest('[data-excluir-cob]');
+      if (x) { const c = coberturas.find((y) => y.id === x.dataset.excluirCob); F.excluirCobertura(c, porId.get(c.matriz_id)?.brinco, recarregar); return; }
       const b = e.target.closest('[data-diag]'); if (!b) return;
       F.abrirDiagnostico(porId.get(b.dataset.diag), recarregar);
     });

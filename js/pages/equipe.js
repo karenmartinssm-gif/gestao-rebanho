@@ -20,7 +20,7 @@ export const AREAS = [
   ['financeiro', 'Financeiro (receitas e despesas)'],
   ['relatorios', 'Relatórios'],
   ['configuracoes', 'Configurações do sistema'],
-  ['excluir', 'Excluir lançamentos feitos por engano (sêmen, pesagens e financeiro)'],
+  ['excluir', 'Excluir lançamentos feitos por engano (sêmen, coberturas, pesagens e financeiro)'],
 ];
 const todas = (v) => Object.fromEntries(AREAS.map(([k]) => [k, v]));
 

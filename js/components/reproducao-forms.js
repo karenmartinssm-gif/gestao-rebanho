@@ -384,6 +384,21 @@ export async function abrirDesmame(bezerroFixo = null, aoSalvar) {
 // ---------------------------------------------------------------------
 // SÊMEN / REPRODUTOR EXTERNO
 // ---------------------------------------------------------------------
+/** Exclui uma cobertura lançada por engano (servidor desfaz os efeitos na matriz). */
+export async function excluirCobertura(c, brinco, aoSalvar) {
+  if (!podeExcluir('reproducao')) return toast('Você não tem permissão para excluir coberturas.', 'erro');
+  const ok = await confirmar({ titulo: 'Excluir cobertura', perigo: true, botao: 'Excluir',
+    mensagem: `Excluir a cobertura de <b>${fmtData(c.data_cobertura)}</b> da matriz <b>${esc(brinco || '')}</b>?<br><br>Se houver diagnóstico de gestação ligado a ela, ele também será excluído. A situação da matriz é recalculada pelos registros que ficarem. Esta ação não pode ser desfeita.` });
+  if (!ok) return;
+  try {
+    exigirConexao();
+    const { data, error } = await sb.rpc('excluir_cobertura', { p_id: c.id });
+    if (error) throw error;
+    toast(data || 'Cobertura excluída.');
+    aoSalvar?.();
+  } catch (err) { toast(traduzirErro(err), 'erro', 9000); }
+}
+
 export function abrirSemen(registro = null, aoSalvar) {
   if (semPermissao()) return;
   const r = registro || {};
