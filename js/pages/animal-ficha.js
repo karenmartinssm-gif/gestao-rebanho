@@ -194,7 +194,7 @@ export async function render(el, [id]) {
         </div>
         ${!coberturas.length && !nascimentos.length ? `<div style="margin-top:16px">${vazio({ icone: 'heart', titulo: 'Sem histórico reprodutivo', texto: 'Registre coberturas, diagnósticos e partos pelos botões acima ou em Reprodução e cria.' })}</div>` : `
         <h3 style="margin:18px 0 8px">Linha do tempo</h3><ul class="linha-tempo">${[
-          ...coberturas.map((c) => ({ d: c.data_cobertura, t: `Cobertura (${c.tipo === 'monta_natural' ? 'monta natural' : c.tipo === 'iatf' ? 'IATF' : 'inseminação'}) · ${ROTULO_SIT_COB[c.situacao]}${c.data_prevista_parto && ['prenhe', 'aguardando_diagnostico'].includes(c.situacao) ? ` · parto previsto ${fmtData(c.data_prevista_parto)}` : ''}` })),
+          ...coberturas.map((c) => ({ d: c.data_cobertura, t: `Cobertura (${({ monta_natural: 'monta natural', iatf: 'IATF', tetf: 'TETF', inseminacao: 'inseminação' })[c.tipo] || c.tipo}${c.acasalamento ? ` · ${c.acasalamento}` : ''}) · ${ROTULO_SIT_COB[c.situacao]}${c.data_prevista_parto && ['prenhe', 'aguardando_diagnostico'].includes(c.situacao) ? ` · parto previsto ${fmtData(c.data_prevista_parto)}` : ''}` })),
           ...diagnosticos.map((x) => ({ d: x.data_diagnostico, t: `Diagnóstico de gestação: ${x.resultado}${x.metodo ? ` (${x.metodo})` : ''}` })),
           ...nascimentos.map((n) => ({ d: n.data_nascimento, t: n.resultado === 'aborto' ? 'Aborto' : n.resultado === 'natimorto' ? 'Parto — natimorto' : 'Parto — bezerro vivo' })),
         ].sort((x, y) => y.d.localeCompare(x.d)).map((e) => `<li><div class="quando">${fmtData(e.d)}</div>${esc(e.t)}</li>`).join('')}</ul>`}`;

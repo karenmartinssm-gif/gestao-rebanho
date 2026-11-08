@@ -12,7 +12,10 @@ import {
 import { incluir, chamar, exigirConexao } from '../sync.js';
 import { listarAnimais, campoAnimal } from './animais-comum.js';
 
-export const ROTULO_TIPO_COB = { monta_natural: 'Monta natural', inseminacao: 'Inseminação artificial (IA)', iatf: 'IATF' };
+export const ROTULO_TIPO_COB = { monta_natural: 'Monta natural', inseminacao: 'Inseminação artificial (IA)', iatf: 'IATF', tetf: 'TETF (transferência de embrião)' };
+const ROTULO_DATA_COB = { monta_natural: 'Data da cobertura', inseminacao: 'Data da inseminação', iatf: 'Data da IATF', tetf: 'Data da TETF' };
+// TETF: o embrião transferido já tem cerca de 7 dias (mesma regra do servidor)
+const diasGestacao = (tipo, gest) => gest - (tipo === 'tetf' ? 7 : 0);
 export const ROTULO_SIT_COB = {
   aguardando_diagnostico: 'Aguardando diagnóstico', prenhe: 'Prenhe', vazia: 'Vazia', parida: 'Parida', aborto: 'Aborto', cancelada: 'Cancelada',
 };
@@ -81,14 +84,20 @@ export async function abrirCobertura(matrizFixa = null, aoSalvar) {
       <div class="campo"><label>Tipo <span class="obrig">*</span></label><div class="opcoes-radio">
         ${Object.entries(ROTULO_TIPO_COB).map(([k, r], i) => `<label><input type="radio" name="tipo" value="${k}" ${i === 0 ? 'checked' : ''} required> ${esc(r)}</label>`).join('')}</div></div>
       <div class="grade grade-2" style="gap:14px">
-        <div class="campo"><label for="c-rep">Touro / sêmen</label><select id="c-rep">${opcoes(reprod, { rotulo: nomeReprodutor, vazio: reprod.length ? 'Não informado' : 'Nenhum reprodutor cadastrado' })}</select>
-          <span class="ajuda">Touros do rebanho aparecem aqui automaticamente. Sêmen: cadastre em Reprodução › Reprodutores.</span></div>
-        <div class="campo"><label for="c-data">Data da cobertura <span class="obrig">*</span></label><input id="c-data" type="date" required max="${hojeISO()}" value="${hojeISO()}">
+        <div class="campo"><label for="c-rep">Touro (doador do sêmen)</label><select id="c-rep">${opcoes(reprod, { rotulo: nomeReprodutor, vazio: 'Não informado' })}<option value="__novo">+ Cadastrar outro touro / sêmen</option></select>
+          <span class="ajuda">Touros do rebanho e sêmens já cadastrados aparecem aqui.</span></div>
+        <div class="campo"><label for="c-data" id="c-data-rot">Data da cobertura <span class="obrig">*</span></label><input id="c-data" type="date" required max="${hojeISO()}" value="${hojeISO()}">
           <span class="ajuda" id="c-fim-ajuda">Monta natural: data em que a matriz entrou com o touro.</span></div>
+        <div class="campo oculto" id="c-novo-campo" style="grid-column:1/-1"><div class="grade grade-2" style="gap:14px">
+          <div class="campo"><label for="c-novo-nome">Nome do touro (doador do sêmen) <span class="obrig">*</span></label><input id="c-novo-nome" placeholder="Ex.: Nelore CFM Ímpeto"></div>
+          <div class="campo"><label for="c-novo-raca">Raça do touro</label><select id="c-novo-raca">${opcoes(store.base.racas.filter((x) => x.ativo), { vazio: 'Não informada' })}</select></div></div>
+          <span class="ajuda">O touro fica cadastrado como sêmen e passa a aparecer na lista nas próximas vezes.</span></div>
         <div class="campo" id="c-fim-campo"><label for="c-fim">Fim da monta (opcional)</label><input id="c-fim" type="date" max="${hojeISO()}"></div>
+        <div class="campo oculto" id="c-acas-campo"><label for="c-acas">Acasalamento / lacre</label><input id="c-acas" placeholder="Ex.: embrião TE-07 · lacre do sêmen 12345">
+          <span class="ajuda">Registro do embrião e do sêmen usados.</span></div>
         <div class="campo"><label for="c-prev">Previsão de parto</label><input id="c-prev" type="date" readonly>
           <label class="check small"><input type="checkbox" id="c-manual"> Corrigir a previsão manualmente</label>
-          <span class="ajuda">Calculada: data da cobertura + ${gest} dias (ajuste em Configurações › Parâmetros).</span></div>
+          <span class="ajuda" id="c-prev-ajuda">Calculada: data da cobertura + ${gest} dias (ajuste em Configurações › Parâmetros).</span></div>
         <div class="campo"><label for="c-resp">Responsável</label><input id="c-resp" value="${esc(store.perfil?.nome || '')}"></div>
       </div>
       <div class="campo"><label for="c-obs">Observações</label><textarea id="c-obs" rows="2"></textarea></div>
@@ -100,10 +109,21 @@ export async function abrirCobertura(matrizFixa = null, aoSalvar) {
   const selecionadas = matrizFixa ? () => [matrizFixa.id]
     : listaMultipla(el.querySelector('#sel-matrizes'), femeas, { detalhe: (a) => [a.categoria_nome, a.lote_nome && `lote ${a.lote_nome}`].filter(Boolean).join(' · ') });
   const data = f.querySelector('#c-data'), prev = f.querySelector('#c-prev'), manual = f.querySelector('#c-manual');
-  const recalc = () => { if (!manual.checked && data.value) prev.value = addDias(data.value, gest); };
+  const tipoAtual = () => f.querySelector('input[name=tipo]:checked').value;
+  const recalc = () => { if (!manual.checked && data.value) prev.value = addDias(data.value, diasGestacao(tipoAtual(), gest)); };
   data.addEventListener('input', recalc);
   manual.addEventListener('change', () => { prev.readOnly = !manual.checked; recalc(); });
-  const ajustarTipo = () => { const mn = f.querySelector('input[name=tipo]:checked').value === 'monta_natural'; f.querySelector('#c-fim-campo').classList.toggle('oculto', !mn); f.querySelector('#c-fim-ajuda').classList.toggle('oculto', !mn); };
+  const ajustarTipo = () => {
+    const t = tipoAtual(); const mn = t === 'monta_natural';
+    f.querySelector('#c-fim-campo').classList.toggle('oculto', !mn); f.querySelector('#c-fim-ajuda').classList.toggle('oculto', !mn);
+    f.querySelector('#c-acas-campo').classList.toggle('oculto', mn);
+    f.querySelector('#c-data-rot').innerHTML = `${ROTULO_DATA_COB[t]} <span class="obrig">*</span>`;
+    f.querySelector('#c-prev-ajuda').textContent = t === 'tetf'
+      ? `Calculada: data da TETF + ${gest - 7} dias (${gest} de gestação menos 7 dias de idade do embrião).`
+      : `Calculada: data + ${gest} dias (ajuste em Configurações › Parâmetros).`;
+    recalc();
+  };
+  f.querySelector('#c-rep').addEventListener('change', (e) => f.querySelector('#c-novo-campo').classList.toggle('oculto', e.target.value !== '__novo'));
   f.querySelectorAll('input[name=tipo]').forEach((r) => r.addEventListener('change', ajustarTipo));
   ajustarTipo(); recalc();
 
@@ -111,14 +131,30 @@ export async function abrirCobertura(matrizFixa = null, aoSalvar) {
     e.preventDefault();
     const ids = selecionadas();
     if (!ids.length) return toast('Selecione ao menos uma matriz.', 'erro');
-    const tipo = f.querySelector('input[name=tipo]:checked').value;
+    const tipo = tipoAtual();
+    let reprodutorId = f.querySelector('#c-rep').value || null;
     const btn = el.querySelector('[type=submit]'); btn.disabled = true;
+    if (reprodutorId === '__novo') {
+      const nome = f.querySelector('#c-novo-nome').value.trim();
+      if (!nome) { btn.disabled = false; return toast('Informe o nome do touro (doador do sêmen).', 'erro'); }
+      const existente = store.base.reprodutores.find((r) => r.identificacao.trim().toUpperCase() === nome.toUpperCase());
+      if (existente) reprodutorId = existente.id;
+      else {
+        try {
+          const novo = { propriedade_id: store.prop.id, tipo: 'semen', identificacao: nome, raca_id: f.querySelector('#c-novo-raca').value || null };
+          const r = await incluir('reprodutores', novo, `Cadastro do sêmen ${nome}`);
+          reprodutorId = r.id;
+          store.base.reprodutores.push({ ...novo, id: r.id, ativo: true, animal_id: null });
+        } catch (err) { btn.disabled = false; return toast(traduzirErro(err), 'erro', 8000); }
+      }
+    }
     let ok = 0, fila = 0; const erros = [];
     for (const id of ids) {
       const brinco = animais.find((a) => a.id === id)?.brinco;
       try {
         const r = await incluir('coberturas', {
-          propriedade_id: store.prop.id, matriz_id: id, reprodutor_id: f.querySelector('#c-rep').value || null, tipo,
+          propriedade_id: store.prop.id, matriz_id: id, reprodutor_id: reprodutorId, tipo,
+          acasalamento: tipo === 'monta_natural' ? null : textoOuNulo(f.querySelector('#c-acas').value),
           data_cobertura: data.value, data_fim: tipo === 'monta_natural' ? f.querySelector('#c-fim').value || null : null,
           previsao_manual: manual.checked, data_prevista_parto: manual.checked ? prev.value || null : null,
           responsavel_nome: textoOuNulo(f.querySelector('#c-resp').value), observacoes: textoOuNulo(f.querySelector('#c-obs').value),

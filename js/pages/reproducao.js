@@ -183,7 +183,7 @@ export async function render(el) {
         { chave: 'data_cobertura', titulo: 'Data', primaria: true, render: (c) => `${fmtData(c.data_cobertura)}${c.data_fim ? ` a ${fmtData(c.data_fim)}` : ''}` },
         { chave: 'matriz', titulo: 'Matriz', valor: (c) => porId.get(c.matriz_id)?.brinco, render: (c) => linkAnimal(c.matriz_id) },
         { chave: 'tipo', titulo: 'Tipo', valor: (c) => F.ROTULO_TIPO_COB[c.tipo], render: (c) => esc(F.ROTULO_TIPO_COB[c.tipo]) },
-        { chave: 'rep', titulo: 'Touro / sêmen', valor: (c) => nomeRep(c.reprodutor_id), render: (c) => esc(nomeRep(c.reprodutor_id)) },
+        { chave: 'rep', titulo: 'Touro / sêmen', valor: (c) => nomeRep(c.reprodutor_id), render: (c) => `${esc(nomeRep(c.reprodutor_id))}${c.acasalamento ? `<div class="small muted">${esc(c.acasalamento)}</div>` : ''}` },
         { chave: 'prev', titulo: 'Previsão de parto', valor: (c) => c.data_prevista_parto, render: (c) => `${fmtData(c.data_prevista_parto)}${c.previsao_manual ? ' <span class="badge" title="Corrigida manualmente ou pelo diagnóstico">ajustada</span>' : ''}` },
         { chave: 'situacao', titulo: 'Situação', valor: (c) => F.ROTULO_SIT_COB[c.situacao], render: (c) => `<span class="badge ${{ prenhe: 'ativo', vazia: 'inativo', parida: 'sucesso', aborto: 'perigo', aguardando_diagnostico: 'info' }[c.situacao] ?? ''}">${esc(F.ROTULO_SIT_COB[c.situacao])}</span>` },
         { chave: 'resp', titulo: 'Responsável', render: (c) => esc(c.responsavel_nome || '—') },
