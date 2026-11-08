@@ -13,9 +13,9 @@ const raiz = document.getElementById('raiz');
 const MENU = [
   { grupo: 'Principal' },
   { rota: 'painel', titulo: 'Painel', icone: 'layout-dashboard' },
-  { rota: 'pendencias', titulo: 'Pendências', icone: 'bell-ring' },
-  { rota: 'graficos', titulo: 'Gráficos', icone: 'chart-column' },
   { rota: 'animais', titulo: 'Rebanho', icone: 'tag' },
+  { rota: 'graficos', titulo: 'Gráficos', icone: 'chart-column' },
+  { rota: 'pendencias', titulo: 'Pendências', icone: 'bell-ring' },
   { grupo: 'Manejo' },
   { rota: 'reproducao', titulo: 'Reprodução e cria', icone: 'heart' },
   { rota: 'sanidade', titulo: 'Sanidade', icone: 'syringe' },
