@@ -460,3 +460,38 @@ button.pend-card .rotulo { padding-right: 26px; }
 /* Faixa do total de animais em verde escuro */
 .contagem-lista { background: var(--verde-800); color: #fff; border-bottom: 0; }
 .contagem-lista .muted { color: rgba(255, 255, 255, .75); }
+/* ===== Rebanho: novo layout (busca + "Mais filtros" e lista em cartão próprio) ===== */
+.card-filtros-rebanho { padding: 16px 18px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(20, 40, 25, .06); }
+.filtros-linha { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.filtros-linha .campo.busca { flex: 0 1 380px; min-width: 220px; margin: 0; }
+.btn-mais-filtros { min-height: 42px; gap: 8px; }
+.btn-mais-filtros svg { transition: transform .15s; }
+.btn-mais-filtros.aberto svg { transform: rotate(180deg); }
+.contador-filtros { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--verde-700); color: #fff; font-size: .72rem; font-weight: 700; line-height: 20px; text-align: center; }
+.mais-filtros { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--borda); }
+.card-filtros-rebanho .filtros-ativos { padding: 12px 0 0; }
+.card-lista-rebanho { overflow: hidden; box-shadow: 0 2px 10px rgba(20, 40, 25, .06); }
+.card-lista-rebanho .contagem-lista { background: var(--fundo); color: var(--texto); border-bottom: 1px solid var(--borda); padding: 12px 18px; }
+.card-lista-rebanho .contagem-lista .muted { color: var(--texto-2); }
+.tabela-rebanho thead th { background: #e7ebe3; color: var(--texto); }
+.tabela-rebanho tbody tr:hover td { background: #f7f8f5; }
+.tabela-rebanho .col-acoes { width: 1%; white-space: nowrap; }
+.acoes-linha { display: inline-flex; gap: 6px; }
+.btn-acao { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--borda-forte); border-radius: 7px; background: #fff; color: var(--texto); cursor: pointer; padding: 0; }
+.btn-acao svg { width: 16px; height: 16px; }
+.btn-acao:hover { border-color: var(--verde-700); color: var(--verde-700); }
+.btn-acao.perigo { background: var(--perigo-fundo); border-color: #f0c9c5; color: var(--perigo); }
+.btn-acao.perigo:hover { background: #f8d9d6; border-color: var(--perigo); color: var(--perigo); }
+/* Menu suspenso (Exportar) */
+.menu-suspenso { position: relative; }
+.menu-suspenso .menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; min-width: 200px; background: #fff; border: 1px solid var(--borda-forte); border-radius: 10px; box-shadow: 0 10px 28px rgba(20, 40, 25, .16); padding: 6px; display: grid; }
+.menu-suspenso .menu button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; border: 0; background: none; font: inherit; color: var(--texto); text-align: left; cursor: pointer; border-radius: 7px; }
+.menu-suspenso .menu button:hover { background: var(--fundo); }
+.menu-suspenso .menu svg { width: 16px; height: 16px; color: var(--verde-700); }
+@media (max-width: 1100px) { .mais-filtros { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 720px) {
+  .filtros-linha .campo.busca { flex: 1 1 100%; }
+  .btn-mais-filtros { width: 100%; justify-content: center; }
+  .mais-filtros { grid-template-columns: 1fr 1fr; }
+  .menu-suspenso .menu { right: auto; left: 0; }
+}

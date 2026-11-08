@@ -2,7 +2,7 @@
 // REBANHO — lista com filtros
 // =====================================================================
 import { store, pode, nomePasto, podeExcluir } from '../store.js';
-import { esc, icones, fmtNum, fmtKg, idadeTexto, montarTabela, vazio, erroCarga, badgeStatus, baixarCSV, opcoes, fmtData, hojeISO, ROTULO_SEXO } from '../ui.js';
+import { esc, icones, fmtNum, montarTabela, vazio, erroCarga, badgeStatus, opcoes, fmtData, toast, traduzirErro, ROTULO_SEXO } from '../ui.js';
 import { listarAnimais } from '../components/animais-comum.js';
 
 const FAIXAS = [
@@ -14,6 +14,9 @@ const FAIXAS = [
 ];
 
 const CHAVE_FILTROS = 'rebanho.filtros.animais';
+// Idade curta: até 23 meses em meses; a partir de 2 anos, em anos
+const idadeCurta = (m) => (m == null ? null : m < 24 ? `${m} ${m === 1 ? 'mês' : 'meses'}` : `${Math.floor(m / 12)} anos`);
+const pesoCurto = (v) => (v == null ? null : `${fmtNum(Number(v), Number.isInteger(Number(v)) ? 0 : 1)} kg`);
 
 export async function render(el) {
   let animais;
@@ -21,52 +24,70 @@ export async function render(el) {
   const b = store.base;
   let f = {};
   try { f = JSON.parse(sessionStorage.getItem(CHAVE_FILTROS) || '{}'); } catch { /* ignora */ }
-  // Vindo de um quadro do Painel (#/animais?categoria=g:matriz…): usa só os filtros do link
+  // Vindo de um quadro do Painel (#/animais?categoria=…): usa só os filtros do link
   const doLink = new URLSearchParams(location.hash.split('?')[1] || '');
   if ([...doLink.keys()].length) f = Object.fromEntries(doLink);
   f = { situacao: 'ativos', ...f };
+  const editar = pode('rebanho_editar');
+  const excluir = podeExcluir('rebanho_editar');
 
   el.innerHTML = `
     <div class="cabecalho-pagina">
       <div><h1>Rebanho</h1><p>Cadastro individual dos animais. Animais vendidos ou mortos permanecem com a ficha preservada.</p></div>
       <div class="acoes">
-        <button class="btn" id="btn-csv"><i data-lucide="download"></i> Exportar (Excel/CSV)</button>
-        ${pode('rebanho_editar') ? '<a class="btn btn-primario" href="#/animais/novo"><i data-lucide="plus"></i> Cadastrar animal</a>' : ''}
+        <div class="menu-suspenso" id="menu-exportar">
+          <button class="btn" type="button" id="btn-exportar" aria-haspopup="true" aria-expanded="false"><i data-lucide="download"></i> Exportar <i data-lucide="chevron-down"></i></button>
+          <div class="menu oculto" role="menu">
+            <button type="button" role="menuitem" data-exp="xlsx"><i data-lucide="sheet"></i> Planilha Excel</button>
+            <button type="button" role="menuitem" data-exp="pdf"><i data-lucide="file-text"></i> PDF</button>
+          </div>
+        </div>
+        ${editar ? '<a class="btn btn-primario" href="#/animais/novo"><i data-lucide="plus"></i> Cadastrar animal</a>' : ''}
       </div>
     </div>
-    <div class="card">
-      <div class="filtros-ativos oculto" id="filtros-ativos" aria-live="polite"></div>
-      <form class="filtros" id="filtros" role="search">
-        <div class="campo busca"><label for="f-busca">Brinco ou nome</label>
-          <div class="busca-wrap"><i data-lucide="search"></i><input id="f-busca" name="busca" type="search" placeholder="Ex.: 1234" value="${esc(f.busca || '')}"></div></div>
-        <button type="button" class="btn btn-sm btn-filtros" id="btn-filtros" aria-expanded="false"><i data-lucide="sliders-horizontal"></i> Mais filtros</button>
-        <div class="campo"><label for="f-sit">Situação</label><select id="f-sit" name="situacao">
-          <option value="ativos">Ativos no rebanho</option><option value="inativos">Fora do rebanho</option><option value="todos">Todos</option>
-          ${b.status.map((s) => `<option value="st:${esc(s.codigo)}">Status: ${esc(s.nome)}</option>`).join('')}</select></div>
-        <div class="campo"><label for="f-sexo">Sexo</label><select id="f-sexo" name="sexo"><option value="">Todos</option><option value="M">Macho</option><option value="F">Fêmea</option></select></div>
-        <div class="campo"><label for="f-reg">Registro</label><select id="f-reg" name="registro"><option value="">Todos</option><option value="sim">Registrados</option><option value="nao">Não registrados</option></select></div>
-        <div class="campo"><label for="f-cat-botao">Categoria</label>
-          <div class="multi" id="f-cat-multi"><input type="hidden" name="categoria" id="f-cat">
-            <button type="button" class="multi-botao" id="f-cat-botao" aria-haspopup="true" aria-expanded="false"><span class="multi-texto">Todas</span></button>
-            <div class="multi-lista oculto" role="group" aria-label="Categorias">
-              ${b.categorias.map((c) => `<label class="check"><input type="checkbox" value="${esc(c.id)}"> ${esc(c.nome)}</label>`).join('')}
-              <button type="button" class="btn btn-sm btn-texto" data-cat-todas>Todas as categorias</button>
-            </div></div></div>
-        <div class="campo"><label for="f-raca">Raça</label><select id="f-raca" name="raca">${opcoes(b.racas, { vazio: 'Todas' })}<option value="__sem">Sem raça informada</option></select></div>
-        <div class="campo"><label for="f-idade">Idade</label><select id="f-idade" name="idade"><option value="">Todas</option>${FAIXAS.map((x) => `<option value="${x.v}">${x.r}</option>`).join('')}</select></div>
-        <div class="campo"><label for="f-pasto">Pasto</label><select id="f-pasto" name="pasto">${opcoes(b.pastos, { vazio: 'Todos', rotulo: nomePasto })}<option value="__sem">Sem pasto</option></select></div>
-        <div class="campo"><label for="f-lote">Lote</label><select id="f-lote" name="lote">${opcoes(b.lotes, { vazio: 'Todos' })}<option value="__sem">Sem lote</option></select></div>
+
+    <div class="card card-filtros-rebanho">
+      <form id="filtros" class="filtros-rebanho" role="search">
+        <div class="filtros-linha">
+          <div class="campo busca"><label for="f-busca">Brinco ou nome</label>
+            <div class="busca-wrap"><i data-lucide="search"></i><input id="f-busca" name="busca" type="search" placeholder="Ex.: 1234" value="${esc(f.busca || '')}"></div></div>
+          <button type="button" class="btn btn-mais-filtros" id="btn-filtros" aria-expanded="false" aria-controls="mais-filtros">
+            Mais filtros <span class="contador-filtros oculto" id="n-filtros"></span> <i data-lucide="chevron-down"></i></button>
+        </div>
+        <div class="mais-filtros oculto" id="mais-filtros">
+          <div class="campo"><label for="f-sit">Situação</label><select id="f-sit" name="situacao">
+            <option value="ativos">Ativos no rebanho</option><option value="inativos">Fora do rebanho</option><option value="todos">Todos</option>
+            ${b.status.map((s) => `<option value="st:${esc(s.codigo)}">Status: ${esc(s.nome)}</option>`).join('')}</select></div>
+          <div class="campo"><label for="f-sexo">Sexo</label><select id="f-sexo" name="sexo"><option value="">Todos</option><option value="M">Macho</option><option value="F">Fêmea</option></select></div>
+          <div class="campo"><label for="f-cat-botao">Categoria</label>
+            <div class="multi" id="f-cat-multi"><input type="hidden" name="categoria" id="f-cat">
+              <button type="button" class="multi-botao" id="f-cat-botao" aria-haspopup="true" aria-expanded="false"><span class="multi-texto">Todas</span></button>
+              <div class="multi-lista oculto" role="group" aria-label="Categorias">
+                ${b.categorias.map((c) => `<label class="check"><input type="checkbox" value="${esc(c.id)}"> ${esc(c.nome)}</label>`).join('')}
+                <button type="button" class="btn btn-sm btn-texto" data-cat-todas>Todas as categorias</button>
+              </div></div></div>
+          <div class="campo"><label for="f-raca">Raça</label><select id="f-raca" name="raca">${opcoes(b.racas, { vazio: 'Todas' })}<option value="__sem">Sem raça informada</option></select></div>
+          <div class="campo"><label for="f-reg">Registro</label><select id="f-reg" name="registro"><option value="">Todos</option><option value="sim">Registrados</option><option value="nao">Não registrados</option></select></div>
+          <div class="campo"><label for="f-idade">Idade</label><select id="f-idade" name="idade"><option value="">Todas</option>${FAIXAS.map((x) => `<option value="${x.v}">${x.r}</option>`).join('')}</select></div>
+          <div class="campo"><label for="f-pasto">Pasto</label><select id="f-pasto" name="pasto">${opcoes(b.pastos, { vazio: 'Todos', rotulo: nomePasto })}<option value="__sem">Sem pasto</option></select></div>
+          <div class="campo"><label for="f-lote">Lote</label><select id="f-lote" name="lote">${opcoes(b.lotes, { vazio: 'Todos' })}<option value="__sem">Sem lote</option></select></div>
+        </div>
       </form>
+      <div class="filtros-ativos oculto" id="filtros-ativos" aria-live="polite"></div>
+    </div>
+
+    <div class="card card-lista-rebanho">
       <div class="contagem-lista" id="contagem" aria-live="polite"></div>
-      <div id="tabela"></div>
+      <div id="tabela" class="tabela-rebanho"></div>
     </div>`;
   icones();
 
   const form = el.querySelector('#filtros');
-  el.querySelector('#btn-filtros').addEventListener('click', (e) => {
-    const aberto = form.classList.toggle('aberto');
-    e.currentTarget.setAttribute('aria-expanded', String(aberto));
-  });
+  const painelFiltros = el.querySelector('#mais-filtros');
+  const btnFiltros = el.querySelector('#btn-filtros');
+  const abrirFiltros = (sim) => { painelFiltros.classList.toggle('oculto', !sim); btnFiltros.setAttribute('aria-expanded', String(sim)); btnFiltros.classList.toggle('aberto', sim); };
+  btnFiltros.addEventListener('click', () => abrirFiltros(painelFiltros.classList.contains('oculto')));
+
   // Filtro antigo por grupo ("g:matriz") vira a lista de categorias desse grupo
   if (f.categoria?.startsWith('g:')) {
     const g = f.categoria.slice(2); const grupos = g === 'outros' ? ['garrote', 'boi', 'outro'] : [g];
@@ -104,22 +125,36 @@ export async function render(el) {
     campoCat.value = ''; sincronizarCat(); abrirCat(false);
     form.dispatchEvent(new Event('input', { bubbles: true }));
   });
-  const fecharFora = (e) => { if (!el.isConnected) return document.removeEventListener('click', fecharFora); if (!multi.contains(e.target)) abrirCat(false); };
+
+  // Menu "Exportar"
+  const menuExp = el.querySelector('#menu-exportar');
+  const abrirMenuExp = (sim) => { menuExp.querySelector('.menu').classList.toggle('oculto', !sim); menuExp.querySelector('#btn-exportar').setAttribute('aria-expanded', String(sim)); };
+  menuExp.querySelector('#btn-exportar').addEventListener('click', () => abrirMenuExp(menuExp.querySelector('.menu').classList.contains('oculto')));
+
+  // Fecha listas abertas ao clicar fora
+  const fecharFora = (e) => {
+    if (!el.isConnected) return document.removeEventListener('click', fecharFora);
+    if (!multi.contains(e.target)) abrirCat(false);
+    if (!menuExp.contains(e.target)) abrirMenuExp(false);
+  };
   document.addEventListener('click', fecharFora);
   sincronizarCat();
-  if ([...doLink.keys()].length) { form.classList.add('aberto'); el.querySelector('#btn-filtros').setAttribute('aria-expanded', 'true'); }
+  if ([...doLink.keys()].length) abrirFiltros(true);
 
   const colunas = [
-    { chave: 'brinco', titulo: 'Brinco', primaria: true, render: (a) => `<b>${esc(a.brinco)}</b>${a.nome ? ` <span class="muted small">${esc(a.nome)}</span>` : ''}`, valor: (a) => a.brinco, csv: (a) => a.brinco },
-    { chave: 'sexo', titulo: 'Sexo', render: (a) => ROTULO_SEXO[a.sexo], valor: (a) => ROTULO_SEXO[a.sexo], csv: (a) => ROTULO_SEXO[a.sexo] },
+    { chave: 'brinco', titulo: 'Brinco', primaria: true, render: (a) => `<b>${esc(a.brinco)}</b>${a.nome ? ` <span class="muted small">${esc(a.nome)}</span>` : ''}`, valor: (a) => a.brinco },
+    { chave: 'sexo', titulo: 'Sexo', render: (a) => ROTULO_SEXO[a.sexo], valor: (a) => ROTULO_SEXO[a.sexo] },
     { chave: 'categoria_nome', titulo: 'Categoria' },
-    { chave: 'raca_nome', titulo: 'Raça' },
-    { chave: 'idade_meses', titulo: 'Idade', render: (a) => idadeTexto(a.data_nascimento, a.data_saida || hojeISO()), csv: (a) => a.idade_meses },
-    { chave: 'peso_atual', titulo: 'Peso atual', classe: 'dir num', render: (a) => (a.peso_atual ? `<span>${fmtKg(a.peso_atual)} <span class="small muted">· ${fmtData(a.data_ultima_pesagem)}</span></span>` : '—'), valor: (a) => (a.peso_atual == null ? null : Number(a.peso_atual)) },
+    { chave: 'raca_nome', titulo: 'Raça', render: (a) => esc(a.raca_nome || '—') },
+    { chave: 'idade_meses', titulo: 'Idade', render: (a) => esc(idadeCurta(a.idade_meses) || '—') },
+    { chave: 'peso_atual', titulo: 'Peso atual', valor: (a) => (a.peso_atual == null ? null : Number(a.peso_atual)),
+      render: (a) => (a.peso_atual ? `<span title="Pesado em ${fmtData(a.data_ultima_pesagem)}">${pesoCurto(a.peso_atual)}</span>` : '<span class="muted">Não definido</span>') },
     { chave: 'pasto_codigo', titulo: 'Pasto', render: (a) => esc(a.pasto_codigo || '—') },
     { chave: 'lote_nome', titulo: 'Lote', render: (a) => esc(a.lote_nome || '—') },
     { chave: 'status_nome', titulo: 'Status', render: badgeStatus },
-    ...(podeExcluir('rebanho_editar') ? [{ chave: 'acoes', titulo: '', render: (a) => `<button class="btn btn-sm btn-texto" data-excluir-animal="${a.id}" title="Excluir animal" aria-label="Excluir o animal ${esc(a.brinco)}"><i data-lucide="trash-2"></i></button>`, csv: () => '' }] : []),
+    ...(editar || excluir ? [{ chave: 'acoes', titulo: 'Ações', classe: 'dir col-acoes', valor: () => null, render: (a) => `<span class="acoes-linha">
+      ${editar ? `<a class="btn-acao" href="#/animais/${a.id}/editar" title="Editar" aria-label="Editar o animal ${esc(a.brinco)}"><i data-lucide="pencil"></i></a>` : ''}
+      ${excluir ? `<button type="button" class="btn-acao perigo" data-excluir-animal="${a.id}" title="Excluir" aria-label="Excluir o animal ${esc(a.brinco)}"><i data-lucide="trash-2"></i></button>` : ''}</span>` }] : []),
   ];
 
   const filtrar = () => {
@@ -149,34 +184,45 @@ export async function render(el) {
   const vazioHtml = animais.length
     ? vazio({ icone: 'search-x', titulo: 'Nenhum animal encontrado', texto: 'Ajuste os filtros para ver outros animais.' })
     : vazio({ icone: 'tag', titulo: 'Nenhum animal cadastrado', texto: 'Cadastre os animais da propriedade para acompanhar o histórico individual e os indicadores do rebanho.',
-        acao: pode('rebanho_editar') ? '<a class="btn btn-primario" href="#/animais/novo"><i data-lucide="plus"></i> Cadastrar animal</a>' : '' });
+        acao: editar ? '<a class="btn btn-primario" href="#/animais/novo"><i data-lucide="plus"></i> Cadastrar animal</a>' : '' });
 
   const tabela = montarTabela(el.querySelector('#tabela'), {
     colunas, linhas: filtrar(), busca: false, vazioHtml, semTotal: true,
     aoClicar: (id) => { location.hash = `#/animais/${id}`; },
   });
-  // Filtros ativos (acima dos filtros) e "Limpar filtros"
+
+  // Filtros ativos e "Limpar filtros"
   const PADRAO = { situacao: 'ativos' };
   const NOMES = { busca: 'Busca', situacao: 'Situação', sexo: 'Sexo', categoria: 'Categoria', raca: 'Raça', registro: 'Registro', idade: 'Idade', pasto: 'Pasto', lote: 'Lote' };
   const barra = el.querySelector('#filtros-ativos');
+  const filtrosAtivos = () => Object.keys(NOMES).map((k) => {
+    const c = form.elements[k]; if (!c) return null;
+    const v = c.value.trim();
+    if (!v || v === (PADRAO[k] || '')) return null;
+    const texto = k === 'categoria' ? v.split(',').map((id) => b.categorias.find((x) => x.id === id)?.nome).filter(Boolean).join(', ')
+      : c.tagName === 'SELECT' ? c.options[c.selectedIndex]?.text : `“${v}”`;
+    return { k, texto };
+  }).filter(Boolean);
   const desenharAtivos = () => {
-    const ativosF = Object.keys(NOMES).map((k) => {
-      const c = form.elements[k]; if (!c) return null;
-      const v = c.value.trim();
-      if (!v || v === (PADRAO[k] || '')) return null;
-      const texto = k === 'categoria' ? v.split(',').map((id) => b.categorias.find((x) => x.id === id)?.nome).filter(Boolean).join(', ')
-        : c.tagName === 'SELECT' ? c.options[c.selectedIndex]?.text : `“${v}”`;
-      return { k, texto };
-    }).filter(Boolean);
+    const ativosF = filtrosAtivos();
     barra.classList.toggle('oculto', !ativosF.length);
     barra.innerHTML = ativosF.length ? `<span class="small muted"><i data-lucide="filter"></i> Filtros ativos:</span>
       ${ativosF.map((x) => `<button type="button" class="chip chip-filtro" data-tirar="${x.k}" title="Tirar este filtro">${esc(NOMES[x.k])}: <b>${esc(x.texto)}</b> <i data-lucide="x"></i></button>`).join('')}
       <button type="button" class="btn btn-sm" data-limpar><i data-lucide="filter-x"></i> Limpar filtros</button>` : '';
+    // Quantos filtros estão aplicados dentro de "Mais filtros"
+    const n = ativosF.filter((x) => x.k !== 'busca').length;
+    const badge = el.querySelector('#n-filtros');
+    badge.textContent = n; badge.classList.toggle('oculto', !n);
     icones();
   };
+
   // Total de animais no início da lista
   const contagem = el.querySelector('#contagem');
-  const desenharContagem = (n) => { contagem.innerHTML = `<b>${fmtNum(n)}</b> ${n === 1 ? 'animal' : 'animais'}${n !== animais.length ? ` <span class="muted">de ${fmtNum(animais.length)} cadastrados</span>` : ''}`; };
+  const desenharContagem = (n) => {
+    contagem.innerHTML = n === animais.length
+      ? `<b>${fmtNum(n)}</b> ${n === 1 ? 'animal cadastrado' : 'animais cadastrados'}`
+      : `<b>${fmtNum(n)}</b> ${n === 1 ? 'animal encontrado' : 'animais encontrados'} <span class="muted">de ${fmtNum(animais.length)} cadastrados</span>`;
+  };
   const aplicar = () => {
     if (location.hash.includes('?')) history.replaceState(null, '', '#/animais');   // o link do Painel vale só na entrada
     const lista = filtrar();
@@ -194,25 +240,41 @@ export async function render(el) {
     }
   });
   form.addEventListener('input', aplicar);
+  form.addEventListener('submit', (e) => e.preventDefault());
   desenharContagem(filtrar().length);
   desenharAtivos();
+
   el.querySelector('#tabela').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-excluir-animal]'); if (!b) return;
-    const a = animais.find((x) => x.id === b.dataset.excluirAnimal);
+    const x = e.target.closest('[data-excluir-animal]'); if (!x) return;
+    const a = animais.find((y) => y.id === x.dataset.excluirAnimal);
     import('../components/excluir-animal.js').then((m) => m.excluirAnimal(a, () => window.dispatchEvent(new HashChangeEvent('hashchange'))));
   });
-  form.addEventListener('submit', (e) => e.preventDefault());
 
-  el.querySelector('#btn-csv').addEventListener('click', () => {
-    const cols = [
-      ...colunas.filter((c) => !['peso_atual', 'status_nome', 'acoes'].includes(c.chave)),
-      { chave: 'peso_atual', titulo: 'Peso atual (kg)' }, { chave: 'data_ultima_pesagem', titulo: 'Data últ. pesagem', csv: (a) => fmtData(a.data_ultima_pesagem) },
-      { chave: 'data_nascimento', titulo: 'Nascimento', csv: (a) => fmtData(a.data_nascimento) },
-      { chave: 'grau_pureza', titulo: 'Grau de pureza', csv: (a) => a.grau_pureza || '' },
-      { chave: 'registrado', titulo: 'Registro', csv: (a) => (a.registrado ? `Sim${a.numero_registro ? ` (${a.numero_registro})` : ''}` : 'Não') },
-      { chave: 'mae_brinco', titulo: 'Mãe', csv: (a) => a.mae_brinco || a.mae_externa }, { chave: 'pai_identificacao', titulo: 'Pai', csv: (a) => a.pai_identificacao || a.pai_externo },
-      { chave: 'status_nome', titulo: 'Status' }, { chave: 'data_saida', titulo: 'Data de saída', csv: (a) => fmtData(a.data_saida) },
-    ];
-    baixarCSV(`rebanho-${hojeISO()}.csv`, cols, filtrar());
+  // Exportar a lista filtrada (Excel ou PDF)
+  menuExp.querySelector('.menu').addEventListener('click', async (e) => {
+    const opcao = e.target.closest('[data-exp]'); if (!opcao) return;
+    abrirMenuExp(false);
+    const lista = filtrar();
+    const C = (t, tipo = 'texto', casas) => ({ t, tipo, casas });
+    const completo = opcao.dataset.exp === 'xlsx';
+    const colunasExp = [C('Brinco'), C('Nome'), C('Sexo'), C('Categoria'), C('Raça'), C('Grau de pureza'), C('Registro'), C('Nascimento', 'data'), C('Idade (meses)', 'num'),
+      C('Peso atual', 'kg'), C('Última pesagem', 'data'), C('Pasto'), C('Lote'), C('Status'), ...(completo ? [C('Mãe'), C('Pai'), C('Origem'), C('Data de saída', 'data')] : [])];
+    const linhas = lista.map((a) => [a.brinco, a.nome, ROTULO_SEXO[a.sexo], a.categoria_nome, a.raca_nome, a.grau_pureza, a.registrado ? `Sim${a.numero_registro ? ` (${a.numero_registro})` : ''}` : 'Não',
+      a.data_nascimento, a.idade_meses, a.peso_atual == null ? null : Number(a.peso_atual), a.data_ultima_pesagem, a.pasto_codigo, a.lote_nome, a.status_nome,
+      ...(completo ? [a.mae_brinco || a.mae_externa, a.pai_identificacao || a.pai_externo, a.origem, a.data_saida] : [])]);
+    const ativosF = filtrosAtivos();
+    const rel = {
+      titulo: 'Rebanho', filtrosTexto: ativosF.length ? `Filtros: ${ativosF.map((x) => `${NOMES[x.k]} ${x.texto}`).join(' · ')}` : 'Todos os animais ativos',
+      resumo: [['Animais', fmtNum(lista.length)], ['Fêmeas', fmtNum(lista.filter((a) => a.sexo === 'F').length)], ['Machos', fmtNum(lista.filter((a) => a.sexo === 'M').length)]],
+      secoes: [{ titulo: 'Animais', colunas: colunasExp, linhas }], notas: [],
+    };
+    const botao = menuExp.querySelector('#btn-exportar'); botao.disabled = true;
+    try {
+      const m = await import('../components/exportar.js');
+      await (completo ? m.exportarExcel(rel) : m.exportarPDF(rel));
+      toast(`${completo ? 'Planilha' : 'PDF'} gerado(a) com ${fmtNum(lista.length)} animais. Veja na pasta de downloads.`);
+    } catch (err) { toast(traduzirErro(err), 'erro', 8000); }
+    botao.disabled = false;
   });
+
 }
