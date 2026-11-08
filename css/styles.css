@@ -422,3 +422,13 @@ a.card.kpi:hover { border-color: var(--verde-700); box-shadow: 0 3px 12px rgba(3
 .atalho-opcao { display: grid; gap: 6px; text-align: left; cursor: pointer; font: inherit; color: inherit; border: 1px solid var(--borda); }
 .atalho-opcao:hover { border-color: var(--verde-700); box-shadow: 0 3px 12px rgba(30, 60, 40, .12); }
 .atalho-opcao svg { width: 26px; height: 26px; color: var(--verde-700); }
+/* Página Pendências: quadros do tamanho dos do Painel */
+button.pend-card { position: relative; text-align: left; font: inherit; color: inherit; width: 100%; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
+button.pend-card.vazio { cursor: default; opacity: .7; }
+button.pend-card.tem { border-color: var(--aviso); background: var(--aviso-fundo); }
+button.pend-card.atrasado { border-color: var(--perigo); background: var(--perigo-fundo); }
+button.pend-card.tem:hover { box-shadow: 0 3px 12px rgba(30, 60, 40, .14); transform: translateY(-1px); }
+.pend-sinal { position: absolute; top: 10px; right: 10px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: var(--aviso); color: #fff; font-size: .75rem; font-weight: 700; line-height: 22px; text-align: center; }
+button.pend-card.atrasado .pend-sinal { background: var(--perigo); }
+button.pend-card { display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; }
+button.pend-card .rotulo { padding-right: 26px; }

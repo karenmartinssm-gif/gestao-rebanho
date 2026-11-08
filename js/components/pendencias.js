@@ -5,7 +5,7 @@
 // =====================================================================
 import { sb } from '../supabase.js';
 import { store, param } from '../store.js';
-import { esc, fmtNum, fmtData, hojeISO, addDias, diasEntre } from '../ui.js';
+import { esc, fmtNum, fmtData, hojeISO, addDias, diasEntre, abrirModal, icones } from '../ui.js';
 
 async function consulta(promessa) {
   const { data, error } = await promessa;
@@ -54,16 +54,23 @@ export function montarPendencias({ animais, manejos, cobs, desm, estq }) {
   const desmamados = new Set(desm.data.map((d) => d.bezerro_id));
   const limiteDesmame = addDias(hoje, param('dias_alerta_desmame'));
 
+  // Cada item: [texto, detalhe (HTML), animais [{ id, brinco }], atrasado?, link]
+  const animaisDe = (m) => m.manejo_animais.map((x) => x.animal_id).filter(ativo).map((id) => ({ id, brinco: porId.get(id).brinco }));
+  const um = (id) => [{ id, brinco: porId.get(id).brinco }];
+  const atrasado = (d) => d < hoje;
+  const nomeTipo = (m) => tipoManejo.get(m.tipo_manejo_id)?.nome || 'Manejo';
+  const desmameEm = (a) => addDias(a.data_nascimento, param('idade_desmame_dias'));
+
   const pend = [
-    { titulo: 'Vacinas próximas', icone: 'syringe', itens: porClasse('vacina').map((m) => [`${tipoManejo.get(m.tipo_manejo_id)?.nome} · ${descrAnimais(m)}`, quando(m.proxima_aplicacao)]) },
-    { titulo: 'Vermifugações pendentes', icone: 'bug', itens: porClasse('vermifugacao').map((m) => [descrAnimais(m), quando(m.proxima_aplicacao)]) },
-    { titulo: 'Outros manejos e retornos', icone: 'clipboard-list', itens: manejosPend.filter((m) => !['vacina', 'vermifugacao'].includes(tipoManejo.get(m.tipo_manejo_id)?.classe)).map((m) => [`${tipoManejo.get(m.tipo_manejo_id)?.nome} · ${descrAnimais(m)}`, quando(m.proxima_aplicacao)]) },
-    { titulo: 'Previsões de parto', icone: 'baby', itens: cobs.data.filter((c) => c.situacao === 'prenhe' && c.data_prevista_parto && c.data_prevista_parto <= limiteParto && ativo(c.matriz_id)).sort((a, b) => a.data_prevista_parto.localeCompare(b.data_prevista_parto)).map((c) => [`Matriz ${porId.get(c.matriz_id).brinco}`, quando(c.data_prevista_parto)]) },
-    { titulo: 'Diagnósticos de gestação pendentes', icone: 'scan-search', itens: cobs.data.filter((c) => c.situacao === 'aguardando_diagnostico' && c.data_cobertura <= limiteDiag && ativo(c.matriz_id)).map((c) => [`Matriz ${porId.get(c.matriz_id).brinco}`, `<span class="small muted">coberta ${fmtData(c.data_cobertura)}</span>`]) },
-    { titulo: 'Desmames previstos', icone: 'milk-off', itens: ativos.filter((a) => a.categoria_grupo === 'bezerro' && a.origem === 'nascido' && a.data_nascimento && !desmamados.has(a.id) && addDias(a.data_nascimento, param('idade_desmame_dias')) <= limiteDesmame).map((a) => [`Bezerro(a) ${a.brinco}`, quando(addDias(a.data_nascimento, param('idade_desmame_dias')))]) },
-    { titulo: 'Tratamentos em andamento', icone: 'stethoscope', itens: [...emTratamento].map((id) => [`Animal ${porId.get(id).brinco}`, '<span class="badge info">em andamento</span>']) },
-    { titulo: 'Fim de carência', icone: 'timer', itens: manejos.data.filter((m) => m.carencia_ate && m.carencia_ate >= hoje).map((m) => [`${tipoManejo.get(m.tipo_manejo_id)?.nome} · ${descrAnimais(m)}`, `<span class="small">até ${fmtData(m.carencia_ate)}</span>`]) },
-    { titulo: 'Suplementos com estoque baixo', icone: 'package-open', itens: estq.data.filter((s) => Number(s.estoque_minimo) > 0 && Number(s.saldo) <= Number(s.estoque_minimo)).map((s) => [s.nome, `<span class="badge perigo">${fmtNum(s.saldo, 1)} ${esc(s.unidade)}</span>`]) },
+    { titulo: 'Vacinas próximas', icone: 'syringe', itens: porClasse('vacina').map((m) => [`${nomeTipo(m)} · ${descrAnimais(m)}`, quando(m.proxima_aplicacao), animaisDe(m), atrasado(m.proxima_aplicacao), '#/sanidade']) },
+    { titulo: 'Vermifugações pendentes', icone: 'bug', itens: porClasse('vermifugacao').map((m) => [descrAnimais(m), quando(m.proxima_aplicacao), animaisDe(m), atrasado(m.proxima_aplicacao), '#/sanidade']) },
+    { titulo: 'Outros manejos e retornos', icone: 'clipboard-list', itens: manejosPend.filter((m) => !['vacina', 'vermifugacao'].includes(tipoManejo.get(m.tipo_manejo_id)?.classe)).map((m) => [`${nomeTipo(m)} · ${descrAnimais(m)}`, quando(m.proxima_aplicacao), animaisDe(m), atrasado(m.proxima_aplicacao), '#/sanidade']) },
+    { titulo: 'Previsões de parto', icone: 'baby', itens: cobs.data.filter((c) => c.situacao === 'prenhe' && c.data_prevista_parto && c.data_prevista_parto <= limiteParto && ativo(c.matriz_id)).sort((a, b) => a.data_prevista_parto.localeCompare(b.data_prevista_parto)).map((c) => [`Matriz ${porId.get(c.matriz_id).brinco}`, quando(c.data_prevista_parto), um(c.matriz_id), atrasado(c.data_prevista_parto), `#/animais/${c.matriz_id}`]) },
+    { titulo: 'Diagnósticos de gestação pendentes', icone: 'scan-search', itens: cobs.data.filter((c) => c.situacao === 'aguardando_diagnostico' && c.data_cobertura <= limiteDiag && ativo(c.matriz_id)).map((c) => [`Matriz ${porId.get(c.matriz_id).brinco}`, `<span class="small muted">coberta ${fmtData(c.data_cobertura)}</span>`, um(c.matriz_id), false, `#/animais/${c.matriz_id}`]) },
+    { titulo: 'Desmames previstos', icone: 'milk-off', itens: ativos.filter((a) => a.categoria_grupo === 'bezerro' && a.origem === 'nascido' && a.data_nascimento && !desmamados.has(a.id) && desmameEm(a) <= limiteDesmame).map((a) => [`Bezerro(a) ${a.brinco}`, quando(desmameEm(a)), um(a.id), atrasado(desmameEm(a)), `#/animais/${a.id}`]) },
+    { titulo: 'Tratamentos em andamento', icone: 'stethoscope', itens: [...emTratamento].map((id) => [`Animal ${porId.get(id).brinco}`, '<span class="badge info">em andamento</span>', um(id), false, `#/animais/${id}`]) },
+    { titulo: 'Fim de carência', icone: 'timer', itens: manejos.data.filter((m) => m.carencia_ate && m.carencia_ate >= hoje).map((m) => [`${nomeTipo(m)} · ${descrAnimais(m)}`, `<span class="small">até ${fmtData(m.carencia_ate)}</span>`, animaisDe(m), false, '#/sanidade']) },
+    { titulo: 'Suplementos com estoque baixo', icone: 'package-open', itens: estq.data.filter((s) => Number(s.estoque_minimo) > 0 && Number(s.saldo) <= Number(s.estoque_minimo)).map((s) => [s.nome, `<span class="badge perigo">${fmtNum(s.saldo, 1)} ${esc(s.unidade)}</span>`, [], Number(s.saldo) <= 0, '#/alimentacao']) },
   ];
 
   return { pend, emTratamento, manejosPend };
@@ -80,4 +87,43 @@ export function htmlPendencias(pend, { soComItens = false, limite = 6 } = {}) {
       <ul class="lista-pend">${b.itens.length ? itens.map(([a, d]) => `<li><span>${esc(a)}</span>${d}</li>`).join('')
         + (b.itens.length > itens.length ? `<li class="vazia"><a href="#/pendencias">e mais ${b.itens.length - itens.length}…</a></li>` : '') : '<li class="vazia">Nada pendente.</li>'}</ul>
     </div>`; }).join('')}</div>`;
+}
+
+/** Quadros do tamanho dos do Painel: número de pendências, aviso e clique para ver a lista. */
+export function htmlCardsPendencias(pend) {
+  return `<div class="grade grade-kpi">${pend.map((b, i) => {
+    const n = b.itens.length;
+    const atr = b.itens.filter((x) => x[3]).length;
+    const detalhe = !n ? 'Nada pendente' : atr ? `${fmtNum(atr)} atrasado${atr > 1 ? 's' : ''} · toque para ver` : 'toque para ver';
+    return `<button type="button" class="card kpi pend-card ${n ? (atr ? 'tem atrasado' : 'tem') : 'vazio'}" data-pend="${i}" ${n ? '' : 'disabled'} aria-label="${esc(b.titulo)}: ${n} pendência(s)">
+      <span class="rotulo"><i data-lucide="${b.icone}"></i>${esc(b.titulo)}</span>
+      <span class="valor">${fmtNum(n)}</span>
+      <span class="detalhe">${detalhe}</span>
+      ${n ? `<span class="pend-sinal" aria-hidden="true">${atr ? '!' : n > 99 ? '99+' : n}</span>` : ''}
+    </button>`; }).join('')}</div>`;
+}
+
+/** Lista de um quadro (abre em janela): cada pendência e os animais envolvidos, com link para a ficha. */
+export function abrirListaPendencia(b) {
+  const linhas = b.itens.map(([texto, detalhe, animais, atr, link]) => `
+    <li class="${atr ? 'perigo' : 'aviso'}">
+      <div style="min-width:0"><a href="${esc(link)}" data-fechar><b>${esc(texto)}</b></a>
+        ${animais.length > 1 ? `<div class="chips" style="margin-top:6px">${animais.map((a) => `<a class="chip" href="#/animais/${a.id}" data-fechar>${esc(a.brinco)}</a>`).join('')}</div>` : ''}</div>
+      <span>${detalhe}</span></li>`).join('');
+  const { el } = abrirModal({
+    titulo: `${b.titulo} (${b.itens.length})`,
+    largo: true,
+    html: `<ul class="lista-avisos">${linhas}</ul>
+      <p class="small muted" style="margin-bottom:0">Toque em um animal para abrir a ficha dele.</p>`,
+    rodape: '<button class="btn btn-primario" data-fechar>Fechar</button>',
+  });
+  icones();
+  return el;
+}
+
+export function ligarCardsPendencias(container, pend) {
+  container.addEventListener('click', (e) => {
+    const c = e.target.closest('[data-pend]'); if (!c || c.disabled) return;
+    abrirListaPendencia(pend[Number(c.dataset.pend)]);
+  });
 }

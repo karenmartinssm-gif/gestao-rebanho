@@ -1,7 +1,7 @@
 {
-  "gerado_em": "2026-11-08T14:45:50",
+  "gerado_em": "2026-11-08T14:50:49",
   "arquivos": {
-    "css/styles.css": "c1818b6d65",
+    "css/styles.css": "527638af8a",
     "js/app.js": "1b07257a8c",
     "js/components/alimentacao-forms.js": "0dcbfee3f9",
     "js/components/animais-comum.js": "7187a29917",
@@ -16,7 +16,7 @@
     "js/components/financeiro-forms.js": "9b9b5fcb81",
     "js/components/graficos.js": "89d9f774d7",
     "js/components/instalar.js": "5d7db8167e",
-    "js/components/pendencias.js": "8a1c820b57",
+    "js/components/pendencias.js": "033767cc59",
     "js/components/pesagem.js": "e1533c97e0",
     "js/components/relatorios-def.js": "ca74aa5d9e",
     "js/components/reproducao-forms.js": "d07ca4e3e0",
@@ -36,7 +36,7 @@
     "js/pages/movimentacoes.js": "529d81e5ba",
     "js/pages/painel.js": "3b843c864c",
     "js/pages/pastagens.js": "ff98c5b91d",
-    "js/pages/pendencias.js": "d8391b2822",
+    "js/pages/pendencias.js": "8554f3e988",
     "js/pages/pesagens.js": "2df6f8ba31",
     "js/pages/relatorios.js": "3e4a7cde25",
     "js/pages/reproducao.js": "fbf453ba6c",
