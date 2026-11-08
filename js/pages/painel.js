@@ -101,6 +101,11 @@ export async function render(el) {
     const partes = [[f, plural(f, 'fêmea', 'fêmeas')], [m, plural(m, 'macho', 'machos')]];
     return partes.sort((x, y) => y[0] - x[0]).map((p) => p[1]).join(' · ');
   };
+  // Quadros por raça (animais ativos), da maior para a menor; raça sem animais não aparece
+  const racasPainel = [
+    ...store.base.racas.map((r) => ({ nome: r.nome, filtro: (a) => a.raca_id === r.id })),
+    { nome: 'Raça não informada', filtro: (a) => !a.raca_id },
+  ].map((r) => ({ ...r, total: conta(r.filtro) })).filter((r) => r.total).sort((x, y) => y.total - x.total || x.nome.localeCompare(y.nome, 'pt-BR'));
   // Quadros zerados ficam ocultos (aparecem quando houver registro). O quadro em destaque sempre aparece.
   const kpi = (rotulo, valor, icone, detalhe = '', destaque = false, link = '') => (!destaque && !Number(valor) ? '' : `
     <${link ? `a href="${link}"` : 'div'} class="card kpi ${destaque ? 'destaque' : ''}">
@@ -137,6 +142,10 @@ export async function render(el) {
       ${kpi('Em tratamento', emTratamento.size, 'stethoscope')}
       ${kpi('Manejos pendentes', manejosPend.length, 'calendar-clock', `próximos ${param('dias_alerta_manejo')} dias e atrasados`)}
     </div>
+
+    ${racasPainel.length ? `<section class="secao"><h2><i data-lucide="dna"></i> Raças</h2><div class="grade grade-kpi">
+      ${racasPainel.map((r) => kpi(r.nome, r.total, 'dna', porSexo(r.filtro))).join('')}
+    </div></section>` : ''}
 
     <section class="secao"><h2><i data-lucide="zap"></i> Atalhos</h2><div id="atalhos">${htmlAtalhos()}</div></section>
 
