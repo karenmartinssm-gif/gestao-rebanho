@@ -511,3 +511,15 @@ button.pend-card .rotulo { padding-right: 26px; }
 .lista-pend li.clicavel a:hover { background: var(--fundo); }
 .lista-pend li.clicavel a:hover .pend-texto { color: var(--verde-700); text-decoration: underline; }
 @media (max-width: 720px) { .pendencias { grid-template-columns: 1fr; } }
+/* Painel: Animais ativos + registrados | linha fina | demais quadros */
+.kpi-faixa { display: flex; align-items: stretch; gap: 18px; }
+.kpi-grupo { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; flex: 1; align-content: start; }
+.kpi-principal { flex: 0 0 auto; grid-template-columns: repeat(2, 180px); }
+.kpi-principal:empty, .kpi-grupo:empty { display: none; }
+.kpi-divisor { width: 1px; align-self: stretch; background: var(--borda-forte); opacity: .7; }
+@media (max-width: 960px) {
+  .kpi-faixa { flex-direction: column; gap: 14px; }
+  .kpi-principal { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi-divisor { width: auto; height: 1px; }
+}
+@media (max-width: 720px) { .kpi-grupo { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }

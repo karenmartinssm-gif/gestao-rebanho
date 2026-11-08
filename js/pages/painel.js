@@ -92,19 +92,24 @@ export async function render(el) {
       acao: '<a class="btn btn-primario" href="#/animais/novo"><i data-lucide="plus"></i> Cadastrar primeiro animal</a>' })}</div>` : ''}
 
     ${htmlInstalar()}
-    <div class="grade grade-kpi">
-      ${kpi('Animais ativos', ativos.length, 'tag', porSexo(() => true), true, '#/animais?situacao=ativos')}
-      ${kpi('Matrizes', grupo('matriz'), 'heart', [plural(prenhes, 'prenhe', 'prenhes'), posParto && `${fmtNum(posParto)} pós-parto`, cobertas && `${fmtNum(cobertas)} aguardando diagnóstico`, plural(vazias, 'vazia', 'vazias')].filter(Boolean).join(' · '), false, linkCats('matriz'))}
-      ${kpi('Touros', grupo('touro'), 'shield', '', false, linkCats('touro'))}
-      ${kpi('Animais registrados', conta((a) => a.registrado), 'badge-check', `de ${fmtNum(ativos.length)} ativos`, false, '#/animais?registro=sim')}
-      ${kpi('Novilhas', grupo('novilha'), 'sprout', novilhasPrenhes ? plural(novilhasPrenhes, 'prenhe', 'prenhes') : '', false, linkCats('novilha'))}
-      ${kpi('Bezerros', grupo('bezerro'), 'baby', porSexo((a) => a.categoria_grupo === 'bezerro'), false, linkCats('bezerro'))}
-      ${kpi('Outros (garrotes, bois…)', conta((a) => ['garrote', 'boi', 'outro'].includes(a.categoria_grupo)), 'layers', '', false, linkCats('garrote', 'boi', 'outro'))}
-      ${kpi(`Nascimentos em ${nomeMes}`, nascMes, 'sunrise', '', false, '#/reproducao')}
-      ${kpi(`Mortes em ${nomeMes}`, mortesMes, 'circle-x', '', false, '#/animais?situacao=st:morto')}
-      ${kpi(`Vendidos em ${nomeMes}`, vendMes, 'handshake', `${fmtNum(vendAno)} no ano`, false, '#/animais?situacao=st:vendido')}
-      ${kpi('Em tratamento', emTratamento.size, 'stethoscope', '', false, '#/sanidade')}
-      ${kpi('Manejos pendentes', manejosPend.length, 'calendar-clock', `próximos ${param('dias_alerta_manejo')} dias e atrasados`, false, '#/sanidade')}
+    <div class="kpi-faixa">
+      <div class="kpi-grupo kpi-principal">
+        ${kpi('Animais ativos', ativos.length, 'tag', porSexo(() => true), true, '#/animais?situacao=ativos')}
+        ${kpi('Animais registrados', conta((a) => a.registrado), 'badge-check', `de ${fmtNum(ativos.length)} ativos`, false, '#/animais?registro=sim')}
+      </div>
+      <div class="kpi-divisor" aria-hidden="true"></div>
+      <div class="kpi-grupo">
+        ${kpi('Matrizes', grupo('matriz'), 'heart', [plural(prenhes, 'prenhe', 'prenhes'), posParto && `${fmtNum(posParto)} pós-parto`, cobertas && `${fmtNum(cobertas)} aguardando diagnóstico`, plural(vazias, 'vazia', 'vazias')].filter(Boolean).join(' · '), false, linkCats('matriz'))}
+        ${kpi('Novilhas', grupo('novilha'), 'sprout', novilhasPrenhes ? plural(novilhasPrenhes, 'prenhe', 'prenhes') : '', false, linkCats('novilha'))}
+        ${kpi('Bezerros', grupo('bezerro'), 'baby', porSexo((a) => a.categoria_grupo === 'bezerro'), false, linkCats('bezerro'))}
+        ${kpi('Touros', grupo('touro'), 'shield', '', false, linkCats('touro'))}
+        ${kpi('Outros (garrotes, bois…)', conta((a) => ['garrote', 'boi', 'outro'].includes(a.categoria_grupo)), 'layers', '', false, linkCats('garrote', 'boi', 'outro'))}
+        ${kpi(`Nascimentos em ${nomeMes}`, nascMes, 'sunrise', '', false, '#/reproducao')}
+        ${kpi(`Mortes em ${nomeMes}`, mortesMes, 'circle-x', '', false, '#/animais?situacao=st:morto')}
+        ${kpi(`Vendidos em ${nomeMes}`, vendMes, 'handshake', `${fmtNum(vendAno)} no ano`, false, '#/animais?situacao=st:vendido')}
+        ${kpi('Em tratamento', emTratamento.size, 'stethoscope', '', false, '#/sanidade')}
+        ${kpi('Manejos pendentes', manejosPend.length, 'calendar-clock', `próximos ${param('dias_alerta_manejo')} dias e atrasados`, false, '#/sanidade')}
+      </div>
     </div>
 
     ${racasPainel.length ? `<section class="secao"><h2><i data-lucide="dna"></i> Raças</h2><div class="grade grade-kpi">
