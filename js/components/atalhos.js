@@ -4,7 +4,7 @@ import { esc, abrirModal, toast, icones } from '../ui.js';
 
 export const ATALHOS = [
   { id: 'animal', titulo: 'Cadastrar animal', icone: 'plus-circle', perm: 'rebanho_editar', acao: () => { location.hash = '#/animais/novo'; } },
-  { id: 'nascimento', titulo: 'Registrar nascimento', icone: 'baby', perm: 'reproducao', etapa: 2 },
+  { id: 'nascimento', titulo: 'Registrar nascimento', icone: 'baby', perm: 'reproducao', acao: () => import('./reproducao-forms.js').then((m) => m.abrirNascimento(null, (id) => { if (id) location.hash = `#/animais/${id}`; else window.dispatchEvent(new HashChangeEvent('hashchange')); })) },
   { id: 'pesagem', titulo: 'Registrar pesagem', icone: 'scale', perm: 'pesagens', acao: () => import('./pesagem.js').then((m) => m.abrirPesagem(null, () => window.dispatchEvent(new HashChangeEvent('hashchange')))) },
   { id: 'vacina', titulo: 'Registrar vacinação', icone: 'syringe', perm: 'sanidade', etapa: 3 },
   { id: 'tratamento', titulo: 'Registrar tratamento', icone: 'stethoscope', perm: 'sanidade', etapa: 3 },

@@ -55,6 +55,22 @@ export async function incluir(tabela, linha, descricao = '') {
   throw error;
 }
 
+/**
+ * Chama uma função do servidor que aceita reenvio sem duplicar (recebe p_id).
+ * Sem internet, a chamada fica na fila deste aparelho.
+ */
+export async function chamar(nome, params, descricao = '') {
+  const p = { ...params, p_id: params.p_id || crypto.randomUUID() };
+  const item = { rpc: nome, registro: { id: p.p_id, params: p }, descricao };
+  if (!navigator.onLine) { enfileirar(item); return { sincronizado: false, id: p.p_id }; }
+  const { error } = await sb.rpc(nome, p);
+  if (!error) return { sincronizado: true, id: p.p_id };
+  if (ehErroDeRede(error)) { enfileirar(item); return { sincronizado: false, id: p.p_id }; }
+  throw error;
+}
+
+const enviar = (item) => (item.rpc ? sb.rpc(item.rpc, item.registro.params) : sb.from(item.tabela).insert(item.registro));
+
 function enfileirar(item) {
   const f = lerFila();
   f.push({ ...item, propriedade_id: store.prop?.id, criado: new Date().toISOString(), erro: null });
@@ -69,7 +85,7 @@ export async function sincronizar() {
   let enviados = 0;
   const restantes = [];
   for (const item of f) {
-    const { error } = await sb.from(item.tabela).insert(item.registro);
+    const { error } = await enviar(item);
     if (!error || ehDuplicidadeDoId(error)) { enviados++; continue; }
     if (ehErroDeRede(error)) { restantes.push(item, ...f.slice(f.indexOf(item) + 1)); break; }
     restantes.push({ ...item, erro: { code: error.code, message: error.message } });

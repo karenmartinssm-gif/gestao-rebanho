@@ -7,6 +7,7 @@ import {
   esc, icones, toast, traduzirErro, fmtData, fmtDataHora, fmtKg, fmtNum, fmtMoeda, idadeTexto, diasEntre, hojeISO,
   vazio, erroCarga, badgeStatus, montarTabela, confirmar, ROTULO_SEXO, ROTULO_ORIGEM, ROTULO_MOV, ROTULO_SITUACAO_REPRO,
 } from '../ui.js';
+import { ROTULO_SIT_COB } from '../components/reproducao-forms.js';
 import { grafico, CORES } from '../components/graficos.js';
 import { exigirConexao } from '../sync.js';
 
@@ -43,6 +44,16 @@ export async function render(el, [id]) {
     q(sb.from('documentos').select('*').eq('animal_id', id).order('criado_em', { ascending: false })),
     q(sb.from('historico_alteracoes').select('*').eq('tabela', 'animais').eq('registro_id', id).order('criado_em', { ascending: false }).limit(200)),
   ]);
+
+  const [matrizRow, cobTouro] = await Promise.all([
+    a.sexo === 'F' ? sb.from('matrizes').select('*').eq('animal_id', id).maybeSingle().then((r) => r.data) : null,
+    reprodutor ? q(sb.from('coberturas').select('*').eq('reprodutor_id', reprodutor.id).order('data_cobertura', { ascending: false })) : [],
+  ]);
+  if (cobTouro.length) {
+    const mats = await q(sb.from('animais').select('id, brinco').in('id', [...new Set(cobTouro.map((c) => c.matriz_id))]));
+    const nome = new Map(mats.map((m) => [m.id, m]));
+    cobTouro.forEach((c) => { c.matriz = nome.get(c.matriz_id); });
+  }
 
   // Nomes dos usuários que registraram eventos
   const idsUsuarios = [...new Set([...hist.map((h) => h.usuario_id), ...pesagens.map((p) => p.criado_por), ...movs.map((m) => m.movimentacao?.criado_por)].filter(Boolean))];
@@ -91,6 +102,7 @@ export async function render(el, [id]) {
         <div class="acoes">
           ${pode('rebanho_editar') ? `<a class="btn" href="#/animais/${id}/editar"><i data-lucide="pencil"></i> Editar</a>` : ''}
           ${ativo && pode('pesagens') ? '<button class="btn" data-acao="pesagem"><i data-lucide="scale"></i> Registrar pesagem</button>' : ''}
+          ${ativo && pode('reproducao') && a.categoria_grupo === 'bezerro' && !desmame.length ? '<button class="btn" data-acao="desmame"><i data-lucide="milk-off"></i> Registrar desmame</button>' : ''}
           ${ativo && pode('movimentacoes') ? '<button class="btn btn-perigo" data-acao="saida"><i data-lucide="log-out"></i> Registrar saída</button>' : ''}
           ${!ativo && ehProprietario() ? '<button class="btn" data-acao="corrigir"><i data-lucide="undo-2"></i> Corrigir status</button>' : ''}
         </div>
@@ -103,6 +115,7 @@ export async function render(el, [id]) {
   const recarregar = () => render(el, [id]).then(icones);
   el.querySelector('[data-acao=pesagem]')?.addEventListener('click', () => import('../components/pesagem.js').then((m) => m.abrirPesagem(a, recarregar)));
   el.querySelector('[data-acao=saida]')?.addEventListener('click', () => import('../components/saida.js').then((m) => m.abrirSaida(a, { aoSalvar: recarregar })));
+  el.querySelector('[data-acao=desmame]')?.addEventListener('click', () => import('../components/reproducao-forms.js').then((m) => m.abrirDesmame(a, recarregar)));
   el.querySelector('[data-acao=corrigir]')?.addEventListener('click', () => import('../components/saida.js').then((m) => m.abrirCorrecaoStatus(a, recarregar)));
 
   const painel = el.querySelector('#painel-aba');
@@ -148,26 +161,35 @@ export async function render(el, [id]) {
     movimentacoes: () => (movs.length ? '<div class="card"><div id="t-movs"></div></div>' : vazio({ icone: 'arrow-left-right', titulo: 'Nenhuma movimentação' })),
 
     reprodutivo: () => {
+      const botoes = (lista) => (ativo && pode('reproducao') ? `<div class="acoes" style="margin-bottom:16px">${lista}</div>` : '');
       if (a.sexo === 'M') {
-        return `<div class="dados-lista">${dado('Cadastrado como reprodutor', reprodutor ? 'Sim' : 'Não')}${dado('Filhos registrados', fmtNum(filhosPai.length))}</div>
-          <p class="small muted">Histórico de coberturas e matrizes vinculadas: módulo de reprodução (etapa 2).</p>`;
+        const nomeMat = (id) => esc(cobTouro.find((c) => c.matriz_id === id)?.matriz?.brinco || '—');
+        return `<div class="dados-lista">${dado('Cadastrado como reprodutor', reprodutor ? 'Sim' : 'Não')}${dado('Coberturas registradas', fmtNum(cobTouro.length))}
+            ${dado('Matrizes vinculadas', fmtNum(new Set(cobTouro.map((c) => c.matriz_id)).size))}${dado('Filhos registrados', fmtNum(filhosPai.length))}</div>
+          ${cobTouro.length ? `<h3 style="margin:18px 0 8px">Utilização</h3><ul class="linha-tempo">${cobTouro.map((c) => `<li><div class="quando">${fmtData(c.data_cobertura)}</div>
+            Matriz <a href="#/animais/${c.matriz_id}">${nomeMat(c.matriz_id)}</a> · ${esc({ monta_natural: 'monta natural', inseminacao: 'inseminação', iatf: 'IATF' }[c.tipo])} · ${esc(ROTULO_SIT_COB[c.situacao])}</li>`).join('')}</ul>` : '<p class="small muted">Nenhuma cobertura registrada com este reprodutor.</p>'}`;
       }
       const partos = nascimentos.filter((n) => n.resultado !== 'aborto');
       const abortos = nascimentos.filter((n) => n.resultado === 'aborto');
       const ultimo = partos[0];
+      const aberta = coberturas.find((c) => ['prenhe', 'aguardando_diagnostico'].includes(c.situacao));
       const matriz = ehMatriz ? '' : '<div class="alerta small" style="margin-bottom:12px"><i data-lucide="info"></i><div>Esta fêmea ainda não está na categoria novilha/matriz.</div></div>';
-      return `${matriz}<div class="dados-lista">
+      return `${matriz}${botoes(`<button class="btn" data-repro="cobertura"><i data-lucide="heart"></i> Registrar cobertura</button>
+          <button class="btn" data-repro="diagnostico"><i data-lucide="scan-search"></i> Diagnóstico</button>
+          <button class="btn btn-primario" data-repro="nascimento"><i data-lucide="baby"></i> Registrar parto</button>`)}
+        <div class="dados-lista">
+          ${dado('Situação reprodutiva', matrizRow ? `<span class="badge">${esc(ROTULO_SITUACAO_REPRO[matrizRow.situacao_reprodutiva])}</span>${!matrizRow.apta_reproducao ? ' <span class="badge perigo">descarte</span>' : ''}` : '—')}
+          ${aberta?.situacao === 'prenhe' ? dado('Previsão de parto', fmtData(aberta.data_prevista_parto)) : ''}
           ${dado('Número de partos', fmtNum(partos.length))}${dado('Bezerros nascidos vivos', fmtNum(nascimentos.filter((n) => n.resultado === 'vivo').length))}
           ${dado('Abortos', fmtNum(abortos.length))}${dado('Último parto', ultimo ? fmtData(ultimo.data_nascimento) : '—')}
           ${dado('Coberturas registradas', fmtNum(coberturas.length))}${dado('Diagnósticos', fmtNum(diagnosticos.length))}
         </div>
-        ${!coberturas.length && !nascimentos.length ? `<div style="margin-top:16px">${vazio({ icone: 'heart', titulo: 'Sem histórico reprodutivo', texto: 'Coberturas, diagnósticos de gestação e partos serão registrados no módulo de reprodução (etapa 2).' })}</div>` : `
+        ${!coberturas.length && !nascimentos.length ? `<div style="margin-top:16px">${vazio({ icone: 'heart', titulo: 'Sem histórico reprodutivo', texto: 'Registre coberturas, diagnósticos e partos pelos botões acima ou em Reprodução e cria.' })}</div>` : `
         <h3 style="margin:18px 0 8px">Linha do tempo</h3><ul class="linha-tempo">${[
-          ...coberturas.map((c) => ({ d: c.data_cobertura, t: `Cobertura (${c.tipo === 'monta_natural' ? 'monta natural' : c.tipo === 'iatf' ? 'IATF' : 'inseminação'})${c.data_prevista_parto ? ` · parto previsto ${fmtData(c.data_prevista_parto)}` : ''}` })),
-          ...diagnosticos.map((x) => ({ d: x.data_diagnostico, t: `Diagnóstico de gestação: ${x.resultado}` })),
+          ...coberturas.map((c) => ({ d: c.data_cobertura, t: `Cobertura (${c.tipo === 'monta_natural' ? 'monta natural' : c.tipo === 'iatf' ? 'IATF' : 'inseminação'}) · ${ROTULO_SIT_COB[c.situacao]}${c.data_prevista_parto && ['prenhe', 'aguardando_diagnostico'].includes(c.situacao) ? ` · parto previsto ${fmtData(c.data_prevista_parto)}` : ''}` })),
+          ...diagnosticos.map((x) => ({ d: x.data_diagnostico, t: `Diagnóstico de gestação: ${x.resultado}${x.metodo ? ` (${x.metodo})` : ''}` })),
           ...nascimentos.map((n) => ({ d: n.data_nascimento, t: n.resultado === 'aborto' ? 'Aborto' : n.resultado === 'natimorto' ? 'Parto — natimorto' : 'Parto — bezerro vivo' })),
-        ].sort((x, y) => y.d.localeCompare(x.d)).map((e) => `<li><div class="quando">${fmtData(e.d)}</div>${esc(e.t)}</li>`).join('')}</ul>`}
-        ${desmame.length ? '' : ''}`;
+        ].sort((x, y) => y.d.localeCompare(x.d)).map((e) => `<li><div class="quando">${fmtData(e.d)}</div>${esc(e.t)}</li>`).join('')}</ul>`}`;
     },
 
     alimentacao: () => (fornec.length ? '<div class="card"><div id="t-fornec"></div></div>'
@@ -196,6 +218,10 @@ export async function render(el, [id]) {
   };
 
   const montar = {
+    reprodutivo: () => painel.querySelectorAll('[data-repro]').forEach((btn) => btn.addEventListener('click', () => import('../components/reproducao-forms.js').then((m) => {
+      const fn = { cobertura: m.abrirCobertura, diagnostico: m.abrirDiagnostico, nascimento: m.abrirNascimento }[btn.dataset.repro];
+      fn(a, (bez) => (bez ? (location.hash = `#/animais/${bez}`) : recarregar()));
+    }))),
     genealogia: () => filhos.length && montarTabela(painel.querySelector('#t-filhos'), {
       colunas: [{ chave: 'brinco', titulo: 'Brinco', primaria: true, render: linkAnimal }, { chave: 'sexo', titulo: 'Sexo', render: (x) => ROTULO_SEXO[x.sexo] },
         { chave: 'data_nascimento', titulo: 'Nascimento', render: (x) => fmtData(x.data_nascimento) }, { chave: 'status_nome', titulo: 'Status', render: badgeStatus }],

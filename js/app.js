@@ -14,7 +14,7 @@ const MENU = [
   { rota: 'painel', titulo: 'Painel', icone: 'layout-dashboard' },
   { rota: 'animais', titulo: 'Rebanho', icone: 'tag' },
   { grupo: 'Manejo' },
-  { rota: 'reproducao', titulo: 'Reprodução e cria', icone: 'heart', etapa: 2 },
+  { rota: 'reproducao', titulo: 'Reprodução e cria', icone: 'heart' },
   { rota: 'sanidade', titulo: 'Sanidade', icone: 'syringe', etapa: 3 },
   { rota: 'pastagens', titulo: 'Pastagens e lotes', icone: 'map', etapa: 3 },
   { rota: 'alimentacao', titulo: 'Alimentação', icone: 'wheat', etapa: 3 },
@@ -34,9 +34,10 @@ const ROTAS = [
   { re: /^animais\/novo$/, pagina: () => import('./pages/animal-form.js'), titulo: 'Cadastrar animal', perm: 'rebanho_editar' },
   { re: /^animais\/([0-9a-f-]{36})\/editar$/, pagina: () => import('./pages/animal-form.js'), titulo: 'Editar animal', perm: 'rebanho_editar' },
   { re: /^animais\/([0-9a-f-]{36})$/, pagina: () => import('./pages/animal-ficha.js'), titulo: 'Ficha do animal' },
+  { re: /^reproducao$/, pagina: () => import('./pages/reproducao.js'), titulo: 'Reprodução e cria' },
   { re: /^equipe$/, pagina: () => import('./pages/equipe.js'), titulo: 'Equipe e permissões', dono: true },
   { re: /^configuracoes$/, pagina: () => import('./pages/configuracoes.js'), titulo: 'Configurações', perm: 'configuracoes' },
-  { re: /^(reproducao|sanidade|pastagens|alimentacao|pesagens|movimentacoes|financeiro|relatorios)$/, pagina: () => import('./pages/em-breve.js'), titulo: null },
+  { re: /^(sanidade|pastagens|alimentacao|pesagens|movimentacoes|financeiro|relatorios)$/, pagina: () => import('./pages/em-breve.js'), titulo: null },
 ];
 
 export function navegar(rota) { location.hash = `#/${rota}`; }

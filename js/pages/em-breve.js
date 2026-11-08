@@ -2,7 +2,6 @@
 import { esc, vazio } from '../ui.js';
 
 const MODULOS = {
-  reproducao: { etapa: 2, icone: 'heart', titulo: 'Reprodução e cria', itens: ['Área das matrizes com situação reprodutiva', 'Cadastro de touros e sêmen', 'Coberturas (monta natural e IA) com previsão de parto configurável', 'Diagnóstico de gestação', 'Registro de nascimento criando a ficha do bezerro automaticamente', 'Desmame', 'Indicadores: prenhez, natalidade, desmame, mortalidade de bezerros, intervalo entre partos'] },
   sanidade: { etapa: 3, icone: 'syringe', titulo: 'Sanidade', itens: ['Calendário sanitário', 'Vacinas, vermifugação, carrapatos, moscas, exames, tratamentos', 'Aplicação coletiva por lote com histórico individual', 'Protocolos próprios da propriedade', 'Alertas de reforço, retorno e fim de carência'] },
   pastagens: { etapa: 3, icone: 'map', titulo: 'Pastagens e lotes', itens: ['Cadastro de pastos e piquetes', 'Lotes de animais', 'Transferências com histórico de ocupação', 'Lotação (cab/ha e UA/ha)'] },
   alimentacao: { etapa: 3, icone: 'wheat', titulo: 'Alimentação e suplementação', itens: ['Produtos e estoque', 'Fornecimentos por lote ou animal', 'Consumo mensal e por cabeça', 'Alerta de estoque baixo'] },

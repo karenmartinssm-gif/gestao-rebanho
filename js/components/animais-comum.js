@@ -2,13 +2,24 @@
 import { sb } from '../supabase.js';
 import { store } from '../store.js';
 import { esc } from '../ui.js';
+import { ehErroDeRede } from '../sync.js';
+
+// A última lista baixada fica guardada no aparelho para os formulários de campo
+// funcionarem sem internet (apenas para consulta; o servidor continua sendo a referência).
+const chaveCache = () => `rebanho.animais.${store.prop.id}`;
 
 export async function listarAnimais({ somenteAtivos = false } = {}) {
-  let q = sb.from('vw_animais').select('*').eq('propriedade_id', store.prop.id).order('brinco').range(0, 9999);
-  if (somenteAtivos) q = q.eq('conta_no_rebanho', true);
+  const q = sb.from('vw_animais').select('*').eq('propriedade_id', store.prop.id).order('brinco').range(0, 9999);
   const { data, error } = await q;
-  if (error) throw error;
-  return data || [];
+  let lista = data;
+  if (error) {
+    if (!ehErroDeRede(error)) throw error;
+    try { lista = JSON.parse(localStorage.getItem(chaveCache()) || 'null'); } catch { lista = null; }
+    if (!lista) throw error;
+  } else {
+    try { localStorage.setItem(chaveCache(), JSON.stringify(lista)); } catch { /* sem espaço: ignora */ }
+  }
+  return somenteAtivos ? lista.filter((a) => a.conta_no_rebanho) : lista;
 }
 
 /** Campo de busca por brinco com lista de sugestões. Retorna função que devolve o animal escolhido. */
