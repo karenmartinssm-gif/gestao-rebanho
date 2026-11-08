@@ -8,6 +8,7 @@ import { listarAnimais } from '../components/animais-comum.js';
 import { htmlAtalhos, ligarAtalhos } from '../components/atalhos.js';
 import { grafico, semDados, CORES } from '../components/graficos.js';
 import { todos } from '../components/consulta.js';
+import { htmlInstalar, ligarInstalar } from '../components/instalar.js';
 
 const plural = (n, um, varios) => `${fmtNum(n)} ${n === 1 ? um : varios}`;
 
@@ -108,6 +109,7 @@ export async function render(el) {
       texto: 'Comece cadastrando os animais da propriedade. Todos os indicadores e gráficos deste painel são calculados a partir dos registros feitos no sistema.',
       acao: '<a class="btn btn-primario" href="#/animais/novo"><i data-lucide="plus"></i> Cadastrar primeiro animal</a>' })}</div>` : ''}
 
+    ${htmlInstalar()}
     <div class="grade grade-kpi">
       ${kpi('Animais ativos', ativos.length, 'tag', `${plural(conta((a) => a.sexo === 'M'), 'macho', 'machos')} · ${plural(conta((a) => a.sexo === 'F'), 'fêmea', 'fêmeas')}`, true, '#/animais')}
       ${kpi('Matrizes', grupo('matriz'), 'heart', `${plural(prenhes, 'prenhe', 'prenhes')} · ${plural(vazias, 'vazia', 'vazias')}`)}
@@ -148,6 +150,7 @@ export async function render(el) {
       </div>
     </section>`;
   ligarAtalhos(el.querySelector('#atalhos'));
+  ligarInstalar(el);
   icones();
 
   // ---------- Gráficos ----------

@@ -4,7 +4,8 @@
 // "Marcar como visto" vale só neste aparelho; um aviso novo (ou com data nova) volta a aparecer.
 // =====================================================================
 import { sb } from '../supabase.js';
-import { store, pode, param } from '../store.js';
+import { store, pode, param, ehProprietario } from '../store.js';
+import { ultimoBackup } from './backup.js';
 import { esc, hojeISO, addDias, diasEntre, fmtData, fmtNum, fmtMoeda, abrirModal, icones, vazio } from '../ui.js';
 import { listarAnimais } from './animais-comum.js';
 import { todos } from './consulta.js';
@@ -19,6 +20,7 @@ const GRUPOS = {
   estoque: { titulo: 'Estoque', icone: 'package-open' },
   financeiro: { titulo: 'Financeiro', icone: 'wallet' },
   pesagens: { titulo: 'Pesagens', icone: 'scale' },
+  sistema: { titulo: 'Cópia de segurança', icone: 'shield-check' },
 };
 
 let cache = null;          // { quando, avisos }
@@ -97,6 +99,14 @@ export async function carregarAvisos(forcar = false) {
   const semPeso = animais.filter((a) => a.conta_no_rebanho && (!a.data_ultima_pesagem || diasEntre(a.data_ultima_pesagem, hoje) > 90)).length;
   if (semPeso) add({ chave: `pes:${hoje.slice(0, 7)}:${semPeso}`, grupo: 'pesagens', nivel: 'info', data: hoje,
     titulo: `${semPeso} animal(is) sem pesagem há mais de 90 dias`, texto: 'veja a lista em Pesagens › Sem pesagem recente', link: '#/pesagens' });
+
+  // Lembrete de cópia de segurança (proprietário, a cada 30 dias, por aparelho)
+  if (ehProprietario()) {
+    const ult = ultimoBackup();
+    const dias = ult ? diasEntre(ult.slice(0, 10), hoje) : null;
+    if (dias === null || dias > 30) add({ chave: `backup:${hoje.slice(0, 7)}`, grupo: 'sistema', nivel: 'aviso', data: hoje,
+      titulo: 'Baixe uma cópia de segurança', texto: dias === null ? 'nenhuma cópia baixada neste aparelho' : `a última foi há ${dias} dias`, link: '#/relatorios' });
+  }
 
   const ordem = { perigo: 0, aviso: 1, info: 2 };
   avisos.sort((a, b) => ordem[a.nivel] - ordem[b.nivel] || a.data.localeCompare(b.data));

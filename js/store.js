@@ -3,6 +3,15 @@
 // =====================================================================
 import { sb } from './supabase.js';
 
+// Cópia local (só para abrir sem internet). Apagada ao sair do sistema.
+const ehRede = (e) => !navigator.onLine || (!e?.code && /fetch|network|Load failed|NetworkError|timeout/i.test(`${e?.message || ''}`));
+const lerLocal = (k) => { try { return JSON.parse(localStorage.getItem(`rebanho.cache.${k}`) || 'null'); } catch { return null; } };
+const gravarLocal = (k, v) => { try { localStorage.setItem(`rebanho.cache.${k}`, JSON.stringify(v)); } catch { /* sem espaço */ } };
+export function limparCopiaLocal() {
+  try { Object.keys(localStorage).filter((k) => k.startsWith('rebanho.cache.') || k.startsWith('rebanho.animais.')).forEach((k) => localStorage.removeItem(k)); } catch { /* ignora */ }
+}
+export const estadoCarga = { offline: false };
+
 export const PARAMETROS_PADRAO = {
   periodo_gestacao_dias: 290,
   dias_diagnostico_gestacao: 45,
@@ -33,15 +42,24 @@ export const param = (chave) => ({ ...PARAMETROS_PADRAO, ...(store.prop?.paramet
 const CHAVE_PROP = 'rebanho.propriedade';
 
 export async function carregarVinculos() {
+  const chave = `vinculos.${store.usuario.id}`;
   const { data, error } = await sb
     .from('propriedade_membros')
     .select('id, papel, permissoes, propriedade:propriedades(*)')
     .eq('usuario_id', store.usuario.id)
     .eq('ativo', true);
-  if (error) throw error;
+  if (error) {
+    const local = ehRede(error) && lerLocal(chave);
+    if (!local) throw error;
+    estadoCarga.offline = true;
+    store.vinculos = local.vinculos; store.perfil = local.perfil;
+    return store.vinculos;
+  }
+  estadoCarga.offline = false;
   store.vinculos = (data || []).filter((v) => v.propriedade);
   const { data: perfil } = await sb.from('usuarios').select('*').eq('id', store.usuario.id).maybeSingle();
   store.perfil = perfil;
+  gravarLocal(chave, { vinculos: store.vinculos, perfil });
   return store.vinculos;
 }
 
@@ -74,9 +92,15 @@ export async function carregarBase() {
     q('lotes'), q('reprodutores', 'identificacao'), q('tipos_manejo'), q('tipos_capim'), q('unidades_medida', 'sigla'),
   ]);
   const erro = res.find((r) => r.error);
-  if (erro) throw erro.error;
+  if (erro) {
+    const local = ehRede(erro.error) && lerLocal(`base.${p}`);
+    if (!local) throw erro.error;
+    store.base = local;
+    return;
+  }
   const [racas, categorias, status, pastos, lotes, reprodutores, tiposManejo, tiposCapim, unidades] = res.map((r) => r.data || []);
   store.base = { racas, categorias, status, pastos, lotes, reprodutores, tiposManejo, tiposCapim, unidades };
+  gravarLocal(`base.${p}`, store.base);
 }
 
 export const nomePasto = (p) => (p ? (p.nome ? `${p.codigo} — ${p.nome}` : p.codigo) : '');

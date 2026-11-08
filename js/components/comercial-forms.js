@@ -17,7 +17,7 @@ const rend = () => ({ rendimentoPct: Number(param('rendimento_carcaca_pct')), pe
 const ehCelular = () => window.matchMedia('(max-width: 720px)').matches;
 
 /** Próximo brinco de uma sequência: "C-098" → "C-099"; "A" → null. */
-function sequencia(inicial, n) {
+export function sequencia(inicial, n) {
   const m = String(inicial).trim().match(/^(.*?)(\d+)$/);
   if (!m) return null;
   const [, pre, num] = m;

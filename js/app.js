@@ -2,9 +2,10 @@
 // Inicialização, autenticação, layout e rotas
 // =====================================================================
 import { sb, configurado, chaveInsegura } from './supabase.js';
-import { store, carregarVinculos, selecionarPropriedade, pode, ehProprietario } from './store.js';
+import { store, carregarVinculos, selecionarPropriedade, pode, ehProprietario, limparCopiaLocal, estadoCarga } from './store.js';
 import { esc, icones, toast, traduzirErro, abrirModal, carregando, fmtDataHora } from './ui.js';
 import * as sync from './sync.js';
+import { registrarAplicativo } from './components/instalar.js';
 
 const raiz = document.getElementById('raiz');
 
@@ -140,6 +141,7 @@ function renderLayout() {
   document.getElementById('btn-sair').onclick = async () => {
     if (sync.estado.pendentes && !confirm(`Há ${sync.estado.pendentes} registro(s) ainda não sincronizado(s) neste aparelho. Se sair agora, eles continuam guardados aqui e serão enviados no próximo acesso com este usuário. Sair mesmo assim?`)) return;
     await sb.auth.signOut();
+    limparCopiaLocal();
   };
   document.getElementById('troca-prop')?.addEventListener('change', async (e) => {
     await selecionarPropriedade(e.target.value);
@@ -310,6 +312,7 @@ async function iniciarSessao() {
     sync.iniciarMonitor();
     renderLayout();
     rotear();
+    if (estadoCarga.offline) toast('Sem internet: o sistema abriu com os dados guardados neste aparelho. Registros novos ficam na fila até a conexão voltar.', 'aviso', 9000);
   } catch (e) {
     raiz.innerHTML = `<div class="conteudo"><div class="alerta perigo"><i data-lucide="alert-triangle"></i><div>
       <b>Não foi possível carregar os dados.</b><br>${esc(traduzirErro(e))}<br><br>
@@ -333,6 +336,7 @@ async function iniciar() {
   }
   window.addEventListener('hashchange', rotear);
   window.addEventListener('hashchange', () => { if (store.prop) atualizarSino(); });
+  registrarAplicativo();
   window.addEventListener('rebanho:sincronizado', (e) => {
     toast(`${e.detail.enviados} registro(s) sincronizado(s) com o servidor.`);
     rotear();

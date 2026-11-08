@@ -2,7 +2,8 @@
 // RELATÓRIOS — escolha, filtros, prévia na tela e exportação PDF/Excel
 // =====================================================================
 import { store, pode, ehProprietario } from '../store.js';
-import { esc, icones, toast, traduzirErro, hojeISO, addDias, fmtData, opcoes, carregando, confirmar } from '../ui.js';
+import { esc, icones, toast, traduzirErro, hojeISO, addDias, fmtData, fmtDataHora, opcoes, carregando, confirmar, abrirModal } from '../ui.js';
+import { ultimoBackup } from '../components/backup.js';
 import { RELATORIOS, fmtCelula, limparCache } from '../components/relatorios-def.js';
 
 const LIMITE_TELA = 200;
@@ -24,14 +25,48 @@ function lista(el, disponiveis) {
     ${grupos.map((g) => `<section class="secao" style="margin-top:0"><h2>${esc(g)}</h2><div class="grade grade-3">
       ${disponiveis.filter((r) => r.grupo === g).map((r) => `<a class="card card-link" href="#/relatorios/${r.id}"><div class="card-titulo"><h3><i data-lucide="${r.icone}"></i>${esc(r.titulo)}</h3><i data-lucide="chevron-right"></i></div><p class="small muted card-corpo" style="margin:0;padding-top:10px">${esc(r.descricao)}</p></a>`).join('')}
     </div></section>`).join('')}
-    ${ehProprietario() ? `<section class="secao"><h2>Exportar todos os dados</h2><div class="card card-corpo">
-      <p style="margin-top:0">Baixa uma planilha Excel com <b>todas as informações da propriedade</b>: uma aba para cada cadastro (animais, pesagens, manejos, financeiro…). Serve como cópia de segurança para guardar no computador ou em um pen drive.</p>
-      <button class="btn btn-primario" id="exp-tudo"><i data-lucide="download"></i> Baixar todos os dados (Excel)</button> <span class="small muted" id="exp-status"></span>
-      <p class="small muted" style="margin-bottom:0">Somente o proprietário vê esta opção. A planilha contém dados financeiros: guarde em local seguro.</p></div></section>` : ''}`;
+    ${ehProprietario() ? `<section class="secao"><h2>Cópia de segurança</h2><div class="card card-corpo">
+      <p style="margin-top:0">Guarde de tempos em tempos uma cópia de <b>todos os registros da propriedade</b> no computador ou em um pen drive. Se algo for apagado por engano, a cópia pode ser restaurada aqui.</p>
+      <div class="acoes" style="flex-wrap:wrap">
+        <button class="btn btn-primario" id="bk-baixar"><i data-lucide="shield-check"></i> Baixar cópia de segurança</button>
+        <label class="btn"><i data-lucide="upload"></i> Restaurar uma cópia<input type="file" id="bk-arquivo" accept=".json,application/json" hidden></label>
+        <button class="btn" id="exp-tudo"><i data-lucide="sheet"></i> Todos os dados em Excel</button>
+      </div>
+      <p class="small muted" id="exp-status" style="margin:10px 0 0">${ultimoBackup() ? `Última cópia baixada neste aparelho: ${fmtDataHora(ultimoBackup())}.` : 'Nenhuma cópia baixada neste aparelho ainda.'}</p>
+      <p class="small muted" style="margin-bottom:0">A cópia (.json) serve para restaurar; a planilha Excel serve para consultar. As duas contêm dados financeiros: guarde em local seguro. Fotos e documentos anexados ficam no servidor e não entram na cópia. Somente o proprietário vê esta seção.</p></div></section>` : ''}`;
+  const st = el.querySelector('#exp-status');
+  el.querySelector('#bk-baixar')?.addEventListener('click', async (e) => {
+    const b = e.currentTarget; b.disabled = true;
+    try {
+      const { baixarBackup } = await import('../components/backup.js');
+      const r = await baixarBackup((t) => { st.textContent = t; });
+      st.textContent = `Cópia baixada agora: ${r.total} registros (${r.tamanho < 1048576 ? `${Math.max(1, Math.round(r.tamanho / 1024))} KB` : `${(r.tamanho / 1048576).toFixed(1).replace('.', ',')} MB`}). Veja na pasta de downloads.`;
+      toast('Cópia de segurança gerada.');
+    } catch (err) { st.textContent = ''; toast(traduzirErro(err), 'erro', 8000); }
+    b.disabled = false;
+  });
+  el.querySelector('#bk-arquivo')?.addEventListener('change', async (e) => {
+    const arq = e.target.files[0]; e.target.value = '';
+    if (!arq) return;
+    try {
+      const m = await import('../components/backup.js');
+      const dados = await m.lerArquivo(arq);
+      const ok = await confirmar({ titulo: 'Restaurar cópia de segurança', botao: 'Restaurar',
+        mensagem: `${esc(m.resumoArquivo(dados))}<br><br>O sistema vai <b>incluir de volta apenas os registros que estiverem faltando</b>. Nada que existe hoje será alterado ou apagado.<br><br><span class="small">Atenção: registros que foram apagados de propósito depois desta cópia também voltarão.</span>` });
+      if (!ok) return;
+      const r = await m.restaurar(dados, (t) => { st.textContent = t; });
+      const linhas = Object.entries(r).filter(([, n]) => n);
+      st.textContent = '';
+      abrirModal({ titulo: 'Restauração concluída', html: linhas.length
+        ? `<p>Registros devolvidos ao sistema:</p><ul class="lista-simples">${linhas.map(([t, n]) => `<li>${esc(t.replace(/_/g, ' '))}: <b>${n}</b></li>`).join('')}</ul>`
+        : '<p>Nada precisou ser restaurado: todos os registros da cópia já existem no sistema.</p>', rodape: '<button class="btn btn-primario" data-fechar>OK</button>' });
+      limparCache();
+    } catch (err) { st.textContent = ''; toast(traduzirErro(err), 'erro', 9000); }
+  });
   el.querySelector('#exp-tudo')?.addEventListener('click', async (e) => {
+    const b = e.currentTarget;   // guardar antes de esperar: depois do clique o navegador zera currentTarget
     const ok = await confirmar({ titulo: 'Baixar todos os dados', mensagem: 'O arquivo terá todos os registros da propriedade, inclusive os valores financeiros. Continuar?', botao: 'Baixar' });
     if (!ok) return;
-    const b = e.currentTarget; const st = el.querySelector('#exp-status');
     b.disabled = true;
     try {
       const { exportarTudo } = await import('../components/exportar.js');

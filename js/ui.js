@@ -72,9 +72,16 @@ export const fmtNum = (v, casas = 0) =>
 export const fmtKg = (v) => (v == null ? '—' : `${fmtNum(v, 1)} kg`);
 export const fmtMoeda = (v) => (v == null ? '—' : Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
 export const fmtPct = (v, casas = 1) => (v == null || !Number.isFinite(v) ? '—' : `${fmtNum(v, casas)}%`);
+// Aceita o jeito brasileiro: "1.500,75", "1500,75", "R$ 1.500", "312.5" e "1.500" (mil e quinhentos)
 export const numOuNulo = (v) => {
-  if (v === null || v === undefined || String(v).trim() === '') return null;
-  const n = Number(String(v).replace(',', '.'));
+  if (v === null || v === undefined) return null;
+  if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+  let t = String(v).trim().replace(/^R\$\s*/i, '').replace(/\s/g, '');
+  if (t === '') return null;
+  if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
+  else if (/^-?\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, '');
+  if (!/^-?\d+(\.\d+)?$/.test(t)) return null;
+  const n = Number(t);
   return Number.isFinite(n) ? n : null;
 };
 export const textoOuNulo = (v) => (v == null || String(v).trim() === '' ? null : String(v).trim());
