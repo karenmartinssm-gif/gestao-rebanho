@@ -187,7 +187,7 @@ export function badgeStatus(a) {
 
 // ---------- Tabela com busca, ordenação e paginação ----------
 // colunas: [{ chave, titulo, render?(linha) -> html, valor?(linha) -> ordenação/busca, classe, primaria }]
-export function montarTabela(container, { colunas, linhas, porPagina = 25, aoClicar, busca = true, vazioHtml, idLinha = (l) => l.id }) {
+export function montarTabela(container, { colunas, linhas, porPagina = 25, aoClicar, busca = true, vazioHtml, idLinha = (l) => l.id, semTotal = false }) {
   let pagina = 1, termo = '', ordem = null, dir = 1;
   const valor = (c, l) => (c.valor ? c.valor(l) : l[c.chave]);
   container.innerHTML = `
@@ -236,7 +236,7 @@ export function montarTabela(container, { colunas, linhas, porPagina = 25, aoCli
       ? `<span>${fmtNum((pagina - 1) * porPagina + 1)}–${fmtNum(Math.min(pagina * porPagina, total))} de ${fmtNum(total)}</span>
          <span class="acoes"><button class="btn btn-sm" data-p="-1" ${pagina === 1 ? 'disabled' : ''}><i data-lucide="chevron-left"></i> Anterior</button>
          <button class="btn btn-sm" data-p="1" ${pagina === paginas ? 'disabled' : ''}>Próxima <i data-lucide="chevron-right"></i></button></span>`
-      : total ? `<span>${fmtNum(total)} registro${total === 1 ? '' : 's'}</span>` : '';
+      : total && !semTotal ? `<span>${fmtNum(total)} registro${total === 1 ? '' : 's'}</span>` : '';
     icones();
   }
 

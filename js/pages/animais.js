@@ -2,7 +2,7 @@
 // REBANHO — lista com filtros
 // =====================================================================
 import { store, pode, nomePasto, podeExcluir } from '../store.js';
-import { esc, icones, fmtKg, idadeTexto, montarTabela, vazio, erroCarga, badgeStatus, baixarCSV, opcoes, fmtData, hojeISO, ROTULO_SEXO } from '../ui.js';
+import { esc, icones, fmtNum, fmtKg, idadeTexto, montarTabela, vazio, erroCarga, badgeStatus, baixarCSV, opcoes, fmtData, hojeISO, ROTULO_SEXO } from '../ui.js';
 import { listarAnimais } from '../components/animais-comum.js';
 
 const FAIXAS = [
@@ -44,6 +44,7 @@ export async function render(el) {
           <option value="ativos">Ativos no rebanho</option><option value="inativos">Fora do rebanho</option><option value="todos">Todos</option>
           ${b.status.map((s) => `<option value="st:${esc(s.codigo)}">Status: ${esc(s.nome)}</option>`).join('')}</select></div>
         <div class="campo"><label for="f-sexo">Sexo</label><select id="f-sexo" name="sexo"><option value="">Todos</option><option value="M">Macho</option><option value="F">Fêmea</option></select></div>
+        <div class="campo"><label for="f-reg">Registro</label><select id="f-reg" name="registro"><option value="">Todos</option><option value="sim">Registrados</option><option value="nao">Não registrados</option></select></div>
         <div class="campo"><label for="f-cat-botao">Categoria</label>
           <div class="multi" id="f-cat-multi"><input type="hidden" name="categoria" id="f-cat">
             <button type="button" class="multi-botao" id="f-cat-botao" aria-haspopup="true" aria-expanded="false"><span class="multi-texto">Todas</span></button>
@@ -52,11 +53,11 @@ export async function render(el) {
               <button type="button" class="btn btn-sm btn-texto" data-cat-todas>Todas as categorias</button>
             </div></div></div>
         <div class="campo"><label for="f-raca">Raça</label><select id="f-raca" name="raca">${opcoes(b.racas, { vazio: 'Todas' })}<option value="__sem">Sem raça informada</option></select></div>
-        <div class="campo"><label for="f-reg">Registro</label><select id="f-reg" name="registro"><option value="">Todos</option><option value="sim">Registrados</option><option value="nao">Não registrados</option></select></div>
         <div class="campo"><label for="f-idade">Idade</label><select id="f-idade" name="idade"><option value="">Todas</option>${FAIXAS.map((x) => `<option value="${x.v}">${x.r}</option>`).join('')}</select></div>
         <div class="campo"><label for="f-pasto">Pasto</label><select id="f-pasto" name="pasto">${opcoes(b.pastos, { vazio: 'Todos', rotulo: nomePasto })}<option value="__sem">Sem pasto</option></select></div>
         <div class="campo"><label for="f-lote">Lote</label><select id="f-lote" name="lote">${opcoes(b.lotes, { vazio: 'Todos' })}<option value="__sem">Sem lote</option></select></div>
       </form>
+      <div class="contagem-lista" id="contagem" aria-live="polite"></div>
       <div id="tabela"></div>
     </div>`;
   icones();
@@ -71,6 +72,8 @@ export async function render(el) {
     const g = f.categoria.slice(2); const grupos = g === 'outros' ? ['garrote', 'boi', 'outro'] : [g];
     f.categoria = b.categorias.filter((c) => grupos.includes(c.grupo)).map((c) => c.id).join(',');
   }
+  // Ignora categorias guardadas que não existem mais (ex.: categoria excluída)
+  if (f.categoria) f.categoria = f.categoria.split(',').filter((id) => b.categorias.some((c) => c.id === id)).join(',');
   for (const [k, v] of Object.entries(f)) { const c = form.elements[k]; if (c && (c.tagName === 'SELECT' || c.type === 'hidden')) c.value = v; }
 
   // Categoria: várias opções marcáveis
@@ -149,7 +152,7 @@ export async function render(el) {
         acao: pode('rebanho_editar') ? '<a class="btn btn-primario" href="#/animais/novo"><i data-lucide="plus"></i> Cadastrar animal</a>' : '' });
 
   const tabela = montarTabela(el.querySelector('#tabela'), {
-    colunas, linhas: filtrar(), busca: false, vazioHtml,
+    colunas, linhas: filtrar(), busca: false, vazioHtml, semTotal: true,
     aoClicar: (id) => { location.hash = `#/animais/${id}`; },
   });
   // Filtros ativos (acima dos filtros) e "Limpar filtros"
@@ -171,9 +174,14 @@ export async function render(el) {
       <button type="button" class="btn btn-sm" data-limpar><i data-lucide="filter-x"></i> Limpar filtros</button>` : '';
     icones();
   };
+  // Total de animais no início da lista
+  const contagem = el.querySelector('#contagem');
+  const desenharContagem = (n) => { contagem.innerHTML = `<b>${fmtNum(n)}</b> ${n === 1 ? 'animal' : 'animais'}${n !== animais.length ? ` <span class="muted">de ${fmtNum(animais.length)} cadastrados</span>` : ''}`; };
   const aplicar = () => {
     if (location.hash.includes('?')) history.replaceState(null, '', '#/animais');   // o link do Painel vale só na entrada
-    tabela.atualizar(filtrar());
+    const lista = filtrar();
+    tabela.atualizar(lista);
+    desenharContagem(lista.length);
     desenharAtivos();
   };
   barra.addEventListener('click', (e) => {
@@ -186,6 +194,7 @@ export async function render(el) {
     }
   });
   form.addEventListener('input', aplicar);
+  desenharContagem(filtrar().length);
   desenharAtivos();
   el.querySelector('#tabela').addEventListener('click', (e) => {
     const b = e.target.closest('[data-excluir-animal]'); if (!b) return;
