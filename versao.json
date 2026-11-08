@@ -1,8 +1,8 @@
 {
-  "gerado_em": "2026-11-08T14:40:35",
+  "gerado_em": "2026-11-08T14:45:50",
   "arquivos": {
     "css/styles.css": "c1818b6d65",
-    "js/app.js": "6a6e6f9461",
+    "js/app.js": "1b07257a8c",
     "js/components/alimentacao-forms.js": "0dcbfee3f9",
     "js/components/animais-comum.js": "7187a29917",
     "js/components/atalhos.js": "02adef8961",
@@ -32,8 +32,9 @@
     "js/pages/configuracoes.js": "9a85a0ffab",
     "js/pages/equipe.js": "6f8d8b1162",
     "js/pages/financeiro.js": "a70f02e88a",
+    "js/pages/graficos.js": "13e21d650d",
     "js/pages/movimentacoes.js": "529d81e5ba",
-    "js/pages/painel.js": "248390cba5",
+    "js/pages/painel.js": "3b843c864c",
     "js/pages/pastagens.js": "ff98c5b91d",
     "js/pages/pendencias.js": "d8391b2822",
     "js/pages/pesagens.js": "2df6f8ba31",

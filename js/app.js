@@ -14,6 +14,7 @@ const MENU = [
   { grupo: 'Principal' },
   { rota: 'painel', titulo: 'Painel', icone: 'layout-dashboard' },
   { rota: 'pendencias', titulo: 'Pendências', icone: 'bell-ring' },
+  { rota: 'graficos', titulo: 'Gráficos', icone: 'chart-column' },
   { rota: 'animais', titulo: 'Rebanho', icone: 'tag' },
   { grupo: 'Manejo' },
   { rota: 'reproducao', titulo: 'Reprodução e cria', icone: 'heart' },
@@ -33,6 +34,7 @@ const MENU = [
 const ROTAS = [
   { re: /^painel$/, pagina: () => import('./pages/painel.js'), titulo: 'Painel' },
   { re: /^pendencias$/, pagina: () => import('./pages/pendencias.js'), titulo: 'Pendências' },
+  { re: /^graficos$/, pagina: () => import('./pages/graficos.js'), titulo: 'Gráficos' },
   { re: /^animais$/, pagina: () => import('./pages/animais.js'), titulo: 'Rebanho' },
   { re: /^animais\/novo$/, pagina: () => import('./pages/animal-form.js'), titulo: 'Cadastrar animal', perm: 'rebanho_editar' },
   { re: /^animais\/([0-9a-f-]{36})\/editar$/, pagina: () => import('./pages/animal-form.js'), titulo: 'Editar animal', perm: 'rebanho_editar' },
