@@ -84,7 +84,7 @@ export function htmlPendencias(pend, { soComItens = false, limite = 6 } = {}) {
     return `
     <div class="card"><div class="card-titulo"><h3><i data-lucide="${b.icone}"></i>${esc(b.titulo)}</h3>
       <span class="contador ${b.itens.length ? 'alerta-c' : ''}">${b.itens.length}</span></div>
-      <ul class="lista-pend">${b.itens.length ? itens.map(([a, d]) => `<li><span>${esc(a)}</span>${d}</li>`).join('')
+      <ul class="lista-pend">${b.itens.length ? itens.map(([a, d, , , link]) => (link ? `<li class="clicavel"><a href="${esc(link)}" title="${esc(a)}"><span class="pend-texto">${esc(a)}</span>${d}</a></li>` : `<li><span class="pend-texto">${esc(a)}</span>${d}</li>`)).join('')
         + (b.itens.length > itens.length ? `<li class="vazia"><a href="#/pendencias">e mais ${b.itens.length - itens.length}…</a></li>` : '') : '<li class="vazia">Nada pendente.</li>'}</ul>
     </div>`; }).join('')}</div>`;
 }

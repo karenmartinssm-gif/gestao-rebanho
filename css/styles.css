@@ -501,3 +501,13 @@ button.pend-card .rotulo { padding-right: 26px; }
 .lateral::-webkit-scrollbar-track, .lateral nav::-webkit-scrollbar-track { background: var(--verde-900); }
 .lateral::-webkit-scrollbar-thumb, .lateral nav::-webkit-scrollbar-thumb { background: var(--verde-600); border-radius: 8px; border: 2px solid var(--verde-900); }
 .lateral::-webkit-scrollbar-thumb:hover, .lateral nav::-webkit-scrollbar-thumb:hover { background: var(--verde-500, #5a8f6c); }
+/* Painel › Atenção e pendências: quadros mais largos, sem quebra de linha e linhas clicáveis */
+.pendencias { grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); }
+.lista-pend li { align-items: center; }
+.lista-pend .pend-texto { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lista-pend .badge { white-space: nowrap; flex-shrink: 0; }
+.lista-pend li.clicavel { padding: 0; }
+.lista-pend li.clicavel a { display: flex; justify-content: space-between; align-items: center; gap: 10px; width: 100%; padding: 9px 18px; color: inherit; text-decoration: none; }
+.lista-pend li.clicavel a:hover { background: var(--fundo); }
+.lista-pend li.clicavel a:hover .pend-texto { color: var(--verde-700); text-decoration: underline; }
+@media (max-width: 720px) { .pendencias { grid-template-columns: 1fr; } }
