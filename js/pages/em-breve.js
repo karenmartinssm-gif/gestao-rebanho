@@ -2,9 +2,6 @@
 import { esc, vazio } from '../ui.js';
 
 const MODULOS = {
-  sanidade: { etapa: 3, icone: 'syringe', titulo: 'Sanidade', itens: ['Calendário sanitário', 'Vacinas, vermifugação, carrapatos, moscas, exames, tratamentos', 'Aplicação coletiva por lote com histórico individual', 'Protocolos próprios da propriedade', 'Alertas de reforço, retorno e fim de carência'] },
-  pastagens: { etapa: 3, icone: 'map', titulo: 'Pastagens e lotes', itens: ['Cadastro de pastos e piquetes', 'Lotes de animais', 'Transferências com histórico de ocupação', 'Lotação (cab/ha e UA/ha)'] },
-  alimentacao: { etapa: 3, icone: 'wheat', titulo: 'Alimentação e suplementação', itens: ['Produtos e estoque', 'Fornecimentos por lote ou animal', 'Consumo mensal e por cabeça', 'Alerta de estoque baixo'] },
   pesagens: { etapa: 4, icone: 'scale', titulo: 'Pesagens e desempenho', itens: ['Pesagem coletiva (curral)', 'GMD por animal, lote e categoria', 'Evolução do rebanho'], obs: 'A pesagem individual já está disponível na ficha do animal e nos atalhos.' },
   movimentacoes: { etapa: 4, icone: 'arrow-left-right', titulo: 'Movimentações, compras e vendas', itens: ['Compras com valor por arroba, frete e documentos', 'Vendas com peso de saída e valores', 'Histórico geral de entradas e saídas'], obs: 'Mortes, perdas, transferências e doações já podem ser registradas na ficha do animal.' },
   financeiro: { etapa: 4, icone: 'wallet', titulo: 'Financeiro', itens: ['Receitas e despesas por categoria', 'Fluxo de caixa', 'Custo por cabeça e por lote', 'Separação entre realizado e estimado'] },

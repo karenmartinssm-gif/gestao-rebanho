@@ -15,9 +15,9 @@ const MENU = [
   { rota: 'animais', titulo: 'Rebanho', icone: 'tag' },
   { grupo: 'Manejo' },
   { rota: 'reproducao', titulo: 'Reprodução e cria', icone: 'heart' },
-  { rota: 'sanidade', titulo: 'Sanidade', icone: 'syringe', etapa: 3 },
-  { rota: 'pastagens', titulo: 'Pastagens e lotes', icone: 'map', etapa: 3 },
-  { rota: 'alimentacao', titulo: 'Alimentação', icone: 'wheat', etapa: 3 },
+  { rota: 'sanidade', titulo: 'Sanidade', icone: 'syringe' },
+  { rota: 'pastagens', titulo: 'Pastagens e lotes', icone: 'map' },
+  { rota: 'alimentacao', titulo: 'Alimentação', icone: 'wheat' },
   { rota: 'pesagens', titulo: 'Pesagens', icone: 'scale', etapa: 4 },
   { rota: 'movimentacoes', titulo: 'Movimentações', icone: 'arrow-left-right', etapa: 4 },
   { grupo: 'Gestão' },
@@ -34,10 +34,13 @@ const ROTAS = [
   { re: /^animais\/novo$/, pagina: () => import('./pages/animal-form.js'), titulo: 'Cadastrar animal', perm: 'rebanho_editar' },
   { re: /^animais\/([0-9a-f-]{36})\/editar$/, pagina: () => import('./pages/animal-form.js'), titulo: 'Editar animal', perm: 'rebanho_editar' },
   { re: /^animais\/([0-9a-f-]{36})$/, pagina: () => import('./pages/animal-ficha.js'), titulo: 'Ficha do animal' },
+  { re: /^sanidade$/, pagina: () => import('./pages/sanidade.js'), titulo: 'Sanidade' },
+  { re: /^pastagens$/, pagina: () => import('./pages/pastagens.js'), titulo: 'Pastagens e lotes' },
+  { re: /^alimentacao$/, pagina: () => import('./pages/alimentacao.js'), titulo: 'Alimentação e suplementação' },
   { re: /^reproducao$/, pagina: () => import('./pages/reproducao.js'), titulo: 'Reprodução e cria' },
   { re: /^equipe$/, pagina: () => import('./pages/equipe.js'), titulo: 'Equipe e permissões', dono: true },
   { re: /^configuracoes$/, pagina: () => import('./pages/configuracoes.js'), titulo: 'Configurações', perm: 'configuracoes' },
-  { re: /^(sanidade|pastagens|alimentacao|pesagens|movimentacoes|financeiro|relatorios)$/, pagina: () => import('./pages/em-breve.js'), titulo: null },
+  { re: /^(pesagens|movimentacoes|financeiro|relatorios)$/, pagina: () => import('./pages/em-breve.js'), titulo: null },
 ];
 
 export function navegar(rota) { location.hash = `#/${rota}`; }

@@ -46,13 +46,18 @@ export async function render(el, [id]) {
   ]);
 
   const [matrizRow, cobTouro] = await Promise.all([
-    a.sexo === 'F' ? sb.from('matrizes').select('*').eq('animal_id', id).maybeSingle().then((r) => r.data) : null,
+    a.sexo === 'F' ? (async () => (await sb.from('matrizes').select('*').eq('animal_id', id).maybeSingle()).data)() : null,
     reprodutor ? q(sb.from('coberturas').select('*').eq('reprodutor_id', reprodutor.id).order('data_cobertura', { ascending: false })) : [],
   ]);
   if (cobTouro.length) {
     const mats = await q(sb.from('animais').select('id, brinco').in('id', [...new Set(cobTouro.map((c) => c.matriz_id))]));
     const nome = new Map(mats.map((m) => [m.id, m]));
     cobTouro.forEach((c) => { c.matriz = nome.get(c.matriz_id); });
+  }
+
+  // Ignora vínculos cujo registro principal não veio (ex.: sem permissão de leitura)
+  for (const [lista, campo] of [[manejos, 'manejo'], [movs, 'movimentacao'], [fornec, 'fornecimento']]) {
+    for (let i = lista.length - 1; i >= 0; i--) if (!lista[i][campo]) lista.splice(i, 1);
   }
 
   // Nomes dos usuários que registraram eventos
@@ -155,8 +160,9 @@ export async function render(el, [id]) {
       : vazio({ icone: 'scale', titulo: 'Nenhuma pesagem registrada', texto: 'Registre pesagens para acompanhar o ganho de peso e o GMD deste animal.',
           acao: ativo && pode('pesagens') ? '<button class="btn btn-primario" data-acao2="pesagem"><i data-lucide="scale"></i> Registrar pesagem</button>' : '' })}`,
 
-    sanitario: () => (manejos.length ? '<div class="card"><div id="t-sanitario"></div></div>'
-      : vazio({ icone: 'syringe', titulo: 'Nenhum registro sanitário', texto: 'Vacinas, vermifugações, tratamentos e ocorrências aplicadas a este animal (individualmente ou no lote) aparecerão aqui. O módulo de sanidade chega na etapa 3.' })),
+    sanitario: () => `${ativo && pode('sanidade') ? '<div class="acoes" style="margin-bottom:12px"><button class="btn btn-primario" data-san="vacina"><i data-lucide="syringe"></i> Registrar aplicação</button><button class="btn" data-san="tratamento"><i data-lucide="stethoscope"></i> Tratamento / ocorrência</button></div>' : ''}
+      ${manejos.length ? '<div class="card"><div id="t-sanitario"></div></div>'
+      : vazio({ icone: 'syringe', titulo: 'Nenhum registro sanitário', texto: 'Vacinas, vermifugações, tratamentos e ocorrências aplicadas a este animal (individualmente ou no lote) aparecem aqui.' })}`,
 
     movimentacoes: () => (movs.length ? '<div class="card"><div id="t-movs"></div></div>' : vazio({ icone: 'arrow-left-right', titulo: 'Nenhuma movimentação' })),
 
@@ -193,7 +199,7 @@ export async function render(el, [id]) {
     },
 
     alimentacao: () => (fornec.length ? '<div class="card"><div id="t-fornec"></div></div>'
-      : vazio({ icone: 'wheat', titulo: 'Nenhum fornecimento registrado', texto: 'Os fornecimentos de sal, suplementos e ração para este animal ou para o lote dele aparecerão aqui (etapa 3).' })),
+      : vazio({ icone: 'wheat', titulo: 'Nenhum fornecimento registrado', texto: 'Os fornecimentos de sal, suplementos e ração para este animal, para o lote ou para o pasto dele aparecem aqui.' })),
 
     observacoes: () => `<div class="card"><div class="card-corpo">${a.observacoes ? `<p style="white-space:pre-wrap;margin:0">${esc(a.observacoes)}</p>` : '<p class="muted" style="margin:0">Sem observações.</p>'}</div></div>
       ${desmame[0] ? `<p class="small muted">Desmamado em ${fmtData(desmame[0].data_desmame)}${desmame[0].peso_desmame ? ` com ${fmtKg(desmame[0].peso_desmame)}` : ''}.</p>` : ''}`,
@@ -253,7 +259,12 @@ export async function render(el, [id]) {
         options: { scales: { x: { grid: { display: false } }, y: { ticks: { callback: (v) => `${v} kg` } } } },
       });
     },
-    sanitario: () => manejos.length && montarTabela(painel.querySelector('#t-sanitario'), {
+    sanitario: () => {
+      painel.querySelectorAll('[data-san]').forEach((btn) => btn.addEventListener('click', () => import('../components/sanidade-forms.js')
+        .then((m) => m.abrirManejo({ classe: btn.dataset.san, animais: [a.id] }, recarregar))));
+      if (manejos.length) montar.tabelaSanitario();
+    },
+    tabelaSanitario: () => montarTabela(painel.querySelector('#t-sanitario'), {
       colunas: [
         { chave: 'data', titulo: 'Data', primaria: true, render: (m) => fmtData(m.manejo.data_aplicacao), valor: (m) => m.manejo.data_aplicacao },
         { chave: 'tipo', titulo: 'Procedimento', render: (m) => esc(store.base.tiposManejo.find((t) => t.id === m.manejo.tipo_manejo_id)?.nome || '—'), valor: (m) => store.base.tiposManejo.find((t) => t.id === m.manejo.tipo_manejo_id)?.nome },
