@@ -30,6 +30,15 @@ export async function render(el, [id]) {
   if (error || !a) { el.innerHTML = error ? erroCarga(error) : vazio({ icone: 'search-x', titulo: 'Animal não encontrado', acao: '<a class="btn" href="#/animais">Voltar ao rebanho</a>' }); icones(); return; }
 
   const reprodutor = store.base.reprodutores.find((r) => r.animal_id === id);
+  // Touro / sêmen usado numa cobertura (nome + raça)
+  const TIPO_COB = { monta_natural: 'Monta natural', inseminacao: 'Inseminação', iatf: 'IATF', tetf: 'TETF' };
+  const nomeTouro = (rid) => {
+    const r = store.base.reprodutores.find((x) => x.id === rid);
+    if (!r) return null;
+    const raca = store.base.racas.find((x) => x.id === r.raca_id)?.nome;
+    return `${r.identificacao}${raca ? ` (${raca})` : ''}`;
+  };
+  const gestacao = (lista) => lista.find((c) => ['prenhe', 'aguardando_diagnostico'].includes(c.situacao));
   const [pesagens, manejos, movs, filhosMae, filhosPai, coberturas, diagnosticos, nascimentos, desmame, fornec, docs, hist] = await Promise.all([
     q(sb.from('pesagens').select('*').eq('animal_id', id).order('data_pesagem').order('criado_em')),
     q(sb.from('manejo_animais').select('id, manejo:manejos_sanitarios(*, produto:produtos_sanitarios(nome, fabricante))').eq('animal_id', id)),
@@ -153,6 +162,11 @@ export async function render(el, [id]) {
           ${a.pai_id ? (a.pai_animal_id ? linkAnimal({ id: a.pai_animal_id, brinco: a.pai_identificacao }) : `${esc(a.pai_identificacao)} <span class="badge info">sêmen</span>`)
             : a.pai_externo ? `${esc(a.pai_externo)} <span class="badge inativo">não cadastrado</span>` : '<span class="muted">Não informado</span>'}</div></div>
       </div>
+      ${a.sexo === 'F' && gestacao(coberturas) ? (() => { const g = gestacao(coberturas); const t = nomeTouro(g.reprodutor_id); return `
+      <div class="card" style="margin-top:16px"><div class="card-titulo"><h3><i data-lucide="baby"></i> Gestação atual</h3><span class="small muted">o pai da cria que ela espera</span></div><div class="card-corpo">
+        ${g.situacao === 'prenhe' ? '<b>Prenhe</b>' : '<b>Coberta, aguardando diagnóstico</b>'}${t ? ` de <b>${esc(t)}</b>` : ''} · ${esc(TIPO_COB[g.tipo] || g.tipo)} em ${fmtData(g.data_cobertura)}${g.data_prevista_parto ? ` · parto previsto <b>${fmtData(g.data_prevista_parto)}</b>` : ''}
+        ${g.acasalamento ? `<div class="small muted" style="margin-top:4px">Acasalamento: ${esc(g.acasalamento)}</div>` : ''}</div></div>`; })() : ''}
+      <p class="small muted" style="margin:10px 0 0">Mãe e Pai acima são os pais deste animal. O touro da gestação atual fica no quadro "Gestação atual" e na aba Reprodutivo.</p>
       <h3 style="margin:20px 0 10px">Filhos registrados (${filhos.length})</h3>
       ${filhos.length ? `<div class="card"><div id="t-filhos"></div></div>` : vazio({ icone: 'git-fork', titulo: 'Nenhum filho registrado', texto: 'Os filhos aparecem aqui quando este animal for informado como mãe ou pai no cadastro ou no registro de nascimento.' })}`,
 
@@ -177,7 +191,7 @@ export async function render(el, [id]) {
         return `<div class="dados-lista">${dado('Cadastrado como reprodutor', reprodutor ? 'Sim' : 'Não')}${dado('Coberturas registradas', fmtNum(cobTouro.length))}
             ${dado('Matrizes vinculadas', fmtNum(new Set(cobTouro.map((c) => c.matriz_id)).size))}${dado('Filhos registrados', fmtNum(filhosPai.length))}</div>
           ${cobTouro.length ? `<h3 style="margin:18px 0 8px">Utilização</h3><ul class="linha-tempo">${cobTouro.map((c) => `<li><div class="quando">${fmtData(c.data_cobertura)}</div>
-            Matriz <a href="#/animais/${c.matriz_id}">${nomeMat(c.matriz_id)}</a> · ${esc({ monta_natural: 'monta natural', inseminacao: 'inseminação', iatf: 'IATF' }[c.tipo])} · ${esc(ROTULO_SIT_COB[c.situacao])}</li>`).join('')}</ul>` : '<p class="small muted">Nenhuma cobertura registrada com este reprodutor.</p>'}`;
+            Matriz <a href="#/animais/${c.matriz_id}">${nomeMat(c.matriz_id)}</a> · ${esc({ monta_natural: 'monta natural', inseminacao: 'inseminação', iatf: 'IATF', tetf: 'TETF' }[c.tipo])} · ${esc(ROTULO_SIT_COB[c.situacao])}</li>`).join('')}</ul>` : '<p class="small muted">Nenhuma cobertura registrada com este reprodutor.</p>'}`;
       }
       const partos = nascimentos.filter((n) => n.resultado !== 'aborto');
       const abortos = nascimentos.filter((n) => n.resultado === 'aborto');
@@ -189,6 +203,7 @@ export async function render(el, [id]) {
           <button class="btn btn-primario" data-repro="nascimento"><i data-lucide="baby"></i> Registrar parto</button>`)}
         <div class="dados-lista">
           ${dado('Situação reprodutiva', matrizRow ? `<span class="badge">${esc(ROTULO_SITUACAO_REPRO[matrizRow.situacao_reprodutiva])}</span>${!matrizRow.apta_reproducao ? ' <span class="badge perigo">descarte</span>' : ''}` : '—')}
+          ${aberta ? dado('Touro da gestação', esc(nomeTouro(aberta.reprodutor_id) || (aberta.tipo === 'tetf' ? 'ver acasalamento' : 'não informado'))) : ''}
           ${aberta?.situacao === 'prenhe' ? dado('Previsão de parto', fmtData(aberta.data_prevista_parto)) : ''}
           ${dado('Número de partos', fmtNum(partos.length))}${dado('Bezerros nascidos vivos', fmtNum(nascimentos.filter((n) => n.resultado === 'vivo').length))}
           ${dado('Abortos', fmtNum(abortos.length))}${dado('Último parto', ultimo ? fmtData(ultimo.data_nascimento) : '—')}
@@ -196,7 +211,7 @@ export async function render(el, [id]) {
         </div>
         ${!coberturas.length && !nascimentos.length ? `<div style="margin-top:16px">${vazio({ icone: 'heart', titulo: 'Sem histórico reprodutivo', texto: 'Registre coberturas, diagnósticos e partos pelos botões acima ou em Reprodução e cria.' })}</div>` : `
         <h3 style="margin:18px 0 8px">Linha do tempo</h3><ul class="linha-tempo">${[
-          ...coberturas.map((c) => ({ d: c.data_cobertura, t: `Cobertura (${({ monta_natural: 'monta natural', iatf: 'IATF', tetf: 'TETF', inseminacao: 'inseminação' })[c.tipo] || c.tipo}${c.acasalamento ? ` · ${c.acasalamento}` : ''}) · ${ROTULO_SIT_COB[c.situacao]}${c.data_prevista_parto && ['prenhe', 'aguardando_diagnostico'].includes(c.situacao) ? ` · parto previsto ${fmtData(c.data_prevista_parto)}` : ''}` })),
+          ...coberturas.map((c) => ({ d: c.data_cobertura, t: `Cobertura (${({ monta_natural: 'monta natural', iatf: 'IATF', tetf: 'TETF', inseminacao: 'inseminação' })[c.tipo] || c.tipo}${nomeTouro(c.reprodutor_id) ? ` · ${nomeTouro(c.reprodutor_id)}` : ''}${c.acasalamento ? ` · ${c.acasalamento}` : ''}) · ${ROTULO_SIT_COB[c.situacao]}${c.data_prevista_parto && ['prenhe', 'aguardando_diagnostico'].includes(c.situacao) ? ` · parto previsto ${fmtData(c.data_prevista_parto)}` : ''}` })),
           ...diagnosticos.map((x) => ({ d: x.data_diagnostico, t: `Diagnóstico de gestação: ${x.resultado}${x.metodo ? ` (${x.metodo})` : ''}` })),
           ...nascimentos.map((n) => ({ d: n.data_nascimento, t: n.resultado === 'aborto' ? 'Aborto' : n.resultado === 'natimorto' ? 'Parto — natimorto' : 'Parto — bezerro vivo' })),
         ].sort((x, y) => y.d.localeCompare(x.d)).map((e) => `<li><div class="quando">${fmtData(e.d)}</div>${esc(e.t)}</li>`).join('')}</ul>`}`;
