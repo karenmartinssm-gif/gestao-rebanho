@@ -6,6 +6,7 @@ import { store, pode, param } from '../store.js';
 import { esc, icones, fmtData, fmtNum, fmtMoeda, hojeISO, addDias, diasEntre, montarTabela, vazio, erroCarga, baixarCSV, MESES } from '../ui.js';
 import { listarAnimais } from '../components/animais-comum.js';
 import * as F from '../components/sanidade-forms.js';
+import { todos } from '../components/consulta.js';
 
 const ABAS = [['agenda', 'Calendário e pendências'], ['registros', 'Registros'], ['produtos', 'Produtos e estoque'], ['protocolos', 'Protocolos']];
 const SIT = { realizado: 'Realizado', em_andamento: 'Em andamento', concluido: 'Concluído', cancelado: 'Cancelado' };
@@ -17,7 +18,7 @@ export async function render(el) {
     const q = async (x) => { const { data, error } = await x; if (error) throw error; return data || []; };
     [animais, manejos, produtos, protocolos] = await Promise.all([
       listarAnimais(),
-      q(sb.from('manejos_sanitarios').select('*, manejo_animais(animal_id)').eq('propriedade_id', p).order('data_aplicacao', { ascending: false }).range(0, 4999)),
+      todos(() => sb.from('manejos_sanitarios').select('*, manejo_animais(animal_id)').eq('propriedade_id', p).order('data_aplicacao', { ascending: false }).order('id'), 500),
       q(sb.from('vw_estoque_sanitarios').select('*').eq('propriedade_id', p).order('nome')),
       q(sb.from('protocolos_sanitarios').select('*').eq('propriedade_id', p).order('nome')),
     ]);

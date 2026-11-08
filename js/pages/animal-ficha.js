@@ -108,6 +108,7 @@ export async function render(el, [id]) {
           ${pode('rebanho_editar') ? `<a class="btn" href="#/animais/${id}/editar"><i data-lucide="pencil"></i> Editar</a>` : ''}
           ${ativo && pode('pesagens') ? '<button class="btn" data-acao="pesagem"><i data-lucide="scale"></i> Registrar pesagem</button>' : ''}
           ${ativo && pode('reproducao') && a.categoria_grupo === 'bezerro' && !desmame.length ? '<button class="btn" data-acao="desmame"><i data-lucide="milk-off"></i> Registrar desmame</button>' : ''}
+          ${ativo && pode('comercial') ? '<button class="btn" data-acao="venda"><i data-lucide="hand-coins"></i> Vender</button>' : ''}
           ${ativo && pode('movimentacoes') ? '<button class="btn btn-perigo" data-acao="saida"><i data-lucide="log-out"></i> Registrar saída</button>' : ''}
           ${!ativo && ehProprietario() ? '<button class="btn" data-acao="corrigir"><i data-lucide="undo-2"></i> Corrigir status</button>' : ''}
         </div>
@@ -120,6 +121,7 @@ export async function render(el, [id]) {
   const recarregar = () => render(el, [id]).then(icones);
   el.querySelector('[data-acao=pesagem]')?.addEventListener('click', () => import('../components/pesagem.js').then((m) => m.abrirPesagem(a, recarregar)));
   el.querySelector('[data-acao=saida]')?.addEventListener('click', () => import('../components/saida.js').then((m) => m.abrirSaida(a, { aoSalvar: recarregar })));
+  el.querySelector('[data-acao=venda]')?.addEventListener('click', () => import('../components/comercial-forms.js').then((m) => m.abrirVenda({ animais: [a.id] }, recarregar)));
   el.querySelector('[data-acao=desmame]')?.addEventListener('click', () => import('../components/reproducao-forms.js').then((m) => m.abrirDesmame(a, recarregar)));
   el.querySelector('[data-acao=corrigir]')?.addEventListener('click', () => import('../components/saida.js').then((m) => m.abrirCorrecaoStatus(a, recarregar)));
 

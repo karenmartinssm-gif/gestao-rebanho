@@ -372,3 +372,32 @@ table.tabela { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .indicador summary { cursor: pointer; color: var(--verde-700); }
 .filtro-periodo { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
 .filtro-periodo select { width: auto; }
+
+/* ---------- Etapa 4: pesagens, comercial e financeiro ---------- */
+.lista-dados { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0; }
+.lista-dados dt { color: var(--texto-2); font-size: .88rem; }
+.lista-dados dd { margin: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--borda); border-radius: 999px; background: var(--fundo); font-size: .88rem; color: var(--texto); text-decoration: none; }
+.chip a { display: inline-flex; align-items: center; gap: 4px; color: inherit; text-decoration: none; }
+.chip svg { width: 14px; height: 14px; }
+.chip .btn-texto { padding: 0; min-height: 0; border: 0; background: none; cursor: pointer; color: var(--texto-2); display: inline-flex; }
+.lista-simples { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.tabela-pesagem td, .tabela-pesagem th { vertical-align: middle; }
+.tabela-pesagem input, .tabela-pesagem select { min-height: 40px; }
+.valor-pos { color: var(--sucesso); }
+.valor-neg { color: var(--perigo); }
+@media (max-width: 720px) {
+  .lista-dados { grid-template-columns: 1fr; gap: 2px; }
+  .lista-dados dd { margin-bottom: 8px; }
+  .tabela-pesagem input.pc-peso, .tabela-pesagem input.v-peso { max-width: none !important; width: 100%; font-size: 1.1rem; min-height: 48px; }
+}
+@media (min-width: 721px) { .tabela td.dir { white-space: nowrap; } }
+.tabela-pesagem input:disabled { background: var(--fundo); opacity: .45; }
+.rolagem-lista { max-height: 360px; overflow: auto; }
+@media (max-width: 720px) {
+  .rolagem-lista { max-height: none; overflow: visible; }
+  /* Formulário em etapas: a navegação Voltar/Próximo substitui o rodapé do modal */
+  .modal:has(form.wizard) .modal-rodape { display: none; }
+}
+@media (max-width: 720px) { .tabela-pesagem input[data-k=peso] { max-width: none !important; width: 100%; } }

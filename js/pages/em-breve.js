@@ -2,9 +2,6 @@
 import { esc, vazio } from '../ui.js';
 
 const MODULOS = {
-  pesagens: { etapa: 4, icone: 'scale', titulo: 'Pesagens e desempenho', itens: ['Pesagem coletiva (curral)', 'GMD por animal, lote e categoria', 'Evolução do rebanho'], obs: 'A pesagem individual já está disponível na ficha do animal e nos atalhos.' },
-  movimentacoes: { etapa: 4, icone: 'arrow-left-right', titulo: 'Movimentações, compras e vendas', itens: ['Compras com valor por arroba, frete e documentos', 'Vendas com peso de saída e valores', 'Histórico geral de entradas e saídas'], obs: 'Mortes, perdas, transferências e doações já podem ser registradas na ficha do animal.' },
-  financeiro: { etapa: 4, icone: 'wallet', titulo: 'Financeiro', itens: ['Receitas e despesas por categoria', 'Fluxo de caixa', 'Custo por cabeça e por lote', 'Separação entre realizado e estimado'] },
   relatorios: { etapa: 5, icone: 'file-text', titulo: 'Relatórios', itens: ['Inventário, matrizes, touros, bezerros', 'Nascimentos, mortalidade, reprodução, desmame', 'Sanidade, pesagens, pastos, suplementos', 'Exportação em PDF e Excel'] },
 };
 

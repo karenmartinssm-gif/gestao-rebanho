@@ -3,14 +3,16 @@ import { sb } from '../supabase.js';
 import { store } from '../store.js';
 import { esc } from '../ui.js';
 import { ehErroDeRede } from '../sync.js';
+import { todos } from './consulta.js';
 
 // A última lista baixada fica guardada no aparelho para os formulários de campo
 // funcionarem sem internet (apenas para consulta; o servidor continua sendo a referência).
 const chaveCache = () => `rebanho.animais.${store.prop.id}`;
 
 export async function listarAnimais({ somenteAtivos = false } = {}) {
-  const q = sb.from('vw_animais').select('*').eq('propriedade_id', store.prop.id).order('brinco').range(0, 9999);
-  const { data, error } = await q;
+  let data = null, error = null;
+  try { data = await todos(() => sb.from('vw_animais').select('*').eq('propriedade_id', store.prop.id).order('brinco').order('id')); }
+  catch (e) { error = e; }
   let lista = data;
   if (error) {
     if (!ehErroDeRede(error)) throw error;

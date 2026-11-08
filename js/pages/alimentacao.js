@@ -7,6 +7,7 @@ import { esc, icones, fmtData, fmtNum, fmtMoeda, hojeISO, montarTabela, vazio, e
 import { grafico, CORES, semDados } from '../components/graficos.js';
 import { abrirMovEstoque } from '../components/sanidade-forms.js';
 import * as F from '../components/alimentacao-forms.js';
+import { todos } from '../components/consulta.js';
 
 const porDia = (porCab, mes, un) => {
   const d = porCab / new Date(Number(mes.slice(0, 4)), Number(mes.slice(5)), 0).getDate();
@@ -21,7 +22,7 @@ export async function render(el) {
     const q = async (x) => { const { data, error } = await x; if (error) throw error; return data || []; };
     [produtos, fornec] = await Promise.all([
       q(sb.from('vw_estoque_suplementos').select('*').eq('propriedade_id', p).order('nome')),
-      q(sb.from('fornecimentos').select('*').eq('propriedade_id', p).order('data_fornecimento', { ascending: false }).range(0, 9999)),
+      todos(() => sb.from('fornecimentos').select('*').eq('propriedade_id', p).order('data_fornecimento', { ascending: false }).order('id')),
     ]);
   } catch (e) { el.innerHTML = erroCarga(e); icones(); return; }
 

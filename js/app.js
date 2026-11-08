@@ -18,10 +18,10 @@ const MENU = [
   { rota: 'sanidade', titulo: 'Sanidade', icone: 'syringe' },
   { rota: 'pastagens', titulo: 'Pastagens e lotes', icone: 'map' },
   { rota: 'alimentacao', titulo: 'Alimentação', icone: 'wheat' },
-  { rota: 'pesagens', titulo: 'Pesagens', icone: 'scale', etapa: 4 },
-  { rota: 'movimentacoes', titulo: 'Movimentações', icone: 'arrow-left-right', etapa: 4 },
+  { rota: 'pesagens', titulo: 'Pesagens', icone: 'scale' },
+  { rota: 'movimentacoes', titulo: 'Movimentações', icone: 'arrow-left-right' },
   { grupo: 'Gestão' },
-  { rota: 'financeiro', titulo: 'Financeiro', icone: 'wallet', etapa: 4, perm: 'financeiro' },
+  { rota: 'financeiro', titulo: 'Financeiro', icone: 'wallet', perm: 'financeiro' },
   { rota: 'relatorios', titulo: 'Relatórios', icone: 'file-text', etapa: 5 },
   { rota: 'equipe', titulo: 'Equipe e permissões', icone: 'users', dono: true },
   { rota: 'configuracoes', titulo: 'Configurações', icone: 'settings', perm: 'configuracoes' },
@@ -40,7 +40,10 @@ const ROTAS = [
   { re: /^reproducao$/, pagina: () => import('./pages/reproducao.js'), titulo: 'Reprodução e cria' },
   { re: /^equipe$/, pagina: () => import('./pages/equipe.js'), titulo: 'Equipe e permissões', dono: true },
   { re: /^configuracoes$/, pagina: () => import('./pages/configuracoes.js'), titulo: 'Configurações', perm: 'configuracoes' },
-  { re: /^(pesagens|movimentacoes|financeiro|relatorios)$/, pagina: () => import('./pages/em-breve.js'), titulo: null },
+  { re: /^pesagens$/, pagina: () => import('./pages/pesagens.js'), titulo: 'Pesagens e desempenho' },
+  { re: /^movimentacoes$/, pagina: () => import('./pages/movimentacoes.js'), titulo: 'Movimentações' },
+  { re: /^financeiro$/, pagina: () => import('./pages/financeiro.js'), titulo: 'Financeiro', perm: 'financeiro' },
+  { re: /^(relatorios)$/, pagina: () => import('./pages/em-breve.js'), titulo: null },
 ];
 
 export function navegar(rota) { location.hash = `#/${rota}`; }

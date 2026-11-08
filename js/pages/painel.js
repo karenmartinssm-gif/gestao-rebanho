@@ -7,6 +7,7 @@ import { esc, icones, fmtNum, fmtData, hojeISO, addDias, ultimosMeses, rotuloMes
 import { listarAnimais } from '../components/animais-comum.js';
 import { htmlAtalhos, ligarAtalhos } from '../components/atalhos.js';
 import { grafico, semDados, CORES } from '../components/graficos.js';
+import { todos } from '../components/consulta.js';
 
 const plural = (n, um, varios) => `${fmtNum(n)} ${n === 1 ? um : varios}`;
 
@@ -27,7 +28,7 @@ export async function render(el) {
   try { animais = await listarAnimais(); } catch (e) { el.innerHTML = erroCarga(e); icones(); return; }
 
   const [pes, matr, manejos, cobs, desm, estq] = await Promise.all([
-    consulta(sb.from('pesagens').select('animal_id, data_pesagem, peso_kg, tipo').eq('propriedade_id', p).gte('data_pesagem', inicio12).neq('tipo', 'nascimento').range(0, 49999)),
+    consulta(todos(() => sb.from('pesagens').select('id, animal_id, data_pesagem, peso_kg, tipo').eq('propriedade_id', p).gte('data_pesagem', inicio12).neq('tipo', 'nascimento').order('id')).then((data) => ({ data }), (error) => ({ error }))),
     consulta(sb.from('matrizes').select('animal_id, situacao_reprodutiva').eq('propriedade_id', p)),
     consulta(sb.from('manejos_sanitarios').select('id, tipo_manejo_id, data_aplicacao, proxima_aplicacao, proxima_resolvida, situacao, carencia_ate, manejo_animais(animal_id)')
       .eq('propriedade_id', p).or(`situacao.eq.em_andamento,and(proxima_aplicacao.not.is.null,proxima_resolvida.eq.false),carencia_ate.gte.${hoje}`)),

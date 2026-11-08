@@ -1,6 +1,6 @@
 // Registro de saída de animal: morte, perda, transferência, doação, outra.
 // Exige conexão, pois altera o status do animal (operação confirmada pelo servidor).
-// Vendas são registradas no módulo Comercial (etapa 4), com dados financeiros.
+// Vendas são registradas em Movimentações (registrar_venda), com dados financeiros.
 import { sb } from '../supabase.js';
 import { store, pode } from '../store.js';
 import { esc, abrirModal, toast, traduzirErro, hojeISO, confirmar, textoOuNulo, ROTULO_MOV } from '../ui.js';
@@ -27,7 +27,7 @@ export async function abrirSaida(animalFixo = null, { tipo = 'saida_morte', aoSa
       ${animalFixo ? `<div class="alerta"><i data-lucide="tag"></i><div>Animal <b>${esc(animalFixo.brinco)}</b>${animalFixo.nome ? ` — ${esc(animalFixo.nome)}` : ''}</div></div>` : '<div id="slot-animal"></div>'}
       <div class="campo"><label for="stipo">Tipo de saída <span class="obrig">*</span></label>
         <select id="stipo" required>${TIPOS.map((t) => `<option value="${t}" ${t === tipo ? 'selected' : ''}>${ROTULO_MOV[t]}</option>`).join('')}</select>
-        <span class="ajuda">Vendas são registradas em Movimentações › Vendas (etapa 4), junto com os valores.</span></div>
+        <span class="ajuda">Vendas são registradas em Movimentações › Registrar venda, junto com os valores.</span></div>
       <div class="campo oculto" id="c-status"><label for="sstatus">Novo status <span class="obrig">*</span></label>
         <select id="sstatus">${statusOutros.length ? statusOutros.map((s) => `<option value="${esc(s.codigo)}">${esc(s.nome)}</option>`).join('') : '<option value="">Cadastre status adicionais em Configurações</option>'}</select></div>
       <div class="campo"><label for="sdata">Data <span class="obrig">*</span></label><input id="sdata" type="date" required max="${hojeISO()}" value="${hojeISO()}"></div>

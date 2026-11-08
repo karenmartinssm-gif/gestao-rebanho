@@ -9,6 +9,7 @@ import {
 import { listarAnimais } from '../components/animais-comum.js';
 import { calcularIndicadores, desempenhoMatriz, situacaoExibida } from '../components/reproducao-indicadores.js';
 import * as F from '../components/reproducao-forms.js';
+import { todos } from '../components/consulta.js';
 
 const pl = (n, um, varios) => `${fmtNum(n)} ${n === 1 ? um : varios}`;
 const ABAS = [['geral', 'Visão geral'], ['matrizes', 'Matrizes'], ['coberturas', 'Coberturas'], ['nascimentos', 'Nascimentos'], ['desmames', 'Desmames'], ['reprodutores', 'Touros e sêmen']];
@@ -28,10 +29,10 @@ export async function render(el) {
     await carregarBase();
     [animais, matrizes, coberturas, nascimentos, desmames] = await Promise.all([
       listarAnimais(),
-      q(sb.from('matrizes').select('*').eq('propriedade_id', p)),
-      q(sb.from('coberturas').select('*').eq('propriedade_id', p).order('data_cobertura', { ascending: false }).range(0, 9999)),
-      q(sb.from('nascimentos').select('*').eq('propriedade_id', p).order('data_nascimento', { ascending: false }).range(0, 9999)),
-      q(sb.from('desmames').select('*').eq('propriedade_id', p).order('data_desmame', { ascending: false }).range(0, 9999)),
+      todos(() => sb.from('matrizes').select('*').eq('propriedade_id', p).order('id')),
+      todos(() => sb.from('coberturas').select('*').eq('propriedade_id', p).order('data_cobertura', { ascending: false }).order('id')),
+      todos(() => sb.from('nascimentos').select('*').eq('propriedade_id', p).order('data_nascimento', { ascending: false }).order('id')),
+      todos(() => sb.from('desmames').select('*').eq('propriedade_id', p).order('data_desmame', { ascending: false }).order('id')),
     ]);
   } catch (e) { el.innerHTML = erroCarga(e); icones(); return; }
 
