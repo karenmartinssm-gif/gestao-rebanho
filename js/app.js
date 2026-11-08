@@ -22,7 +22,7 @@ const MENU = [
   { rota: 'movimentacoes', titulo: 'Movimentações', icone: 'arrow-left-right' },
   { grupo: 'Gestão' },
   { rota: 'financeiro', titulo: 'Financeiro', icone: 'wallet', perm: 'financeiro' },
-  { rota: 'relatorios', titulo: 'Relatórios', icone: 'file-text', etapa: 5 },
+  { rota: 'relatorios', titulo: 'Relatórios', icone: 'file-text' },
   { rota: 'equipe', titulo: 'Equipe e permissões', icone: 'users', dono: true },
   { rota: 'configuracoes', titulo: 'Configurações', icone: 'settings', perm: 'configuracoes' },
 ];
@@ -43,7 +43,7 @@ const ROTAS = [
   { re: /^pesagens$/, pagina: () => import('./pages/pesagens.js'), titulo: 'Pesagens e desempenho' },
   { re: /^movimentacoes$/, pagina: () => import('./pages/movimentacoes.js'), titulo: 'Movimentações' },
   { re: /^financeiro$/, pagina: () => import('./pages/financeiro.js'), titulo: 'Financeiro', perm: 'financeiro' },
-  { re: /^(relatorios)$/, pagina: () => import('./pages/em-breve.js'), titulo: null },
+  { re: /^relatorios(?:\/([a-z]+))?$/, pagina: () => import('./pages/relatorios.js'), titulo: 'Relatórios' },
 ];
 
 export function navegar(rota) { location.hash = `#/${rota}`; }
@@ -77,6 +77,23 @@ async function rotear() {
   icones();
 }
 
+// ---------- Avisos (sino) ----------
+let sinoLigado = false;
+async function atualizarSino(forcar = false) {
+  try {
+    const m = await import('./components/avisos.js');
+    if (!sinoLigado) { sinoLigado = true; m.aoAtualizar((lista) => desenharSino(m.naoVistos(lista).length)); }
+    desenharSino(m.naoVistos(await m.carregarAvisos(forcar)).length);
+  } catch (e) { console.warn('Avisos indisponíveis:', e); }
+}
+function desenharSino(n) {
+  const b = document.getElementById('avisos-n');
+  if (!b) return;
+  b.textContent = n > 99 ? '99+' : String(n);
+  b.classList.toggle('oculto', !n);
+  document.getElementById('btn-avisos')?.setAttribute('aria-label', n ? `Avisos: ${n} novo(s)` : 'Avisos');
+}
+
 // ---------- Layout ----------
 function renderLayout() {
   const nome = store.perfil?.nome || store.usuario.email;
@@ -104,6 +121,7 @@ function renderLayout() {
       <header class="topo">
         <button class="btn btn-icone btn-texto btn-menu" id="btn-menu" aria-label="Abrir menu"><i data-lucide="menu"></i></button>
         <div class="titulo" id="titulo-pagina"></div>
+        <button class="btn btn-icone btn-texto sino" id="btn-avisos" title="Avisos" aria-label="Avisos"><i data-lucide="bell"></i><span class="sino-n oculto" id="avisos-n"></span></button>
         <button class="conexao" id="conexao" title="Status da conexão e sincronização"></button>
         <div class="usuario-menu">
           <div class="avatar" title="${esc(nome)}">${esc(iniciais || '?')}</div>
@@ -129,6 +147,8 @@ function renderLayout() {
   });
   document.getElementById('fab').onclick = () => import('./components/atalhos.js').then((m) => m.abrirAtalhos());
   document.getElementById('conexao').onclick = abrirPainelSync;
+  document.getElementById('btn-avisos').onclick = () => import('./components/avisos.js').then((m) => m.abrirAvisos());
+  atualizarSino();
   sync.aoMudar(desenharConexao);
 }
 
@@ -312,9 +332,11 @@ async function iniciar() {
     return;
   }
   window.addEventListener('hashchange', rotear);
+  window.addEventListener('hashchange', () => { if (store.prop) atualizarSino(); });
   window.addEventListener('rebanho:sincronizado', (e) => {
     toast(`${e.detail.enviados} registro(s) sincronizado(s) com o servidor.`);
     rotear();
+    atualizarSino(true);
   });
 
   sb.auth.onAuthStateChange((evento, sessao) => {

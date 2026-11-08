@@ -155,7 +155,7 @@ export async function render(el) {
     painel.innerHTML = `
       ${sessoes.length ? `<section class="secao" style="margin-top:0"><h2>Pesagens coletivas recentes</h2><div class="grade grade-3">${sessoes.map((s) => {
         const vals = s.itens.map((x) => Number(x.peso_kg));
-        return `<div class="card"><div class="small muted">${fmtData(s.data)}${s.resp ? ` · ${esc(s.resp)}` : ''}</div><div style="font-size:1.3rem;font-weight:700">${fmtNum(s.itens.length)} animal(is)</div>
+        return `<div class="card card-corpo"><div class="small muted">${fmtData(s.data)}${s.resp ? ` · ${esc(s.resp)}` : ''}</div><div style="font-size:1.3rem;font-weight:700">${fmtNum(s.itens.length)} animal(is)</div>
           <div class="small">Peso médio <b>${fmtKg(vals.reduce((a, b) => a + b, 0) / vals.length)}</b> · de ${fmtKg(Math.min(...vals))} a ${fmtKg(Math.max(...vals))}</div></div>`;
       }).join('')}</div></section>` : ''}
       <div class="filtro-periodo"><select id="h-tipo" aria-label="Tipo"><option value="">Todos os tipos</option>${Object.entries(TIPO).map(([k, t]) => `<option value="${k}">${t}</option>`).join('')}</select>

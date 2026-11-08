@@ -51,7 +51,7 @@ export function abrirCompra(aoSalvar) {
         <div class="campo"><label for="c-obs">Observações</label><input id="c-obs"></div>
       </div></fieldset>
       <fieldset class="etapa-form"><legend><i data-lucide="tag"></i> Animais comprados</legend>
-        <div class="card" style="background:var(--fundo);margin-bottom:12px"><p class="small" style="margin:0 0 10px"><b>Gerar a lista de uma vez</b> (depois dá para ajustar animal por animal):</p>
+        <div class="card card-corpo" style="background:var(--fundo);margin-bottom:12px"><p class="small" style="margin:0 0 10px"><b>Gerar a lista de uma vez</b> (depois dá para ajustar animal por animal):</p>
           <div class="form-grade">
             <div class="campo"><label for="g-qtd">Quantidade</label><input id="g-qtd" inputmode="numeric" placeholder="Ex.: 20"></div>
             <div class="campo"><label for="g-brinco">Primeiro brinco</label><input id="g-brinco" placeholder="Ex.: C-001"><span class="ajuda">Os próximos seguem a numeração.</span></div>

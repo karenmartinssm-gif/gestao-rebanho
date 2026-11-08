@@ -401,3 +401,17 @@ table.tabela { width: 100%; border-collapse: collapse; font-size: .9rem; }
   .modal:has(form.wizard) .modal-rodape { display: none; }
 }
 @media (max-width: 720px) { .tabela-pesagem input[data-k=peso] { max-width: none !important; width: 100%; } }
+/* ---------- Etapa 5: avisos e relatórios ---------- */
+.sino { position: relative; }
+.sino-n { position: absolute; top: 2px; right: 2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--perigo); color: #fff; font-size: .7rem; font-weight: 700; line-height: 18px; text-align: center; }
+.lista-avisos { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.lista-avisos li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--borda); border-left: 4px solid var(--aviso); border-radius: 8px; background: var(--superficie); }
+.lista-avisos li.perigo { border-left-color: var(--perigo); }
+.lista-avisos li.info { border-left-color: var(--info); }
+.lista-avisos li.visto { opacity: .65; }
+.lista-avisos a { display: grid; gap: 2px; color: var(--texto); text-decoration: none; min-width: 0; }
+.lista-avisos a .small { color: var(--texto-2); }
+a.card-link { display: block; color: inherit; text-decoration: none; transition: border-color .15s, box-shadow .15s; }
+a.card-link:hover { border-color: var(--verde-700); box-shadow: 0 2px 10px rgba(30, 60, 40, .08); }
+a.card-link h3 { display: flex; align-items: center; gap: 8px; }
+a.card-link .card-titulo { border-bottom: 0; padding-bottom: 0; }
