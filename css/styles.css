@@ -419,3 +419,6 @@ a.card-link .card-titulo { border-bottom: 0; padding-bottom: 0; }
 a.card.kpi { text-decoration: none; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
 a.card.kpi:not(.destaque) { color: inherit; }
 a.card.kpi:hover { border-color: var(--verde-700); box-shadow: 0 3px 12px rgba(30, 60, 40, .12); transform: translateY(-1px); }
+.atalho-opcao { display: grid; gap: 6px; text-align: left; cursor: pointer; font: inherit; color: inherit; border: 1px solid var(--borda); }
+.atalho-opcao:hover { border-color: var(--verde-700); box-shadow: 0 3px 12px rgba(30, 60, 40, .12); }
+.atalho-opcao svg { width: 26px; height: 26px; color: var(--verde-700); }
