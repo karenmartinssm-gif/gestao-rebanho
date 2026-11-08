@@ -28,12 +28,14 @@ export async function render(el) {
     <div class="cabecalho-pagina"><div><h1>Gráficos</h1><p>Evolução e composição do rebanho nos últimos 12 meses, calculadas a partir dos registros.</p></div></div>
     <section class="secao" style="margin-top:0">
       <div class="grade grade-2">
+        <div class="card"><div class="card-titulo"><h3>Animais por categoria</h3><span class="small muted">animais ativos</span></div><div class="grafico" id="w-categoria"><canvas id="g-categoria"></canvas></div></div>
+        <div class="card"><div class="card-titulo"><h3>Animais por raça</h3><span class="small muted">animais ativos</span></div><div class="grafico" id="w-raca"><canvas id="g-raca"></canvas></div></div>
+        <div class="card"><div class="card-titulo"><h3>Animais registrados</h3><span class="small muted">animais ativos</span></div><div class="grafico" id="w-registro"><canvas id="g-registro"></canvas></div></div>
+        <div class="card"><div class="card-titulo"><h3>Distribuição por sexo</h3><span class="small muted">animais ativos</span></div><div class="grafico" id="w-sexo"><canvas id="g-sexo"></canvas></div></div>
         <div class="card"><div class="card-titulo"><h3>Evolução do tamanho do rebanho</h3><span class="small muted">fim de cada mês</span></div><div class="grafico"><canvas id="g-evolucao"></canvas></div></div>
-        <div class="card"><div class="card-titulo"><h3>Animais por categoria</h3></div><div class="grafico"><canvas id="g-categoria"></canvas></div></div>
+        <div class="card"><div class="card-titulo"><h3>Animais por pasto</h3></div><div class="grafico" id="w-pasto"><canvas id="g-pasto"></canvas></div></div>
         <div class="card"><div class="card-titulo"><h3>Nascimentos por mês</h3></div><div class="grafico"><canvas id="g-nasc"></canvas></div></div>
         <div class="card"><div class="card-titulo"><h3>Mortalidade por mês</h3></div><div class="grafico"><canvas id="g-mort"></canvas></div></div>
-        <div class="card"><div class="card-titulo"><h3>Distribuição por sexo</h3></div><div class="grafico"><canvas id="g-sexo"></canvas></div></div>
-        <div class="card"><div class="card-titulo"><h3>Animais por pasto</h3></div><div class="grafico" id="w-pasto"><canvas id="g-pasto"></canvas></div></div>
         <div class="card" style="grid-column:1/-1"><div class="card-titulo"><h3>Evolução do peso médio</h3>
           <span class="small muted">média das pesagens registradas no mês (exceto peso ao nascer)</span></div><div class="grafico" id="w-peso"><canvas id="g-peso"></canvas></div></div>
       </div>
@@ -48,15 +50,31 @@ export async function render(el) {
     data: { labels: meses.map(rotuloMes), datasets: [{ label: 'Animais', data: meses.map((m) => { const fim = fimDoMes(m); return animais.filter((a) => a.data_entrada <= fim && (!a.data_saida || a.data_saida > fim)).length; }), borderColor: CORES[0], backgroundColor: 'rgba(46,90,61,.12)', fill: true, tension: .3 }] },
   });
 
-  const cats = store.base.categorias.map((c) => ({ nome: c.nome, n: ativos.filter((a) => a.categoria_id === c.id).length })).filter((c) => c.n);
-  if (cats.length) grafico(el.querySelector('#g-categoria'), { type: 'doughnut', data: { labels: cats.map((c) => c.nome), datasets: [{ data: cats.map((c) => c.n), backgroundColor: CORES, borderWidth: 2, borderColor: '#fff' }] } });
-  else el.querySelector('#g-categoria').parentElement.innerHTML = semDados();
+  // Pizza com a porcentagem ao lado de cada cor na legenda (ex.: "Novilha · 33%")
+  const pizza = (id, itens, cores = CORES) => {
+    const lista = itens.filter((x) => x.n);
+    if (!lista.length) { el.querySelector(`#w-${id}`).innerHTML = semDados('Nenhum animal ativo.'); return; }
+    const total = lista.reduce((s, x) => s + x.n, 0);
+    const pct = (n) => { const v = (n / total) * 100; return v > 0 && v < 1 ? '<1' : String(Math.round(v)); };
+    grafico(el.querySelector(`#g-${id}`), {
+      type: 'doughnut',
+      data: { labels: lista.map((x) => `${x.nome} · ${pct(x.n)}%`), datasets: [{ data: lista.map((x) => x.n), backgroundColor: lista.map((x, i) => x.cor || cores[i % cores.length]), borderWidth: 2, borderColor: '#fff' }] },
+      options: { plugins: {
+        legend: { display: true, position: window.innerWidth < 720 ? 'bottom' : 'right', labels: { boxWidth: 14, boxHeight: 14, padding: 12, font: { size: 13 } } },
+        tooltip: { callbacks: { label: (ctx) => ` ${lista[ctx.dataIndex].nome}: ${ctx.raw} ${ctx.raw === 1 ? 'animal' : 'animais'} (${pct(ctx.raw)}%)` } },
+      } },
+    });
+  };
+  const maiorPrimeiro = (l) => l.sort((x, y) => y.n - x.n);
+
+  pizza('categoria', store.base.categorias.map((c) => ({ nome: c.nome, n: conta((a) => a.categoria_id === c.id) })));
+  pizza('raca', maiorPrimeiro([...store.base.racas.map((r) => ({ nome: r.nome, n: conta((a) => a.raca_id === r.id) })), { nome: 'Não informada', n: conta((a) => !a.raca_id) }]));
+  pizza('registro', [{ nome: 'Registrados', n: conta((a) => a.registrado), cor: CORES[0] }, { nome: 'Não registrados', n: conta((a) => !a.registrado), cor: CORES[9] }]);
 
   grafico(el.querySelector('#g-nasc'), { type: 'bar', data: { labels: meses.map(rotuloMes), datasets: [{ label: 'Nascimentos', data: porMes(animais.filter((a) => a.origem === 'nascido'), 'data_nascimento'), backgroundColor: CORES[1], borderRadius: 4 }] } });
   grafico(el.querySelector('#g-mort'), { type: 'bar', data: { labels: meses.map(rotuloMes), datasets: [{ label: 'Mortes', data: porMes(animais.filter((a) => a.status === 'morto'), 'data_saida'), backgroundColor: CORES[7], borderRadius: 4 }] } });
 
-  if (ativos.length) grafico(el.querySelector('#g-sexo'), { type: 'doughnut', data: { labels: ['Machos', 'Fêmeas'], datasets: [{ data: [conta((a) => a.sexo === 'M'), conta((a) => a.sexo === 'F')], backgroundColor: [CORES[3], CORES[1]], borderWidth: 2, borderColor: '#fff' }] } });
-  else el.querySelector('#g-sexo').parentElement.innerHTML = semDados();
+  pizza('sexo', maiorPrimeiro([{ nome: 'Fêmeas', n: conta((a) => a.sexo === 'F'), cor: CORES[1] }, { nome: 'Machos', n: conta((a) => a.sexo === 'M'), cor: CORES[3] }]));
 
   const pastos = store.base.pastos.map((pt) => ({ nome: nomePasto(pt), n: ativos.filter((a) => a.pasto_id === pt.id).length })).filter((x) => x.n);
   const semPasto = conta((a) => !a.pasto_id);
