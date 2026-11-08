@@ -14,6 +14,14 @@ const FAIXAS = [
 ];
 
 const CHAVE_FILTROS = 'rebanho.filtros.animais';
+// Grupos de categorias (os mesmos dos quadros do Painel)
+const GRUPOS = {
+  matriz: { nome: 'Matrizes (vacas, primíparas, matrizes)', grupos: ['matriz'] },
+  novilha: { nome: 'Novilhas', grupos: ['novilha'] },
+  bezerro: { nome: 'Bezerros e bezerras', grupos: ['bezerro'] },
+  touro: { nome: 'Touros', grupos: ['touro'] },
+  outros: { nome: 'Outros (garrotes, bois…)', grupos: ['garrote', 'boi', 'outro'] },
+};
 
 export async function render(el) {
   let animais;
@@ -21,6 +29,9 @@ export async function render(el) {
   const b = store.base;
   let f = {};
   try { f = JSON.parse(sessionStorage.getItem(CHAVE_FILTROS) || '{}'); } catch { /* ignora */ }
+  // Vindo de um quadro do Painel (#/animais?categoria=g:matriz…): usa só os filtros do link
+  const doLink = new URLSearchParams(location.hash.split('?')[1] || '');
+  if ([...doLink.keys()].length) f = Object.fromEntries(doLink);
   f = { situacao: 'ativos', ...f };
 
   el.innerHTML = `
@@ -40,8 +51,11 @@ export async function render(el) {
           <option value="ativos">Ativos no rebanho</option><option value="inativos">Fora do rebanho</option><option value="todos">Todos</option>
           ${b.status.map((s) => `<option value="st:${esc(s.codigo)}">Status: ${esc(s.nome)}</option>`).join('')}</select></div>
         <div class="campo"><label for="f-sexo">Sexo</label><select id="f-sexo" name="sexo"><option value="">Todos</option><option value="M">Macho</option><option value="F">Fêmea</option></select></div>
-        <div class="campo"><label for="f-cat">Categoria</label><select id="f-cat" name="categoria">${opcoes(b.categorias, { vazio: 'Todas' })}</select></div>
-        <div class="campo"><label for="f-raca">Raça</label><select id="f-raca" name="raca">${opcoes(b.racas, { vazio: 'Todas' })}</select></div>
+        <div class="campo"><label for="f-cat">Categoria</label><select id="f-cat" name="categoria"><option value="">Todas</option>
+          <optgroup label="Grupos">${Object.entries(GRUPOS).map(([k, g]) => `<option value="g:${k}">${esc(g.nome)}</option>`).join('')}</optgroup>
+          <optgroup label="Categorias">${opcoes(b.categorias, { vazio: null })}</optgroup></select></div>
+        <div class="campo"><label for="f-raca">Raça</label><select id="f-raca" name="raca">${opcoes(b.racas, { vazio: 'Todas' })}<option value="__sem">Sem raça informada</option></select></div>
+        <div class="campo"><label for="f-reg">Registro</label><select id="f-reg" name="registro"><option value="">Todos</option><option value="sim">Registrados</option><option value="nao">Não registrados</option></select></div>
         <div class="campo"><label for="f-idade">Idade</label><select id="f-idade" name="idade"><option value="">Todas</option>${FAIXAS.map((x) => `<option value="${x.v}">${x.r}</option>`).join('')}</select></div>
         <div class="campo"><label for="f-pasto">Pasto</label><select id="f-pasto" name="pasto">${opcoes(b.pastos, { vazio: 'Todos', rotulo: nomePasto })}<option value="__sem">Sem pasto</option></select></div>
         <div class="campo"><label for="f-lote">Lote</label><select id="f-lote" name="lote">${opcoes(b.lotes, { vazio: 'Todos' })}<option value="__sem">Sem lote</option></select></div>
@@ -56,6 +70,7 @@ export async function render(el) {
     e.currentTarget.setAttribute('aria-expanded', String(aberto));
   });
   for (const [k, v] of Object.entries(f)) { const c = form.elements[k]; if (c && c.tagName === 'SELECT') c.value = v; }
+  if ([...doLink.keys()].length) { form.classList.add('aberto'); el.querySelector('#btn-filtros').setAttribute('aria-expanded', 'true'); }
 
   const colunas = [
     { chave: 'brinco', titulo: 'Brinco', primaria: true, render: (a) => `<b>${esc(a.brinco)}</b>${a.nome ? ` <span class="muted small">${esc(a.nome)}</span>` : ''}`, valor: (a) => a.brinco, csv: (a) => a.brinco },
@@ -81,8 +96,9 @@ export async function render(el) {
       if (d.situacao?.startsWith('st:') && a.status !== d.situacao.slice(3)) return false;
       if (t && !a.brinco.toUpperCase().includes(t) && !(a.nome || '').toUpperCase().includes(t)) return false;
       if (d.sexo && a.sexo !== d.sexo) return false;
-      if (d.categoria && a.categoria_id !== d.categoria) return false;
-      if (d.raca && a.raca_id !== d.raca) return false;
+      if (d.categoria && (d.categoria.startsWith('g:') ? !GRUPOS[d.categoria.slice(2)]?.grupos.includes(a.categoria_grupo) : a.categoria_id !== d.categoria)) return false;
+      if (d.raca && (d.raca === '__sem' ? a.raca_id : a.raca_id !== d.raca)) return false;
+      if (d.registro && !!a.registrado !== (d.registro === 'sim')) return false;
       if (d.pasto && (d.pasto === '__sem' ? a.pasto_id : a.pasto_id !== d.pasto)) return false;
       if (d.lote && (d.lote === '__sem' ? a.lote_id : a.lote_id !== d.lote)) return false;
       if (faixa) {

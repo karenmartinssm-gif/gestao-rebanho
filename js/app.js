@@ -50,7 +50,7 @@ const ROTAS = [
 export function navegar(rota) { location.hash = `#/${rota}`; }
 
 async function rotear() {
-  const caminho = location.hash.replace(/^#\/?/, '') || 'painel';
+  const caminho = location.hash.replace(/^#\/?/, '').split('?')[0] || 'painel';   // "?…" = filtros da página
   const rota = ROTAS.find((r) => r.re.test(caminho));
   const conteudo = document.getElementById('conteudo');
   if (!conteudo) return;

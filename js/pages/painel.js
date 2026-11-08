@@ -103,7 +103,7 @@ export async function render(el) {
   };
   // Quadros por raça (animais ativos), da maior para a menor; raça sem animais não aparece
   const racasPainel = [
-    ...store.base.racas.map((r) => ({ nome: r.nome, filtro: (a) => a.raca_id === r.id })),
+    ...store.base.racas.map((r) => ({ id: r.id, nome: r.nome, filtro: (a) => a.raca_id === r.id })),
     { nome: 'Raça não informada', filtro: (a) => !a.raca_id },
   ].map((r) => ({ ...r, total: conta(r.filtro) })).filter((r) => r.total).sort((x, y) => y.total - x.total || x.nome.localeCompare(y.nome, 'pt-BR'));
   // Quadros zerados ficam ocultos (aparecem quando houver registro). O quadro em destaque sempre aparece.
@@ -129,22 +129,22 @@ export async function render(el) {
 
     ${htmlInstalar()}
     <div class="grade grade-kpi">
-      ${kpi('Animais ativos', ativos.length, 'tag', porSexo(() => true), true, '#/animais')}
-      ${kpi('Matrizes', grupo('matriz'), 'heart', [plural(prenhes, 'prenhe', 'prenhes'), posParto && `${fmtNum(posParto)} pós-parto`, cobertas && `${fmtNum(cobertas)} aguardando diagnóstico`, plural(vazias, 'vazia', 'vazias')].filter(Boolean).join(' · '))}
-      ${kpi('Touros', grupo('touro'), 'shield')}
-      ${kpi('Animais registrados', conta((a) => a.registrado), 'badge-check', `de ${fmtNum(ativos.length)} ativos`)}
-      ${kpi('Novilhas', grupo('novilha'), 'sprout', novilhasPrenhes ? plural(novilhasPrenhes, 'prenhe', 'prenhes') : '')}
-      ${kpi('Bezerros', grupo('bezerro'), 'baby', porSexo((a) => a.categoria_grupo === 'bezerro'))}
-      ${kpi('Outros (garrotes, bois…)', conta((a) => ['garrote', 'boi', 'outro'].includes(a.categoria_grupo)), 'layers')}
-      ${kpi(`Nascimentos em ${nomeMes}`, nascMes, 'sunrise')}
-      ${kpi(`Mortes em ${nomeMes}`, mortesMes, 'circle-x')}
-      ${kpi(`Vendidos em ${nomeMes}`, vendMes, 'handshake', `${fmtNum(vendAno)} no ano`)}
-      ${kpi('Em tratamento', emTratamento.size, 'stethoscope')}
-      ${kpi('Manejos pendentes', manejosPend.length, 'calendar-clock', `próximos ${param('dias_alerta_manejo')} dias e atrasados`)}
+      ${kpi('Animais ativos', ativos.length, 'tag', porSexo(() => true), true, '#/animais?situacao=ativos')}
+      ${kpi('Matrizes', grupo('matriz'), 'heart', [plural(prenhes, 'prenhe', 'prenhes'), posParto && `${fmtNum(posParto)} pós-parto`, cobertas && `${fmtNum(cobertas)} aguardando diagnóstico`, plural(vazias, 'vazia', 'vazias')].filter(Boolean).join(' · '), false, '#/animais?categoria=g:matriz')}
+      ${kpi('Touros', grupo('touro'), 'shield', '', false, '#/animais?categoria=g:touro')}
+      ${kpi('Animais registrados', conta((a) => a.registrado), 'badge-check', `de ${fmtNum(ativos.length)} ativos`, false, '#/animais?registro=sim')}
+      ${kpi('Novilhas', grupo('novilha'), 'sprout', novilhasPrenhes ? plural(novilhasPrenhes, 'prenhe', 'prenhes') : '', false, '#/animais?categoria=g:novilha')}
+      ${kpi('Bezerros', grupo('bezerro'), 'baby', porSexo((a) => a.categoria_grupo === 'bezerro'), false, '#/animais?categoria=g:bezerro')}
+      ${kpi('Outros (garrotes, bois…)', conta((a) => ['garrote', 'boi', 'outro'].includes(a.categoria_grupo)), 'layers', '', false, '#/animais?categoria=g:outros')}
+      ${kpi(`Nascimentos em ${nomeMes}`, nascMes, 'sunrise', '', false, '#/reproducao')}
+      ${kpi(`Mortes em ${nomeMes}`, mortesMes, 'circle-x', '', false, '#/animais?situacao=st:morto')}
+      ${kpi(`Vendidos em ${nomeMes}`, vendMes, 'handshake', `${fmtNum(vendAno)} no ano`, false, '#/animais?situacao=st:vendido')}
+      ${kpi('Em tratamento', emTratamento.size, 'stethoscope', '', false, '#/sanidade')}
+      ${kpi('Manejos pendentes', manejosPend.length, 'calendar-clock', `próximos ${param('dias_alerta_manejo')} dias e atrasados`, false, '#/sanidade')}
     </div>
 
     ${racasPainel.length ? `<section class="secao"><h2><i data-lucide="dna"></i> Raças</h2><div class="grade grade-kpi">
-      ${racasPainel.map((r) => kpi(r.nome, r.total, 'dna', porSexo(r.filtro))).join('')}
+      ${racasPainel.map((r) => kpi(r.nome, r.total, 'dna', porSexo(r.filtro), false, `#/animais?raca=${r.id || '__sem'}`)).join('')}
     </div></section>` : ''}
 
     <section class="secao"><h2><i data-lucide="zap"></i> Atalhos</h2><div id="atalhos">${htmlAtalhos()}</div></section>
