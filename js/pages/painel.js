@@ -49,9 +49,15 @@ export async function render(el) {
   const vendMes = animais.filter((a) => a.status === 'vendido' && a.data_saida?.startsWith(mesAtual)).length;
   const vendAno = animais.filter((a) => a.status === 'vendido' && a.data_saida?.startsWith(hoje.slice(0, 4))).length;
 
-  const matrizesAtivas = matr.data.filter((m) => ativo(m.animal_id));
-  const prenhes = matrizesAtivas.filter((m) => ['prenhe', 'proxima_parto'].includes(m.situacao_reprodutiva)).length;
-  const vazias = matrizesAtivas.filter((m) => m.situacao_reprodutiva === 'vazia').length;
+  // Quadro "Matrizes" = categorias do grupo matriz (vacas, primíparas, matrizes); novilhas contam à parte
+  const doGrupo = (g) => matr.data.filter((m) => ativo(m.animal_id) && porId.get(m.animal_id)?.categoria_grupo === g);
+  const contaSit = (lista, sits) => lista.filter((m) => sits.includes(m.situacao_reprodutiva)).length;
+  const matrizesAtivas = doGrupo('matriz');
+  const prenhes = contaSit(matrizesAtivas, ['prenhe', 'proxima_parto']);
+  const posParto = contaSit(matrizesAtivas, ['pos_parto']);
+  const vazias = contaSit(matrizesAtivas, ['vazia']);
+  const cobertas = contaSit(matrizesAtivas, ['coberta', 'aguardando_diagnostico', 'em_reproducao']);
+  const novilhasPrenhes = contaSit(doGrupo('novilha'), ['prenhe', 'proxima_parto']);
 
   const tipoManejo = new Map(store.base.tiposManejo.map((t) => [t.id, t]));
   const emTratamento = new Set(manejos.data.filter((m) => m.situacao === 'em_andamento')
@@ -112,9 +118,9 @@ export async function render(el) {
     ${htmlInstalar()}
     <div class="grade grade-kpi">
       ${kpi('Animais ativos', ativos.length, 'tag', `${plural(conta((a) => a.sexo === 'M'), 'macho', 'machos')} · ${plural(conta((a) => a.sexo === 'F'), 'fêmea', 'fêmeas')}`, true, '#/animais')}
-      ${kpi('Matrizes', grupo('matriz'), 'heart', `${plural(prenhes, 'prenhe', 'prenhes')} · ${plural(vazias, 'vazia', 'vazias')}`)}
+      ${kpi('Matrizes', grupo('matriz'), 'heart', [plural(prenhes, 'prenhe', 'prenhes'), posParto && `${fmtNum(posParto)} pós-parto`, cobertas && `${fmtNum(cobertas)} aguardando diagnóstico`, plural(vazias, 'vazia', 'vazias')].filter(Boolean).join(' · '))}
       ${kpi('Touros', grupo('touro'), 'shield')}
-      ${kpi('Novilhas', grupo('novilha'), 'sprout')}
+      ${kpi('Novilhas', grupo('novilha'), 'sprout', novilhasPrenhes ? plural(novilhasPrenhes, 'prenhe', 'prenhes') : '')}
       ${kpi('Bezerros', grupo('bezerro'), 'baby', `${fmtNum(conta((a) => a.categoria_grupo === 'bezerro' && a.sexo === 'M'))} M · ${fmtNum(conta((a) => a.categoria_grupo === 'bezerro' && a.sexo === 'F'))} F`)}
       ${kpi('Outros (garrotes, bois…)', conta((a) => ['garrote', 'boi', 'outro'].includes(a.categoria_grupo)), 'layers')}
       ${kpi(`Nascimentos em ${nomeMes}`, nascMes, 'sunrise')}
