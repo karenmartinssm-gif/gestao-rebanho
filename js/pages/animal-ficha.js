@@ -103,7 +103,17 @@ export async function render(el, [id]) {
       Animal <b>${esc(a.status_nome.toLowerCase())}</b>${a.data_saida ? ` em ${fmtData(a.data_saida)}` : ''}. A ficha e o histórico estão preservados e não contam no rebanho ativo.</div></div>` : ''}
     <div class="card"><div class="card-corpo">
       <div class="ficha-topo">
-        <div class="ficha-foto">${a.foto_path && urls.get(a.foto_path) ? `<img src="${esc(urls.get(a.foto_path))}" alt="Foto do animal ${esc(a.brinco)}">` : '<i data-lucide="image"></i>'}</div>
+        ${(() => {
+          const temFoto = a.foto_path && urls.get(a.foto_path);
+          const miolo = temFoto ? `<img src="${esc(urls.get(a.foto_path))}" alt="Foto do animal ${esc(a.brinco)}">` : '<i data-lucide="camera"></i>';
+          if (!pode('rebanho_editar')) return `<div class="ficha-foto">${miolo}</div>`;
+          // Toque no quadro para tirar/escolher a foto (no celular abre câmera ou galeria)
+          return `<label class="ficha-foto editavel ${temFoto ? 'com-foto' : ''}" title="${temFoto ? 'Trocar foto' : 'Adicionar foto'}">
+            ${miolo}${temFoto ? '' : '<span class="ficha-foto-txt">Adicionar foto</span>'}
+            ${temFoto ? '<span class="ficha-foto-cam" aria-hidden="true"><i data-lucide="camera"></i></span>' : ''}
+            <input type="file" id="foto-rapida" accept="image/*" class="oculto" aria-label="${temFoto ? 'Trocar foto' : 'Adicionar foto'} do animal ${esc(a.brinco)}">
+          </label>`;
+        })()}
         <div class="ficha-info">
           <h1>Brinco ${esc(a.brinco)} ${a.nome ? `<span class="muted" style="font-weight:500">${esc(a.nome)}</span>` : ''} ${badgeStatus(a)}</h1>
           <div class="ficha-resumo">
@@ -129,6 +139,20 @@ export async function render(el, [id]) {
   icones();
 
   const recarregar = () => render(el, [id]).then(icones);
+  el.querySelector('#foto-rapida')?.addEventListener('change', async (e) => {
+    const arq = e.target.files[0];
+    if (!arq) return;
+    if (!arq.type.startsWith('image/')) { toast('Escolha uma imagem (foto).', 'erro'); return; }
+    const quadro = e.target.closest('.ficha-foto');
+    try {
+      exigirConexao();
+      quadro.classList.add('enviando');
+      const { enviarFoto } = await import('./animal-form.js');
+      toast('Enviando foto…', 'info');
+      const ok = await enviarFoto(a, arq, { tipo: 'foto', definirComoPrincipal: true });
+      if (ok) { toast('Foto salva.'); recarregar(); } else quadro.classList.remove('enviando');
+    } catch (err) { quadro.classList.remove('enviando'); toast(traduzirErro(err), 'erro'); }
+  });
   el.querySelector('[data-acao=pesagem]')?.addEventListener('click', () => import('../components/pesagem.js').then((m) => m.abrirPesagem(a, recarregar)));
   el.querySelector('[data-acao=saida]')?.addEventListener('click', () => import('../components/saida.js').then((m) => m.abrirSaida(a, { aoSalvar: recarregar })));
   el.querySelector('[data-acao=venda]')?.addEventListener('click', () => import('../components/comercial-forms.js').then((m) => m.abrirVenda({ animais: [a.id] }, recarregar)));

@@ -656,5 +656,14 @@ button.pend-card .rotulo { padding-right: 26px; }
 @media (max-width: 960px) { .btn-recolher { display: none; } }
 
 /* Logo: cabeça da vaca em verde */
-.marca-logo { background: var(--verde-50); padding: 4px; }
+.marca-logo { background: #192e22; padding: 4px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
 .marca-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+/* Ficha: quadro da foto clicável */
+.ficha-foto.editavel { position: relative; cursor: pointer; flex-direction: column; gap: 4px; transition: box-shadow .15s, background .15s; }
+.ficha-foto.editavel:hover { box-shadow: 0 0 0 2px var(--musgo-500); }
+.ficha-foto.editavel:not(.com-foto) { display: flex; align-items: center; justify-content: center; }
+.ficha-foto-txt { font-size: .72rem; font-weight: 600; color: var(--verde-700); }
+.ficha-foto-cam { position: absolute; right: 6px; bottom: 6px; width: 26px; height: 26px; border-radius: 99px; background: var(--verde-700); color: #fff; display: grid; place-items: center; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+.ficha-foto .ficha-foto-cam svg { width: 14px; height: 14px; }
+.ficha-foto.enviando { opacity: .55; pointer-events: none; }
