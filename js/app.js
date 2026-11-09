@@ -111,7 +111,7 @@ function renderLayout() {
   <div class="app${menuRecolhido() ? ' lateral-recolhida' : ''}">
     <aside class="lateral" aria-label="Menu principal">
       <div class="marca">
-        <div class="marca-logo">GR</div>
+        <div class="marca-logo"><img src="img/cabeca-verde.png" alt="Rebanho Pucci"></div>
         <div class="marca-texto"><div class="marca-nome">Gestão de Rebanho</div><div class="marca-prop">${esc(store.prop.nome)}</div></div>
         <button type="button" class="btn-recolher" id="btn-recolher" title="Recolher menu" aria-label="Recolher menu"><i data-lucide="panel-left-close"></i></button>
       </div>
@@ -225,7 +225,7 @@ function telaLogin(modo = 'entrar') {
   raiz.innerHTML = `
   <div class="tela-acesso">
     <section class="acesso-arte">
-      <div><div class="marca-logo" style="width:48px;height:48px;font-size:1.1rem">GR</div>
+      <div><div class="marca-logo" style="width:48px;height:48px;font-size:1.1rem"><img src="img/cabeca-verde.png" alt="Rebanho Pucci"></div>
         <h1>Gestão de Rebanho</h1>
         <p>Controle de cria para gado de corte: animais, reprodução, sanidade, pastagens, pesagens e financeiro em um só lugar.</p>
         <ul><li>Ficha individual com todo o histórico</li><li>Indicadores calculados a partir dos seus registros</li><li>Funciona no computador, tablet e celular</li></ul>
@@ -305,7 +305,7 @@ function telaNovaSenha() {
 let verificadorConvite = null;
 function telaSemPropriedade() {
   raiz.innerHTML = `<div class="acesso-form" style="min-height:100vh"><div class="card acesso-caixa" style="max-width:480px"><div class="card-corpo">
-    <div class="marca-logo" style="width:44px;height:44px">GR</div>
+    <div class="marca-logo" style="width:44px;height:44px"><img src="img/cabeca-verde.png" alt="Rebanho Pucci"></div>
     <h1>Aguardando liberação</h1>
     <p style="margin:0">Sua conta foi criada, mas o acesso ao sistema ainda não foi liberado.</p>
     <div class="alerta"><i data-lucide="info"></i><div>Peça ao proprietário para liberar o e-mail <b>${esc(store.usuario.email)}</b> em <b>Equipe e permissões</b>. Assim que for liberado, você entra automaticamente.</div></div>

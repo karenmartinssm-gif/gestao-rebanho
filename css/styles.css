@@ -654,3 +654,7 @@ button.pend-card .rotulo { padding-right: 26px; }
   .lateral-recolhida .nav-item svg { width: 20px; height: 20px; }
 }
 @media (max-width: 960px) { .btn-recolher { display: none; } }
+
+/* Logo: cabeça da vaca em verde */
+.marca-logo { background: var(--verde-50); padding: 4px; }
+.marca-logo img { width: 100%; height: 100%; object-fit: contain; display: block; }
