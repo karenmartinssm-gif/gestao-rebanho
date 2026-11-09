@@ -2,7 +2,7 @@
 // PAINEL — indicadores calculados a partir dos registros reais
 // =====================================================================
 import { sb } from '../supabase.js';
-import { store, param, nomePasto } from '../store.js';
+import { store, nomePasto } from '../store.js';
 import { esc, icones, fmtNum, fmtMoeda, fmtData, hojeISO, addDias, ultimosMeses, rotuloMes, fimDoMes, vazio, erroCarga, diasEntre } from '../ui.js';
 import { listarAnimais } from '../components/animais-comum.js';
 import { htmlAtalhos, ligarAtalhos } from '../components/atalhos.js';
@@ -24,7 +24,6 @@ export async function render(el) {
   const hoje = hojeISO();
   const meses = ultimosMeses(12);
   const inicio12 = `${meses[0]}-01`;
-  const mesAtual = hoje.slice(0, 7);
 
   let animais;
   try { animais = await listarAnimais(); } catch (e) { el.innerHTML = erroCarga(e); icones(); return; }
@@ -41,10 +40,6 @@ export async function render(el) {
   const registrados = conta((a) => a.registrado);
   const grupo = (g) => conta((a) => a.categoria_grupo === g);
 
-  const nascMes = animais.filter((a) => a.origem === 'nascido' && a.data_nascimento?.startsWith(mesAtual)).length;
-  const mortesMes = animais.filter((a) => a.status === 'morto' && a.data_saida?.startsWith(mesAtual)).length;
-  const vendMes = animais.filter((a) => a.status === 'vendido' && a.data_saida?.startsWith(mesAtual)).length;
-  const vendAno = animais.filter((a) => a.status === 'vendido' && a.data_saida?.startsWith(hoje.slice(0, 4))).length;
 
   // Quadro "Vacas" = categorias do grupo matriz (vacas e primíparas); novilhas contam à parte
   const doGrupo = (g) => matr.data.filter((m) => ativo(m.animal_id) && porId.get(m.animal_id)?.categoria_grupo === g);
@@ -56,7 +51,7 @@ export async function render(el) {
   const cobertas = contaSit(matrizesAtivas, ['coberta', 'aguardando_diagnostico', 'em_reproducao']);
   const novilhasPrenhes = contaSit(doGrupo('novilha'), ['prenhe', 'proxima_parto']);
 
-  const { pend, emTratamento, manejosPend } = montarPendencias({ animais, manejos, cobs, desm, estq, nasc });
+  const { pend } = montarPendencias({ animais, manejos, cobs, desm, estq, nasc });
   const comPendencia = pend.filter((b) => b.itens.length).sort((x, y) => y.itens.length - x.itens.length);
 
   // Link para o Rebanho com as categorias do grupo já marcadas (ex.: Vacas = Vaca e Primípara)
@@ -72,15 +67,14 @@ export async function render(el) {
     ...store.base.racas.map((r) => ({ id: r.id, nome: r.nome, filtro: (a) => a.raca_id === r.id })),
     { nome: 'Raça não informada', filtro: (a) => !a.raca_id },
   ].map((r) => ({ ...r, total: conta(r.filtro) })).filter((r) => r.total).sort((x, y) => y.total - x.total || x.nome.localeCompare(y.nome, 'pt-BR'));
-  // Quadros zerados ficam ocultos (aparecem quando houver registro). O quadro em destaque sempre aparece.
-  const kpi = (rotulo, valor, icone, detalhe = '', destaque = false, link = '') => (!destaque && !Number(valor) ? '' : `
+  // Os quadros aparecem sempre, mesmo com zero
+  const kpi = (rotulo, valor, icone, detalhe = '', destaque = false, link = '') => (`
     <${link ? `a href="${link}"` : 'div'} class="card kpi ${destaque ? 'destaque' : ''}">
       <span class="rotulo"><i data-lucide="${icone}"></i>${esc(rotulo)}</span>
       <span class="valor">${fmtNum(valor)}</span>
       ${detalhe ? `<span class="detalhe">${detalhe}</span>` : ''}
     </${link ? 'a' : 'div'}>`);
 
-  const nomeMes = new Date().toLocaleDateString('pt-BR', { month: 'long' });
   const agora = new Date();
   const saudacao = agora.getHours() < 12 ? 'Bom dia' : agora.getHours() < 18 ? 'Boa tarde' : 'Boa noite';
   const primeiroNome = (store.perfil?.nome || '').trim().split(/\s+/)[0];
@@ -101,18 +95,18 @@ export async function render(el) {
   const temComp = ativos.length > 0;
   const pctDe = (n) => { const v = (n / (ativos.length || 1)) * 100; return v > 0 && v < 1 ? '<1' : String(Math.round(v)); };
 
-  // Quadros pequenos: só os que têm valor; 4 quadros ficam 2 em cima e 2 embaixo
+  // "Outros" = touros, garrotes, bois e demais; o detalhe mostra quantos de cada categoria (do maior para o menor)
+  const GRUPOS_OUTROS = ['touro', 'garrote', 'boi', 'outro'];
+  const separacaoOutros = store.base.categorias.filter((c) => GRUPOS_OUTROS.includes(c.grupo))
+    .map((c) => ({ nome: c.nome.toLowerCase(), n: conta((a) => a.categoria_id === c.id) })).filter((x) => x.n)
+    .sort((x, y) => y.n - x.n || x.nome.localeCompare(y.nome, 'pt-BR'))
+    .map((x) => `${fmtNum(x.n)} ${x.n === 1 ? x.nome : x.nome.replace(/(r|z)$/, '$1e').replace(/l$/, 'i') + 's'}`).join(' · ');
+  // Quadros pequenos: sempre Vacas, Novilhas, Bezerros e Outros (2 em cima e 2 embaixo)
   const miniCards = [
     kpi('Vacas', grupo('matriz'), 'heart', [plural(prenhes, 'prenhe', 'prenhes'), posParto && `${fmtNum(posParto)} pós-parto`, cobertas && `${fmtNum(cobertas)} aguardando diagnóstico`, plural(vazias, 'vazia', 'vazias')].filter(Boolean).join(' · '), false, linkCats('matriz')),
     kpi('Novilhas', grupo('novilha'), 'sprout', novilhasPrenhes ? plural(novilhasPrenhes, 'prenhe', 'prenhes') : '', false, linkCats('novilha')),
     kpi('Bezerros', grupo('bezerro'), 'baby', porSexo((a) => a.categoria_grupo === 'bezerro'), false, linkCats('bezerro')),
-    kpi('Touros', grupo('touro'), 'shield', '', false, linkCats('touro')),
-    kpi('Outros (garrotes, bois…)', conta((a) => ['garrote', 'boi', 'outro'].includes(a.categoria_grupo)), 'layers', '', false, linkCats('garrote', 'boi', 'outro')),
-    kpi(`Nascimentos em ${nomeMes}`, nascMes, 'sunrise', '', false, '#/reproducao'),
-    kpi(`Mortes em ${nomeMes}`, mortesMes, 'circle-x', '', false, '#/animais?situacao=st:morto'),
-    kpi(`Vendidos em ${nomeMes}`, vendMes, 'handshake', `${fmtNum(vendAno)} no ano`, false, '#/animais?situacao=st:vendido'),
-    kpi('Em tratamento', emTratamento.size, 'stethoscope', '', false, '#/sanidade'),
-    kpi('Manejos pendentes', manejosPend.length, 'calendar-clock', `próximos ${param('dias_alerta_manejo')} dias e atrasados`, false, '#/sanidade'),
+    kpi('Outros', conta((a) => GRUPOS_OUTROS.includes(a.categoria_grupo)), 'layers', separacaoOutros, false, linkCats(...GRUPOS_OUTROS)),
   ].filter(Boolean);
   const colsMini = miniCards.length === 4 ? 2 : Math.min(Math.max(miniCards.length, 1), 3);
 
