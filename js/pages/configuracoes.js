@@ -6,7 +6,7 @@ import { store, carregarBase, recarregarPropriedade, PARAMETROS_PADRAO, ehPropri
 import { esc, icones, toast, traduzirErro, abrirModal, montarTabela, confirmar, numOuNulo, textoOuNulo } from '../ui.js';
 import { exigirConexao } from '../sync.js';
 
-const GRUPOS = { bezerro: 'Bezerro(a)', novilha: 'Novilha', matriz: 'Matriz', garrote: 'Garrote', touro: 'Touro (reprodutor)', boi: 'Boi', outro: 'Outro' };
+const GRUPOS = { bezerro: 'Bezerro(a)', novilha: 'Novilha', matriz: 'Vaca', garrote: 'Garrote', touro: 'Touro (reprodutor)', boi: 'Boi', outro: 'Outro' };
 const CLASSES = { vacina: 'Vacina', vermifugacao: 'Vermifugação', medicamento: 'Medicamento', carrapato: 'Controle de carrapatos', mosca: 'Controle de moscas', exame: 'Exame', tratamento: 'Tratamento', doenca: 'Doença', ocorrencia: 'Ocorrência veterinária', outro: 'Outro' };
 
 const PARAMS = [
@@ -26,7 +26,7 @@ const CADASTROS = {
   racas: { titulo: 'Raças', tabela: 'racas', base: 'racas', campos: [{ k: 'nome', r: 'Nome', obrig: true }] },
   categorias: {
     titulo: 'Categorias de animais', tabela: 'categorias_animais', base: 'categorias', ordem: true,
-    ajuda: 'O "grupo" define como a categoria entra nos indicadores (ex.: Matriz, Bezerro). As faixas de idade servem apenas para sugerir a categoria no cadastro.',
+    ajuda: 'O "grupo" define como a categoria entra nos indicadores (ex.: Vaca, Bezerro). As faixas de idade servem apenas para sugerir a categoria no cadastro.',
     campos: [
       { k: 'nome', r: 'Nome', obrig: true },
       { k: 'grupo', r: 'Grupo para indicadores', tipo: 'select', opcoes: GRUPOS, obrig: true },

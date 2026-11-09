@@ -46,7 +46,7 @@ export async function render(el) {
   const vendMes = animais.filter((a) => a.status === 'vendido' && a.data_saida?.startsWith(mesAtual)).length;
   const vendAno = animais.filter((a) => a.status === 'vendido' && a.data_saida?.startsWith(hoje.slice(0, 4))).length;
 
-  // Quadro "Matrizes" = categorias do grupo matriz (vacas, primíparas, matrizes); novilhas contam à parte
+  // Quadro "Vacas" = categorias do grupo matriz (vacas e primíparas); novilhas contam à parte
   const doGrupo = (g) => matr.data.filter((m) => ativo(m.animal_id) && porId.get(m.animal_id)?.categoria_grupo === g);
   const contaSit = (lista, sits) => lista.filter((m) => sits.includes(m.situacao_reprodutiva)).length;
   const matrizesAtivas = doGrupo('matriz');
@@ -103,7 +103,7 @@ export async function render(el) {
 
   // Quadros pequenos: só os que têm valor; 4 quadros ficam 2 em cima e 2 embaixo
   const miniCards = [
-    kpi('Matrizes', grupo('matriz'), 'heart', [plural(prenhes, 'prenhe', 'prenhes'), posParto && `${fmtNum(posParto)} pós-parto`, cobertas && `${fmtNum(cobertas)} aguardando diagnóstico`, plural(vazias, 'vazia', 'vazias')].filter(Boolean).join(' · '), false, linkCats('matriz')),
+    kpi('Vacas', grupo('matriz'), 'heart', [plural(prenhes, 'prenhe', 'prenhes'), posParto && `${fmtNum(posParto)} pós-parto`, cobertas && `${fmtNum(cobertas)} aguardando diagnóstico`, plural(vazias, 'vazia', 'vazias')].filter(Boolean).join(' · '), false, linkCats('matriz')),
     kpi('Novilhas', grupo('novilha'), 'sprout', novilhasPrenhes ? plural(novilhasPrenhes, 'prenhe', 'prenhes') : '', false, linkCats('novilha')),
     kpi('Bezerros', grupo('bezerro'), 'baby', porSexo((a) => a.categoria_grupo === 'bezerro'), false, linkCats('bezerro')),
     kpi('Touros', grupo('touro'), 'shield', '', false, linkCats('touro')),
