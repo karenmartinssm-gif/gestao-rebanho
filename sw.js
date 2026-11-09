@@ -6,7 +6,7 @@
 // =====================================================================
 const CACHE = 'rebanho-app-v1';
 const CDN = /^https:\/\/(cdn\.jsdelivr\.net|unpkg\.com|cdnjs\.cloudflare\.com|fonts\.googleapis\.com|fonts\.gstatic\.com)\//;
-const BASICOS = ['./', 'index.html', 'manifest.webmanifest', 'favicon.ico', 'img/icon-192.png', 'img/icon-512.png', 'img/favicon-32.png', 'img/apple-touch-icon.png', 'img/cabeca-verde.png'];
+const BASICOS = ['./', 'index.html', 'manifest.webmanifest', 'favicon.ico', 'img/icon-192.png', 'img/icon-512.png', 'img/favicon-32.png', 'img/apple-touch-icon.png', 'img/cabeca-branca.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil((async () => {

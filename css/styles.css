@@ -667,3 +667,5 @@ button.pend-card .rotulo { padding-right: 26px; }
 .ficha-foto-cam { position: absolute; right: 6px; bottom: 6px; width: 26px; height: 26px; border-radius: 99px; background: var(--verde-700); color: #fff; display: grid; place-items: center; box-shadow: 0 1px 4px rgba(0,0,0,.25); }
 .ficha-foto .ficha-foto-cam svg { width: 14px; height: 14px; }
 .ficha-foto.enviando { opacity: .55; pointer-events: none; }
+/* Menu lateral: só a silhueta branca, sem quadrinho */
+.lateral .marca-logo { background: transparent; box-shadow: none; padding: 0; border-radius: 0; }
