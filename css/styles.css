@@ -746,6 +746,18 @@ button.ficha-foto { border: 0; padding: 0; font: inherit; }
 
 /* Rebanho: cartão compacto no celular (no computador continua a tabela) */
 .tabela-rebanho .col-cartao { display: none; }
+.ca-foto { flex: none; width: 58px; height: 58px; border-radius: 10px; overflow: hidden; background: var(--musgo-100); color: var(--verde-700);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; position: relative; }
+.ca-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ca-foto svg { width: 20px; height: 20px; }
+.ca-foto span { font-size: .6rem; line-height: 1.1; text-align: center; color: var(--texto-2); padding: 0 3px; }
+label.ca-foto { cursor: pointer; }
+label.ca-foto:hover { background: var(--verde-50); }
+.ca-foto.enviando { opacity: .5; pointer-events: none; }
+/* Computador: miniatura na primeira coluna */
+.tabela-rebanho .col-foto { width: 1%; padding-top: 6px; padding-bottom: 6px; }
+.tabela-rebanho .col-foto .ca-foto { width: 46px; height: 46px; border-radius: 8px; }
+.tabela-rebanho .col-foto .ca-foto svg { width: 18px; height: 18px; }
 @media (max-width: 720px) {
   .tabela-rebanho table.tabela.responsiva tr { padding: 0; }
   .tabela-rebanho table.tabela.responsiva td { display: none; }
@@ -753,13 +765,6 @@ button.ficha-foto { border: 0; padding: 0; font: inherit; }
   .tabela-rebanho table.tabela.responsiva td.col-cartao::before { content: none; }
   .tabela-rebanho table.tabela.responsiva td[colspan] { display: block; }
   .cartao-animal { display: flex; align-items: center; gap: 10px; padding: 11px 12px; }
-  .ca-foto { flex: none; width: 58px; height: 58px; border-radius: 10px; overflow: hidden; background: var(--musgo-100); color: var(--verde-700);
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; position: relative; }
-  .ca-foto img { width: 100%; height: 100%; object-fit: cover; }
-  .ca-foto svg { width: 20px; height: 20px; }
-  .ca-foto span { font-size: .6rem; line-height: 1.1; text-align: center; color: var(--texto-2); padding: 0 3px; }
-  label.ca-foto { cursor: pointer; }
-  .ca-foto.enviando { opacity: .5; pointer-events: none; }
   .ca-info { flex: 1; min-width: 0; }
   .ca-titulo { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
   .ca-titulo b { font-size: 1rem; color: var(--texto); }

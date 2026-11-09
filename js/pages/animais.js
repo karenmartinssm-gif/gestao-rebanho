@@ -147,12 +147,16 @@ export async function render(el) {
   const acoesHtml = (a) => `<span class="acoes-linha">
       ${editar ? `<a class="btn-acao" href="#/animais/${a.id}/editar" title="Editar" aria-label="Editar o animal ${esc(a.brinco)}"><i data-lucide="pencil"></i></a>` : ''}
       ${excluir ? `<button type="button" class="btn-acao perigo" data-excluir-animal="${a.id}" title="Excluir" aria-label="Excluir o animal ${esc(a.brinco)}"><i data-lucide="trash-2"></i></button>` : ''}</span>`;
-  const cartao = (a) => {
+  // Foto do animal (celular e computador); sem foto, quem pode editar já adiciona por ali
+  const fotoHtml = (a, comTexto = true) => {
     const url = a.foto_path && urlsFoto.get(a.foto_path);
-    const foto = url ? `<span class="ca-foto"><img src="${esc(url)}" alt="" loading="lazy"></span>`
-      : editar ? `<label class="ca-foto vazia" title="Adicionar foto"><i data-lucide="camera"></i><span>Adicionar foto</span>
+    return url ? `<span class="ca-foto"><img src="${esc(url)}" alt="Foto do animal ${esc(a.brinco)}" loading="lazy"></span>`
+      : editar ? `<label class="ca-foto vazia" title="Adicionar foto"><i data-lucide="camera"></i>${comTexto ? '<span>Adicionar foto</span>' : ''}
           <input type="file" accept="image/*" class="oculto" data-foto-lista="${a.id}" aria-label="Adicionar foto do animal ${esc(a.brinco)}"></label>`
       : '<span class="ca-foto vazia"><i data-lucide="camera"></i></span>';
+  };
+  const cartao = (a) => {
+    const foto = fotoHtml(a);
     const resumo = [a.categoria_nome ? `<b>${esc(a.categoria_nome)}</b>` : '', esc(ROTULO_SEXO[a.sexo] || ''), esc(a.raca_nome || ''),
     ].filter(Boolean);
     const local = [esc(idadeCurta(a.idade_meses) || ''), a.peso_atual ? esc(pesoCurto(a.peso_atual)) : '',
@@ -167,6 +171,7 @@ export async function render(el) {
 
   const colunas = [
     { chave: 'cartao', titulo: 'Animal', classe: 'col-cartao', valor: (a) => a.brinco, render: cartao },
+    { chave: 'foto', titulo: 'Foto', classe: 'col-foto', valor: (a) => (a.foto_path ? 1 : 0), render: (a) => fotoHtml(a, false) },
     { chave: 'brinco', titulo: 'Brinco', primaria: true, render: (a) => `<b>${esc(a.brinco)}</b>${a.nome ? ` <span class="muted small">${esc(a.nome)}</span>` : ''}`, valor: (a) => a.brinco },
     { chave: 'sexo', titulo: 'Sexo', render: (a) => ROTULO_SEXO[a.sexo], valor: (a) => ROTULO_SEXO[a.sexo] },
     { chave: 'categoria_nome', titulo: 'Categoria' },
@@ -214,9 +219,9 @@ export async function render(el) {
     aoClicar: (id) => { location.hash = `#/animais/${id}`; },
   });
 
-  // Fotos dos cartões do celular (endereços temporários do arquivo privado), sem travar a lista
+  // Fotos (endereços temporários do arquivo privado), carregadas sem travar a lista
   const comFoto = [...new Set(animais.map((a) => a.foto_path).filter(Boolean))];
-  if (comFoto.length && window.matchMedia('(max-width: 720px)').matches) {
+  if (comFoto.length) {
     (async () => {
       try {
         for (let i = 0; i < comFoto.length; i += 200) {
