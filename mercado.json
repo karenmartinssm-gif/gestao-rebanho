@@ -1,0 +1,36 @@
+{
+  "regiao": "SP",
+  "fonte": "Scot Consultoria via Notícias Agrícolas",
+  "link": "https://www.noticiasagricolas.com.br/cotacoes/boi-gordo/boi-gordo-scot-consultoria",
+  "itens": [
+    {
+      "chave": "boi",
+      "nome": "Boi gordo",
+      "valor": 383.0,
+      "unidade": "arroba",
+      "fechamento": "2026-11-05"
+    },
+    {
+      "chave": "vaca",
+      "nome": "Vaca gorda",
+      "valor": 358.0,
+      "unidade": "arroba",
+      "fechamento": "2026-11-05"
+    },
+    {
+      "chave": "bezerro",
+      "nome": "Bezerro",
+      "valor": 4151.11,
+      "unidade": "cabeca",
+      "fechamento": "2026-11-06"
+    },
+    {
+      "chave": "novilha",
+      "nome": "Novilha",
+      "valor": 3716.05,
+      "unidade": "cabeca",
+      "fechamento": "2026-11-06"
+    }
+  ],
+  "atualizado_em": "2026-11-09T10:53:48Z"
+}

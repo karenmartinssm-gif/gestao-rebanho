@@ -3,7 +3,7 @@
 // =====================================================================
 import { sb } from '../supabase.js';
 import { store, param, nomePasto } from '../store.js';
-import { esc, icones, fmtNum, fmtData, hojeISO, addDias, ultimosMeses, rotuloMes, fimDoMes, vazio, erroCarga, diasEntre } from '../ui.js';
+import { esc, icones, fmtNum, fmtMoeda, fmtData, hojeISO, addDias, ultimosMeses, rotuloMes, fimDoMes, vazio, erroCarga, diasEntre } from '../ui.js';
 import { listarAnimais } from '../components/animais-comum.js';
 import { htmlAtalhos, ligarAtalhos } from '../components/atalhos.js';
 import { todos } from '../components/consulta.js';
@@ -113,6 +113,8 @@ export async function render(el) {
       </div>
     </div>
 
+    <section class="secao" id="mercado" hidden></section>
+
     ${racasPainel.length ? `<section class="secao"><h2><i data-lucide="dna"></i> Raças</h2><div class="grade grade-kpi">
       ${racasPainel.map((r) => kpi(r.nome, r.total, 'dna', porSexo(r.filtro), false, `#/animais?raca=${r.id || '__sem'}`)).join('')}
     </div></section>` : ''}
@@ -126,5 +128,41 @@ export async function render(el) {
   ligarAtalhos(el.querySelector('#atalhos'));
   ligarInstalar(el);
   icones();
+  mostrarMercado(el.querySelector('#mercado'));
 
+}
+
+// Fechamento do mercado pecuário de SP (mercado.json é atualizado todo dia útil pelo GitHub Actions)
+async function mostrarMercado(sec) {
+  if (!sec) return;
+  let m;
+  try {
+    const r = await fetch('mercado.json', { cache: 'no-cache' });
+    if (!r.ok) return;
+    m = await r.json();
+  } catch { return; }
+  const itens = (m.itens || []).filter((x) => Number(x.valor) > 0);
+  if (!itens.length || !sec.isConnected) return;
+  const fech = itens.map((x) => x.fechamento).sort().pop();
+  const ddmm = (d) => fmtData(d).slice(0, 5);
+  const preco = (x) => `${fmtMoeda(x.valor)}${x.unidade === 'arroba' ? '<small>/@</small>' : ''}`;
+  const barras = itens.filter((x) => x.unidade === 'arroba').sort((a, b) => b.valor - a.valor);
+  const maior = Math.max(...barras.map((x) => x.valor));
+  sec.innerHTML = `<div class="card mercado">
+    <div class="mercado-topo">
+      <div><h3>Mercado pecuário · ${esc(m.regiao || 'SP')}</h3><span class="small muted">Fechamento ${fmtData(fech)}</span></div>
+      <a class="btn btn-sm mercado-link" href="${esc(m.link || 'https://www.noticiasagricolas.com.br/cotacoes/boi-gordo')}" target="_blank" rel="noopener noreferrer">Ver mercado <i data-lucide="arrow-right"></i></a>
+    </div>
+    <div class="mercado-grade">${itens.map((x) => `
+      <div class="mercado-item"><span class="rotulo">${esc(x.nome)}</span>
+        <span class="valor">${preco(x)}</span>
+        <span class="detalhe">${x.unidade === 'arroba' ? 'por arroba' : 'por cabeça'}${x.fechamento !== fech ? ` · ${ddmm(x.fechamento)}` : ''}</span></div>`).join('')}
+    </div>
+    <div class="mercado-rodape"><span>Fonte: ${esc(m.fonte || 'Scot Consultoria')}</span><span>Preço de referência</span></div>
+    ${barras.map((x) => `<div class="mercado-barra"><span>${esc(x.nome)}</span>
+      <div class="trilho"><div style="width:${Math.max(4, (x.valor / maior) * 100).toFixed(1)}%"></div></div>
+      <b>${fmtMoeda(x.valor)}</b></div>`).join('')}
+  </div>`;
+  sec.hidden = false;
+  icones();
 }
