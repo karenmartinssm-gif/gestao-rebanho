@@ -183,9 +183,27 @@ export async function render(el) {
 
   // ---------------- MATRIZES ----------------
   function abaMatrizes() {
-    painel.innerHTML = `<div class="filtro-periodo"><label class="check"><input type="checkbox" id="m-inativas"> Mostrar também as que saíram do rebanho</label>
+    // Quadros de resumo (rebanho ativo) — clicar filtra a tabela; clicar de novo tira o filtro
+    const CAT = { vacas: ['Vacas', 'heart', (m) => m.a.categoria_grupo !== 'novilha'], novilhas: ['Novilhas', 'sprout', (m) => m.a.categoria_grupo === 'novilha'] };
+    const SIT = {
+      pos_parto: ['Recuperação pós-parto', 'baby', (m) => m.sit === 'pos_parto'],
+      proxima_parto: ['Próxima do parto', 'calendar-clock', (m) => m.sit === 'proxima_parto'],
+      vazia: ['Vazia', 'heart-off', (m) => m.sit === 'vazia'],
+      prenhe: ['Prenhe', 'heart-pulse', (m) => m.sit === 'prenhe' || m.sit === 'proxima_parto'],
+    };
+    const filtro = { cat: null, sit: null };
+    const conta = (fn) => ativas.filter(fn).length;
+    const quadro = (tipo, k, [titulo, icone, fn], detalhe = '') => `<div class="card kpi clicavel" role="button" tabindex="0" data-f-${tipo}="${k}" title="Filtrar a tabela">
+      <span class="rotulo"><i data-lucide="${icone}"></i>${titulo}</span><span class="valor">${fmtNum(conta(fn))}</span>${detalhe ? `<span class="detalhe">${detalhe}</span>` : ''}</div>`;
+    const nProx = conta(SIT.proxima_parto[2]);
+    painel.innerHTML = `<div class="vacas-resumo">
+        <div class="vacas-resumo-cat">${Object.entries(CAT).map(([k, d]) => quadro('cat', k, d)).join('')}</div>
+        <div class="vacas-resumo-sit">${Object.entries(SIT).map(([k, d]) => quadro('sit', k, d, k === 'prenhe' && nProx ? `inclui ${fmtNum(nProx)} próxima${nProx === 1 ? '' : 's'} do parto` : '')).join('')}</div>
+      </div>
+      <div class="filtro-periodo"><label class="check"><input type="checkbox" id="m-inativas"> Mostrar também as que saíram do rebanho</label>
       <button class="btn btn-sm" id="m-csv" style="margin-left:auto"><i data-lucide="download"></i> Exportar CSV</button></div>
-      <div class="card"><div id="t-matrizes"></div></div>
+      <div id="m-filtro" class="small" hidden></div>
+      <div class="card tabela-vacas"><div id="t-matrizes"></div></div>
       <p class="small muted">Vacas e novilhas entram aqui automaticamente pela categoria do animal. A situação é atualizada por coberturas, diagnósticos e partos.</p>`;
     const cols = [
       { chave: 'brinco', titulo: 'Vaca', primaria: true, valor: (m) => m.a.brinco, render: (m) => `${linkAnimal(m.a.id)}${m.a.nome ? ` <span class="small muted">${esc(m.a.nome)}</span>` : ''}<div class="small muted">${esc(m.a.categoria_nome)}${!m.apta_reproducao ? ' · <b>descarte</b>' : ''}</div>`, csv: (m) => m.a.brinco },
@@ -197,17 +215,39 @@ export async function render(el) {
       { chave: 'abortos', titulo: 'Abortos', classe: 'dir', valor: (m) => m.d.abortos, render: (m) => fmtNum(m.d.abortos), csv: (m) => m.d.abortos },
       { chave: 'ultimo', titulo: 'Último parto', valor: (m) => m.d.ultimoParto, render: (m) => fmtData(m.d.ultimoParto), csv: (m) => fmtData(m.d.ultimoParto) },
       { chave: 'iep', titulo: 'IEP médio', classe: 'dir', valor: (m) => m.d.iep, render: (m) => (m.d.iep ? `${fmtNum(m.d.iep)} d` : '—'), csv: (m) => (m.d.iep ? Math.round(m.d.iep) : '') },
-      { chave: 'peso', titulo: 'Peso médio desmame (filhos)', classe: 'dir', valor: (m) => m.d.pesoDesmameMedio, render: (m) => (m.d.pesoDesmameMedio ? fmtKg(m.d.pesoDesmameMedio) : '—'), csv: (m) => m.d.pesoDesmameMedio?.toFixed(1) ?? '' },
-      ...(editar ? [{ chave: 'acao', titulo: '', render: (m) => (m.a.conta_no_rebanho ? `<button class="btn btn-sm" data-sit="${m.id}" title="Ajustar situação">Situação</button>` : '') }] : []),
+      { chave: 'peso', titulo: 'Peso desmame (filhos)', classe: 'dir', valor: (m) => m.d.pesoDesmameMedio, render: (m) => (m.d.pesoDesmameMedio ? fmtKg(m.d.pesoDesmameMedio) : '—'), csv: (m) => m.d.pesoDesmameMedio?.toFixed(1) ?? '' },
+      ...(editar ? [{ chave: 'acao', titulo: '', classe: 'col-acao', render: (m) => (m.a.conta_no_rebanho ? `<button class="btn btn-sm" data-sit="${m.id}" title="Ajustar situação">Situação</button>` : '') }] : []),
     ];
     const box = painel.querySelector('#t-matrizes');
-    const linhas = () => (painel.querySelector('#m-inativas').checked ? listaMatrizes : ativas);
+    const linhas = () => (painel.querySelector('#m-inativas').checked ? listaMatrizes : ativas)
+      .filter((m) => (!filtro.cat || CAT[filtro.cat][2](m)) && (!filtro.sit || (m.a.conta_no_rebanho && SIT[filtro.sit][2](m))));
     const t = montarTabela(box, {
       colunas: cols, linhas: linhas(),
       vazioHtml: vazio({ icone: 'heart', titulo: 'Nenhuma vaca', texto: 'Cadastre fêmeas nas categorias Novilha, Primípara ou Vaca para que apareçam aqui.' }),
       aoClicar: (id) => { const m = listaMatrizes.find((x) => x.id === id); if (m) location.hash = `#/animais/${m.a.id}`; },
     });
     painel.querySelector('#m-inativas').addEventListener('change', () => t.atualizar(linhas()));
+    const aviso = painel.querySelector('#m-filtro');
+    const aplicarFiltro = () => {
+      painel.querySelectorAll('[data-f-cat]').forEach((q) => q.classList.toggle('selecionado', q.dataset.fCat === filtro.cat));
+      painel.querySelectorAll('[data-f-sit]').forEach((q) => q.classList.toggle('selecionado', q.dataset.fSit === filtro.sit));
+      const partes = [filtro.cat && CAT[filtro.cat][0], filtro.sit && SIT[filtro.sit][0]].filter(Boolean);
+      aviso.hidden = !partes.length;
+      aviso.innerHTML = partes.length ? `<span>Mostrando: <b>${esc(partes.join(' · '))}</b></span> <button type="button" class="btn btn-texto btn-sm" data-limpar-filtro><i data-lucide="x"></i> Tirar filtro</button>` : '';
+      t.atualizar(linhas());
+      icones();
+    };
+    const clicarQuadro = (alvo) => {
+      const q = alvo.closest('[data-f-cat],[data-f-sit]');
+      if (q) {
+        if (q.dataset.fCat) filtro.cat = filtro.cat === q.dataset.fCat ? null : q.dataset.fCat;
+        else filtro.sit = filtro.sit === q.dataset.fSit ? null : q.dataset.fSit;
+        aplicarFiltro();
+      } else if (alvo.closest('[data-limpar-filtro]')) { filtro.cat = null; filtro.sit = null; aplicarFiltro(); }
+    };
+    painel.querySelector('.vacas-resumo').addEventListener('click', (e) => clicarQuadro(e.target));
+    painel.querySelector('.vacas-resumo').addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); clicarQuadro(e.target); } });
+    aviso.addEventListener('click', (e) => clicarQuadro(e.target));
     box.addEventListener('click', (e) => {
       const b = e.target.closest('[data-sit]'); if (!b) return;
       e.stopPropagation();

@@ -785,3 +785,24 @@ button.ficha-foto { border: 0; padding: 0; font: inherit; }
 .lista-animais li a { text-decoration: none; }
 .lista-animais li > .muted { grid-column: 1; }
 .lista-animais .lista-info { grid-column: 2; grid-row: 1 / span 2; align-self: center; text-align: right; color: var(--verde-800); }
+
+/* Reprodução › Vacas e novilhas: quadros-filtro e tabela compacta */
+.vacas-resumo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2.2fr); gap: 16px; margin-bottom: 16px; }
+.vacas-resumo-cat { display: grid; grid-template-rows: 1fr 1fr; gap: 12px; }
+.vacas-resumo-sit { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.vacas-resumo .kpi { padding: 12px 14px; }
+.vacas-resumo .kpi .valor { font-size: 1.5rem; }
+.card.kpi.selecionado { border-color: var(--verde-700); box-shadow: inset 0 0 0 1px var(--verde-700); background: var(--verde-50); }
+#m-filtro { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: -4px 0 10px; color: var(--texto-2); }
+#m-filtro[hidden] { display: none; }
+.tabela-vacas .tabela th { white-space: normal; line-height: 1.25; vertical-align: bottom; padding: 10px 10px; font-size: .7rem; }
+.tabela-vacas .tabela td { padding: 10px 10px; }
+.tabela-vacas .tabela td:first-child { min-width: 130px; }
+.tabela-vacas .tabela td:nth-child(2) { white-space: nowrap; }
+.tabela-vacas .tabela .col-acao { width: 1%; white-space: nowrap; }
+@media (max-width: 720px) {
+  .vacas-resumo { grid-template-columns: 1fr; gap: 10px; }
+  .vacas-resumo-cat { grid-template-rows: none; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .vacas-resumo-sit { gap: 10px; }
+  .tabela-vacas .tabela td:first-child { min-width: 0; }
+}
