@@ -90,7 +90,15 @@ export async function render(el) {
   const porCat = store.base.categorias.map((c) => ({ nome: c.nome, n: conta((a) => a.categoria_id === c.id) }))
     .concat([{ nome: 'Sem categoria', n: conta((a) => !a.categoria_id) }])
     .filter((x) => x.n).sort((x, y) => y.n - x.n);
-  const composicao = porCat.length > 6 ? [...porCat.slice(0, 5), { nome: 'Outros', n: porCat.slice(5).reduce((t, x) => t + x.n, 0) }] : porCat;
+  const resumir = (l) => (l.length > 6 ? [...l.slice(0, 5), { nome: 'Outros', n: l.slice(5).reduce((t, x) => t + x.n, 0) }] : l);
+  // Duas visões na mesma rosca: por raça (padrão) e por categoria
+  const visoes = {
+    raca: { sub: 'Animais ativos', itens: resumir(racasPainel.map((x) => ({ nome: x.nome, n: x.total, extra: porSexo(x.filtro) }))) },
+    categoria: { sub: 'Animais ativos', itens: resumir(porCat) },
+  };
+  let visao = 'raca';
+  try { if (localStorage.getItem('painel.composicao') === 'categoria') visao = 'categoria'; } catch { /* sem armazenamento */ }
+  const temComp = ativos.length > 0;
   const pctDe = (n) => { const v = (n / (ativos.length || 1)) * 100; return v > 0 && v < 1 ? '<1' : String(Math.round(v)); };
 
   el.innerHTML = `
@@ -126,14 +134,18 @@ export async function render(el) {
         </div>
       </div>
 
-      ${composicao.length ? `<a class="card composicao" href="#/graficos">
-        <h3>Composição do rebanho</h3><span class="small muted">Animais ativos por categoria</span>
+      ${temComp ? `<div class="card composicao">
+        <h3>Composição do rebanho</h3>
+        <div class="comp-topo"><span class="small muted" id="comp-sub"></span>
+          <div class="comp-abas" role="tablist">
+            <button type="button" role="tab" data-visao="raca">Raça</button><button type="button" role="tab" data-visao="categoria">Categoria</button>
+          </div></div>
         <div class="comp-corpo">
-          <div class="comp-rosca"><canvas id="g-composicao" aria-label="Composição do rebanho por categoria"></canvas>
+          <div class="comp-rosca"><canvas id="g-composicao" aria-label="Composição do rebanho"></canvas>
             <div class="comp-centro"><b>${fmtNum(ativos.length)}</b><span>animais</span></div></div>
-          <ul class="comp-legenda">${composicao.map((x, i) => `<li><i style="background:${CORES[i % CORES.length]}"></i><span>${esc(x.nome)}</span><b>${fmtNum(x.n)} · ${pctDe(x.n)}%</b></li>`).join('')}</ul>
+          <ul class="comp-legenda" id="comp-legenda"></ul>
         </div>
-      </a>` : ''}
+      </div>` : ''}
 
       <section id="mercado" class="painel-mercado" hidden></section>
     </div>
@@ -148,15 +160,26 @@ export async function render(el) {
         <div id="atalhos" class="card">${htmlAtalhos()}</div></section>
     </div>
 
-    ${racasPainel.length ? `<section class="secao"><h2><i data-lucide="dna"></i> Raças</h2><div class="grade grade-kpi">
-      ${racasPainel.map((r) => kpi(r.nome, r.total, 'dna', porSexo(r.filtro), false, `#/animais?raca=${r.id || '__sem'}`)).join('')}
-    </div></section>` : ''}`;
-  if (composicao.length) {
+`;
+  const desenharComp = () => {
+    const v = visoes[visao];
+    el.querySelectorAll('[data-visao]').forEach((b) => { b.classList.toggle('ativo', b.dataset.visao === visao); b.setAttribute('aria-selected', b.dataset.visao === visao); });
+    el.querySelector('#comp-sub').textContent = v.sub;
+    el.querySelector('#comp-legenda').innerHTML = v.itens.map((x, i) => `<li title="${esc(x.extra || '')}"><i style="background:${CORES[i % CORES.length]}"></i><span>${esc(x.nome)}</span><b>${fmtNum(x.n)} · ${pctDe(x.n)}%</b></li>`).join('');
     grafico(el.querySelector('#g-composicao'), {
       type: 'doughnut',
-      data: { labels: composicao.map((x) => x.nome), datasets: [{ data: composicao.map((x) => x.n), backgroundColor: composicao.map((x, i) => CORES[i % CORES.length]), borderWidth: 2, borderColor: '#fff' }] },
+      data: { labels: v.itens.map((x) => x.nome), datasets: [{ data: v.itens.map((x) => x.n), backgroundColor: v.itens.map((x, i) => CORES[i % CORES.length]), borderWidth: 2, borderColor: '#fff' }] },
       options: { cutout: '64%', plugins: { legend: { display: false },
-        tooltip: { callbacks: { label: (ctx) => ` ${composicao[ctx.dataIndex].nome}: ${ctx.raw} (${pctDe(ctx.raw)}%)` } } } },
+        tooltip: { callbacks: { label: (ctx) => ` ${v.itens[ctx.dataIndex].nome}: ${ctx.raw} (${pctDe(ctx.raw)}%)${v.itens[ctx.dataIndex].extra ? ` · ${v.itens[ctx.dataIndex].extra}` : ''}` } } } },
+    });
+  };
+  if (temComp) {
+    desenharComp();
+    el.querySelector('.comp-abas').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-visao]'); if (!b || b.dataset.visao === visao) return;
+      visao = b.dataset.visao;
+      try { localStorage.setItem('painel.composicao', visao); } catch { /* sem armazenamento */ }
+      desenharComp();
     });
   }
   ligarAtalhos(el.querySelector('#atalhos'));

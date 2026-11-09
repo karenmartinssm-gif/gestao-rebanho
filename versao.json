@@ -1,7 +1,7 @@
 {
-  "gerado_em": "2026-11-09T08:20:13",
+  "gerado_em": "2026-11-09T08:27:12",
   "arquivos": {
-    "css/styles.css": "69a0987736",
+    "css/styles.css": "b0cc2fbb0a",
     "js/app.js": "214aa3b535",
     "js/components/alimentacao-forms.js": "0dcbfee3f9",
     "js/components/animais-comum.js": "7187a29917",
@@ -34,7 +34,7 @@
     "js/pages/financeiro.js": "9f1a350133",
     "js/pages/graficos.js": "bace3d50b5",
     "js/pages/movimentacoes.js": "529d81e5ba",
-    "js/pages/painel.js": "642e1f0b6d",
+    "js/pages/painel.js": "15eddc2827",
     "js/pages/pastagens.js": "ff98c5b91d",
     "js/pages/pendencias.js": "8402ef59c7",
     "js/pages/pesagens.js": "2df6f8ba31",
