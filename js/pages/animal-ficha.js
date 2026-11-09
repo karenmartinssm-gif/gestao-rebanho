@@ -5,7 +5,7 @@ import { sb, BUCKET } from '../supabase.js';
 import { store, pode, ehProprietario, nomePasto, podeExcluir } from '../store.js';
 import {
   esc, icones, toast, traduzirErro, fmtData, fmtDataHora, fmtKg, fmtNum, fmtMoeda, idadeTexto, diasEntre, hojeISO,
-  vazio, erroCarga, badgeStatus, montarTabela, confirmar, ROTULO_SEXO, ROTULO_ORIGEM, ROTULO_MOV, ROTULO_SITUACAO_REPRO,
+  vazio, erroCarga, badgeStatus, montarTabela, confirmar, abrirModal, ROTULO_SEXO, ROTULO_ORIGEM, ROTULO_MOV, ROTULO_SITUACAO_REPRO,
 } from '../ui.js';
 import { ROTULO_SIT_COB } from '../components/reproducao-forms.js';
 import { grafico, CORES } from '../components/graficos.js';
@@ -106,13 +106,18 @@ export async function render(el, [id]) {
         ${(() => {
           const temFoto = a.foto_path && urls.get(a.foto_path);
           const miolo = temFoto ? `<img src="${esc(urls.get(a.foto_path))}" alt="Foto do animal ${esc(a.brinco)}">` : '<i data-lucide="camera"></i>';
-          if (!pode('rebanho_editar')) return `<div class="ficha-foto">${miolo}</div>`;
-          // Toque no quadro para tirar/escolher a foto (no celular abre câmera ou galeria)
-          return `<label class="ficha-foto editavel ${temFoto ? 'com-foto' : ''}" title="${temFoto ? 'Trocar foto' : 'Adicionar foto'}">
-            ${miolo}${temFoto ? '' : '<span class="ficha-foto-txt">Adicionar foto</span>'}
-            ${temFoto ? '<span class="ficha-foto-cam" aria-hidden="true"><i data-lucide="camera"></i></span>' : ''}
-            <input type="file" id="foto-rapida" accept="image/*" class="oculto" aria-label="${temFoto ? 'Trocar foto' : 'Adicionar foto'} do animal ${esc(a.brinco)}">
-          </label>`;
+          const ver = '<button type="button" role="menuitem" data-ver-foto><i data-lucide="maximize-2"></i> Ver foto</button>';
+          const entrada = (rotulo) => `<input type="file" id="foto-rapida" accept="image/*" class="oculto" aria-label="${rotulo} do animal ${esc(a.brinco)}">`;
+          if (!pode('rebanho_editar')) return temFoto ? `<button type="button" class="ficha-foto editavel com-foto" data-ver-foto title="Ver foto">${miolo}</button>` : `<div class="ficha-foto">${miolo}</div>`;
+          // Sem foto: toque no quadro para tirar/escolher a foto (no celular abre câmera ou galeria)
+          if (!temFoto) return `<label class="ficha-foto editavel" title="Adicionar foto">${miolo}<span class="ficha-foto-txt">Adicionar foto</span>${entrada('Adicionar foto')}</label>`;
+          // Com foto: menu com "Ver foto" (abre grande) e "Trocar foto"
+          return `<div class="menu-suspenso foto-suspenso">
+            <button type="button" class="ficha-foto editavel com-foto" id="btn-foto" aria-haspopup="true" aria-expanded="false" title="Foto do animal">
+              ${miolo}<span class="ficha-foto-cam" aria-hidden="true"><i data-lucide="camera"></i></span></button>
+            <div class="menu oculto" role="menu">${ver}
+              <label role="menuitem"><i data-lucide="camera"></i> Trocar foto${entrada('Trocar foto')}</label></div>
+          </div>`;
         })()}
         <div class="ficha-info">
           <h1>Brinco ${esc(a.brinco)} ${a.nome ? `<span class="muted" style="font-weight:500">${esc(a.nome)}</span>` : ''} ${badgeStatus(a)}</h1>
@@ -139,11 +144,33 @@ export async function render(el, [id]) {
   icones();
 
   const recarregar = () => render(el, [id]).then(icones);
+  // Foto: menu (Ver foto / Trocar foto) e visualização ampliada
+  const btnFoto = el.querySelector('#btn-foto');
+  if (btnFoto) {
+    const menuFoto = btnFoto.nextElementSibling;
+    const fecharMenuFoto = () => { menuFoto.classList.add('oculto'); btnFoto.setAttribute('aria-expanded', 'false'); };
+    btnFoto.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const abrir = menuFoto.classList.contains('oculto');
+      menuFoto.classList.toggle('oculto', !abrir); btnFoto.setAttribute('aria-expanded', String(abrir));
+    });
+    menuFoto.addEventListener('click', (e) => { if (e.target.closest('[data-ver-foto], label')) setTimeout(fecharMenuFoto, 0); });
+    document.addEventListener('click', function fora(e) {
+      if (!el.isConnected) { document.removeEventListener('click', fora); return; }
+      if (!e.target.closest('.foto-suspenso')) fecharMenuFoto();
+    });
+  }
+  el.querySelectorAll('[data-ver-foto]').forEach((b) => b.addEventListener('click', () => {
+    const src = el.querySelector('.ficha-foto img')?.src;
+    if (!src) return;
+    abrirModal({ titulo: `Brinco ${a.brinco}`, largo: true,
+      html: `<div class="foto-grande"><img src="${esc(src)}" alt="Foto do animal ${esc(a.brinco)}"></div>` });
+  }));
   el.querySelector('#foto-rapida')?.addEventListener('change', async (e) => {
     const arq = e.target.files[0];
     if (!arq) return;
     if (!arq.type.startsWith('image/')) { toast('Escolha uma imagem (foto).', 'erro'); return; }
-    const quadro = e.target.closest('.ficha-foto');
+    const quadro = el.querySelector('.ficha-foto');
     try {
       exigirConexao();
       quadro.classList.add('enviando');

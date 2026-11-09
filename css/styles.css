@@ -690,3 +690,11 @@ button.pend-card .rotulo { padding-right: 26px; }
   .painel-busca > .btn { padding: 0 13px; }
   .painel-busca .txt-ver { display: none; }
 }
+
+/* Ficha: menu da foto e foto ampliada */
+.foto-suspenso .menu { left: 0; right: auto; top: calc(100% + 6px); min-width: 180px; }
+.foto-suspenso .menu label { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; font: inherit; color: var(--texto); cursor: pointer; border-radius: 7px; }
+.foto-suspenso .menu label:hover { background: var(--fundo); }
+button.ficha-foto { border: 0; padding: 0; font: inherit; }
+.foto-grande { display: grid; place-items: center; background: #0f1a13; border-radius: 10px; overflow: hidden; }
+.foto-grande img { max-width: 100%; max-height: 72vh; object-fit: contain; display: block; }
