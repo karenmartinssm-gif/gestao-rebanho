@@ -139,7 +139,7 @@ export async function render(el) {
   };
   document.addEventListener('click', fecharFora);
   sincronizarCat();
-  if ([...doLink.keys()].length) abrirFiltros(true);
+  // "Mais filtros" começa sempre fechado; os filtros ativos aparecem nos chips e no contador
 
   const colunas = [
     { chave: 'brinco', titulo: 'Brinco', primaria: true, render: (a) => `<b>${esc(a.brinco)}</b>${a.nome ? ` <span class="muted small">${esc(a.nome)}</span>` : ''}`, valor: (a) => a.brinco },

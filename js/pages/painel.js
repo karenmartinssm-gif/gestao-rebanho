@@ -245,7 +245,7 @@ function ligarBusca(el, animais) {
   const input = el.querySelector('#busca-animal');
   const lista = el.querySelector('#busca-sugestoes');
   if (!input) return;
-  if (window.innerWidth <= 720) input.placeholder = 'Buscar animal (nº ou apelido)';
+  if (window.innerWidth <= 720) input.placeholder = 'Buscar animal';
   const norm = (t) => (t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
   let achados = [];
   let marcado = -1;
