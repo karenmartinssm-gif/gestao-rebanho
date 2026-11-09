@@ -12,7 +12,7 @@ import * as F from '../components/reproducao-forms.js';
 import { todos } from '../components/consulta.js';
 
 const pl = (n, um, varios) => `${fmtNum(n)} ${n === 1 ? um : varios}`;
-const ABAS = [['geral', 'Visão geral'], ['matrizes', 'Matrizes'], ['coberturas', 'Coberturas'], ['nascimentos', 'Nascimentos'], ['desmames', 'Desmames'], ['reprodutores', 'Touros e sêmen']];
+const ABAS = [['geral', 'Visão geral'], ['matrizes', 'Vacas e novilhas'], ['coberturas', 'Coberturas'], ['nascimentos', 'Nascimentos'], ['desmames', 'Desmames'], ['reprodutores', 'Touros e sêmen']];
 const CHAVE_ABA = 'rebanho.repro.aba';
 const classeSit = { prenhe: 'ativo', proxima_parto: 'aviso', vazia: 'inativo', aguardando_diagnostico: 'info', coberta: 'info', em_reproducao: '', pos_parto: '' };
 
@@ -62,7 +62,7 @@ export async function render(el) {
 
   el.innerHTML = `
     <div class="cabecalho-pagina">
-      <div><h1>Reprodução e cria</h1><p>Matrizes, coberturas, partos e desmames com indicadores calculados a partir dos registros.</p></div>
+      <div><h1>Reprodução e cria</h1><p>Vacas, coberturas, partos e desmames com indicadores calculados a partir dos registros.</p></div>
       ${editar ? `<div class="acoes">
         <button class="btn" data-acao="cobertura"><i data-lucide="heart"></i> Cobertura</button>
         <button class="btn" data-acao="diagnostico"><i data-lucide="scan-search"></i> Diagnóstico</button>
@@ -96,7 +96,7 @@ export async function render(el) {
     const aoPe = animais.filter((a) => a.conta_no_rebanho && a.categoria_grupo === 'bezerro' && a.origem === 'nascido' && !desmamados.has(a.id)).length;
     painel.innerHTML = `
       <div class="grade grade-kpi" style="margin-bottom:20px">
-        <div class="card kpi destaque"><span class="rotulo"><i data-lucide="heart"></i>Matrizes e novilhas ativas</span><span class="valor">${fmtNum(ativas.length)}</span></div>
+        <div class="card kpi destaque"><span class="rotulo"><i data-lucide="heart"></i>Vacas e novilhas ativas</span><span class="valor">${fmtNum(ativas.length)}</span></div>
         <div class="card kpi"><span class="rotulo"><i data-lucide="heart-pulse"></i>Prenhes</span><span class="valor">${fmtNum(contaSit('prenhe') + contaSit('proxima_parto'))}</span><span class="detalhe">${fmtNum(contaSit('proxima_parto'))} próximas do parto</span></div>
         <div class="card kpi"><span class="rotulo"><i data-lucide="scan-search"></i>Aguardando diagnóstico</span><span class="valor">${fmtNum(contaSit('aguardando_diagnostico') + contaSit('coberta'))}</span></div>
         <div class="card kpi"><span class="rotulo"><i data-lucide="heart-off"></i>Vazias</span><span class="valor">${fmtNum(contaSit('vazia'))}</span></div>
@@ -127,7 +127,7 @@ export async function render(el) {
         card('Mortalidade de bezerros', fmtPct(r.mortalidade.valor), `${pl(r.mortalidade.num, 'morte', 'mortes')} de ${pl(r.mortalidade.den, 'nascido vivo', 'nascidos vivos')} · ${pl(r.mortalidade.natimortos, 'natimorto', 'natimortos')} · ${pl(r.mortalidade.abortos, 'aborto', 'abortos')}`,
           'Bezerros nascidos vivos no período que morreram antes do desmame ÷ nascidos vivos no período × 100. Natimortos e abortos são mostrados à parte e não entram nesta taxa.'),
         card('Intervalo entre partos', r.iep.valor ? `${fmtNum(r.iep.valor)} dias` : '—', r.iep.n ? `média de ${r.iep.n} intervalo(s) · ${fmtNum(r.iep.valor / 30.44, 1)} meses` : 'Necessário: matrizes com 2 ou mais partos',
-          'Média dos dias entre partos consecutivos da mesma matriz, considerando os partos (vivos ou natimortos) ocorridos no período. Abortos não contam como parto.'),
+          'Média dos dias entre partos consecutivos da mesma vaca, considerando os partos (vivos ou natimortos) ocorridos no período. Abortos não contam como parto.'),
         card('Peso médio ao desmame', r.pesoDesmame.valor ? fmtKg(r.pesoDesmame.valor) : '—', `${r.pesoDesmame.n} desmame(s) com peso registrado${r.pesoDesmame.idade ? ` · idade média ${fmtNum(r.pesoDesmame.idade)} dias` : ''}`,
           'Média dos pesos informados nos desmames do período. Desmames sem peso não entram na média.'),
       ].join('');
@@ -141,9 +141,9 @@ export async function render(el) {
     painel.innerHTML = `<div class="filtro-periodo"><label class="check"><input type="checkbox" id="m-inativas"> Mostrar também as que saíram do rebanho</label>
       <button class="btn btn-sm" id="m-csv" style="margin-left:auto"><i data-lucide="download"></i> Exportar CSV</button></div>
       <div class="card"><div id="t-matrizes"></div></div>
-      <p class="small muted">Matrizes e novilhas entram aqui automaticamente pela categoria do animal. A situação é atualizada por coberturas, diagnósticos e partos.</p>`;
+      <p class="small muted">Vacas e novilhas entram aqui automaticamente pela categoria do animal. A situação é atualizada por coberturas, diagnósticos e partos.</p>`;
     const cols = [
-      { chave: 'brinco', titulo: 'Matriz', primaria: true, valor: (m) => m.a.brinco, render: (m) => `${linkAnimal(m.a.id)}${m.a.nome ? ` <span class="small muted">${esc(m.a.nome)}</span>` : ''}<div class="small muted">${esc(m.a.categoria_nome)}${!m.apta_reproducao ? ' · <b>descarte</b>' : ''}</div>`, csv: (m) => m.a.brinco },
+      { chave: 'brinco', titulo: 'Vaca', primaria: true, valor: (m) => m.a.brinco, render: (m) => `${linkAnimal(m.a.id)}${m.a.nome ? ` <span class="small muted">${esc(m.a.nome)}</span>` : ''}<div class="small muted">${esc(m.a.categoria_nome)}${!m.apta_reproducao ? ' · <b>descarte</b>' : ''}</div>`, csv: (m) => m.a.brinco },
       { chave: 'idade', titulo: 'Idade', valor: (m) => m.a.idade_meses, render: (m) => idadeTexto(m.a.data_nascimento), csv: (m) => idadeTexto(m.a.data_nascimento) },
       { chave: 'sit', titulo: 'Situação', valor: (m) => ROTULO_SITUACAO_REPRO[m.sit], render: (m) => (m.a.conta_no_rebanho ? `<span class="badge ${classeSit[m.sit] ?? ''}">${esc(ROTULO_SITUACAO_REPRO[m.sit])}</span>` : `<span class="badge inativo">${esc(m.a.status_nome)}</span>`), csv: (m) => ROTULO_SITUACAO_REPRO[m.sit] },
       { chave: 'prev', titulo: 'Previsão de parto', valor: (m) => (m.cob?.situacao === 'prenhe' ? m.cob.data_prevista_parto : null), render: (m) => (m.cob?.situacao === 'prenhe' ? fmtData(m.cob.data_prevista_parto) : '—'), csv: (m) => (m.cob?.situacao === 'prenhe' ? fmtData(m.cob.data_prevista_parto) : '') },
@@ -159,7 +159,7 @@ export async function render(el) {
     const linhas = () => (painel.querySelector('#m-inativas').checked ? listaMatrizes : ativas);
     const t = montarTabela(box, {
       colunas: cols, linhas: linhas(),
-      vazioHtml: vazio({ icone: 'heart', titulo: 'Nenhuma matriz', texto: 'Cadastre fêmeas nas categorias Novilha ou Matriz para que apareçam aqui.' }),
+      vazioHtml: vazio({ icone: 'heart', titulo: 'Nenhuma vaca', texto: 'Cadastre fêmeas nas categorias Novilha, Primípara ou Vaca para que apareçam aqui.' }),
       aoClicar: (id) => { const m = listaMatrizes.find((x) => x.id === id); if (m) location.hash = `#/animais/${m.a.id}`; },
     });
     painel.querySelector('#m-inativas').addEventListener('change', () => t.atualizar(linhas()));
@@ -181,7 +181,7 @@ export async function render(el) {
     montarTabela(painel.querySelector('#t-cob'), {
       colunas: [
         { chave: 'data_cobertura', titulo: 'Data', primaria: true, render: (c) => `${fmtData(c.data_cobertura)}${c.data_fim ? ` a ${fmtData(c.data_fim)}` : ''}` },
-        { chave: 'matriz', titulo: 'Matriz', valor: (c) => porId.get(c.matriz_id)?.brinco, render: (c) => linkAnimal(c.matriz_id) },
+        { chave: 'matriz', titulo: 'Vaca', valor: (c) => porId.get(c.matriz_id)?.brinco, render: (c) => linkAnimal(c.matriz_id) },
         { chave: 'tipo', titulo: 'Tipo', valor: (c) => F.ROTULO_TIPO_COB[c.tipo], render: (c) => esc(F.ROTULO_TIPO_COB[c.tipo]) },
         { chave: 'rep', titulo: 'Touro / sêmen', valor: (c) => nomeRep(c.reprodutor_id), render: (c) => `${esc(nomeRep(c.reprodutor_id))}${c.acasalamento ? `<div class="small muted">${esc(c.acasalamento)}</div>` : ''}` },
         { chave: 'prev', titulo: 'Previsão de parto', valor: (c) => c.data_prevista_parto, render: (c) => `${fmtData(c.data_prevista_parto)}${c.previsao_manual ? ' <span class="badge" title="Corrigida manualmente ou pelo diagnóstico">ajustada</span>' : ''}` },
@@ -264,7 +264,7 @@ export async function render(el) {
         { chave: 'raca', titulo: 'Raça', valor: (r) => store.base.racas.find((x) => x.id === (r.raca_id || r.a?.raca_id))?.nome, render: (r) => esc(store.base.racas.find((x) => x.id === (r.raca_id || r.a?.raca_id))?.nome || '—') },
         { chave: 'peso', titulo: 'Peso', classe: 'dir', valor: (r) => r.a?.peso_atual, render: (r) => (r.a?.peso_atual ? fmtKg(r.a.peso_atual) : '—') },
         { chave: 'cobs', titulo: 'Coberturas', classe: 'dir', render: (r) => fmtNum(r.cobs) },
-        { chave: 'matrizes', titulo: 'Matrizes vinculadas', classe: 'dir', render: (r) => fmtNum(r.matrizes) },
+        { chave: 'matrizes', titulo: 'Vacas vinculadas', classe: 'dir', render: (r) => fmtNum(r.matrizes) },
         { chave: 'filhos', titulo: 'Filhos', classe: 'dir', render: (r) => fmtNum(r.filhos) },
         { chave: 'prenhez', titulo: 'Prenhez', classe: 'dir', render: (r) => fmtPct(r.prenhez) },
         { chave: 'ultima', titulo: 'Último uso', render: (r) => fmtData(r.ultima) },

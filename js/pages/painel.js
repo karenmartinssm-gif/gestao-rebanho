@@ -59,7 +59,7 @@ export async function render(el) {
   const { pend, emTratamento, manejosPend } = montarPendencias({ animais, manejos, cobs, desm, estq, nasc });
   const comPendencia = pend.filter((b) => b.itens.length).sort((x, y) => y.itens.length - x.itens.length);
 
-  // Link para o Rebanho com as categorias do grupo já marcadas (ex.: Matrizes = Vaca, Primípara, Matriz)
+  // Link para o Rebanho com as categorias do grupo já marcadas (ex.: Vacas = Vaca e Primípara)
   const linkCats = (...grupos) => `#/animais?categoria=${store.base.categorias.filter((c) => grupos.includes(c.grupo)).map((c) => c.id).join(',')}`;
   // Separação por sexo, sempre com o número maior primeiro (ex.: "80 fêmeas · 3 machos")
   const porSexo = (filtro) => {

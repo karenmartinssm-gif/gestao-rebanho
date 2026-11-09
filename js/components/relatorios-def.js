@@ -85,7 +85,7 @@ export const RELATORIOS = [
       };
     } },
 
-  { id: 'matrizes', grupo: 'Rebanho', titulo: 'Matrizes', icone: 'heart', filtros: ['lote'], descricao: 'Situação reprodutiva, partos, intervalo entre partos e desempenho das crias.',
+  { id: 'matrizes', grupo: 'Rebanho', titulo: 'Vacas e novilhas', icone: 'heart', filtros: ['lote'], descricao: 'Situação reprodutiva, partos, intervalo entre partos e desempenho das crias.',
     async gerar(f) {
       const [animais, matrizes, coberturas, nascimentos, desmames] = await obter('animais', 'matrizes', 'coberturas', 'nascimentos', 'desmames');
       const porId = new Map(animais.map((a) => [a.id, a]));
@@ -99,9 +99,9 @@ export const RELATORIOS = [
       });
       const cont = (s) => linhas.filter((l) => l[3] === s).length;
       return {
-        resumo: [['Matrizes e novilhas ativas', fmtNum(lista.length)], ...Object.values(ROTULO_SITUACAO_REPRO).map((s) => [s, fmtNum(cont(s))]).filter((r) => r[1] !== '0')],
-        secoes: [{ titulo: 'Matrizes', colunas: [C('Brinco'), C('Categoria'), C('Idade (meses)', 'num'), C('Situação'), C('Previsão de parto', 'data'), C('Partos', 'num'), C('Bezerros vivos', 'num'), C('Abortos', 'num'), C('Último parto', 'data'), C('IEP médio (dias)', 'num'), C('Peso médio desmame crias', 'kg'), C('Apta')], linhas }],
-        notas: ['IEP = média dos dias entre partos consecutivos da matriz (abortos não contam como parto).'],
+        resumo: [['Vacas e novilhas ativas', fmtNum(lista.length)], ...Object.values(ROTULO_SITUACAO_REPRO).map((s) => [s, fmtNum(cont(s))]).filter((r) => r[1] !== '0')],
+        secoes: [{ titulo: 'Vacas e novilhas', colunas: [C('Brinco'), C('Categoria'), C('Idade (meses)', 'num'), C('Situação'), C('Previsão de parto', 'data'), C('Partos', 'num'), C('Bezerros vivos', 'num'), C('Abortos', 'num'), C('Último parto', 'data'), C('IEP médio (dias)', 'num'), C('Peso médio desmame crias', 'kg'), C('Apta')], linhas }],
+        notas: ['IEP = média dos dias entre partos consecutivos da vaca (abortos não contam como parto).'],
       };
     } },
 
@@ -152,7 +152,7 @@ export const RELATORIOS = [
       return {
         resumo: [['Registros', fmtNum(lista.length)], ['Vivos', fmtNum(cont('vivo'))], ['Natimortos', fmtNum(cont('natimorto'))], ['Abortos', fmtNum(cont('aborto'))],
           ['Machos / fêmeas (vivos)', `${lista.filter((n) => n.resultado === 'vivo' && n.sexo === 'M').length} / ${lista.filter((n) => n.resultado === 'vivo' && n.sexo === 'F').length}`], ['Peso médio ao nascer', fmtKg(media(pesos))]],
-        secoes: [{ titulo: 'Nascimentos', colunas: [C('Data', 'data'), C('Matriz'), C('Resultado'), C('Sexo'), C('Bezerro'), C('Peso', 'kg'), C('Tipo de parto'), C('Pai')],
+        secoes: [{ titulo: 'Nascimentos', colunas: [C('Data', 'data'), C('Vaca'), C('Resultado'), C('Sexo'), C('Bezerro'), C('Peso', 'kg'), C('Tipo de parto'), C('Pai')],
           linhas: lista.map((n) => [n.data_nascimento, porId.get(n.matriz_id)?.brinco, ROTULO_RESULTADO[n.resultado], sexo(n.sexo), porId.get(n.bezerro_id)?.brinco, n.peso_nascimento ? Number(n.peso_nascimento) : null, n.tipo_parto, reprod.get(n.reprodutor_id)?.identificacao]) }],
         notas: [],
       };
@@ -362,7 +362,7 @@ export const RELATORIOS = [
 /** Tabelas para "Exportar todos os dados" (proprietário). */
 export const TABELAS_EXPORTACAO = [
   ['Animais', 'vw_animais', 'brinco'], ['Pesagens', 'pesagens', 'data_pesagem'], ['Movimentações', 'movimentacoes', 'data_movimentacao'],
-  ['Movimentação - animais', 'movimentacao_animais', 'criado_em'], ['Matrizes', 'matrizes', 'criado_em'], ['Reprodutores', 'reprodutores', 'identificacao'],
+  ['Movimentação - animais', 'movimentacao_animais', 'criado_em'], ['Vacas e novilhas', 'matrizes', 'criado_em'], ['Reprodutores', 'reprodutores', 'identificacao'],
   ['Coberturas', 'coberturas', 'data_cobertura'], ['Diagnósticos', 'diagnosticos_gestacao', 'data_diagnostico'], ['Nascimentos', 'nascimentos', 'data_nascimento'],
   ['Desmames', 'desmames', 'data_desmame'], ['Manejos sanitários', 'manejos_sanitarios', 'data_aplicacao'], ['Manejo - animais', 'manejo_animais', 'criado_em'],
   ['Produtos sanitários', 'produtos_sanitarios', 'nome'], ['Protocolos', 'protocolos_sanitarios', 'nome'], ['Suplementos', 'produtos_suplementacao', 'nome'],

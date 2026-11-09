@@ -67,11 +67,11 @@ export async function carregarAvisos(forcar = false) {
   const limParto = addDias(hoje, param('dias_alerta_parto'));
   cobs.filter((c) => c.situacao === 'prenhe' && c.data_prevista_parto && c.data_prevista_parto <= limParto && ativo(c.matriz_id)).forEach((c) => add({
     chave: `parto:${c.id}:${c.data_prevista_parto}`, grupo: 'reproducao', nivel: c.data_prevista_parto < hoje ? 'perigo' : 'aviso', data: c.data_prevista_parto,
-    titulo: `Parto previsto — matriz ${brinco(c.matriz_id)}`, texto: prazo(c.data_prevista_parto), link: `#/animais/${c.matriz_id}` }));
+    titulo: `Parto previsto — vaca ${brinco(c.matriz_id)}`, texto: prazo(c.data_prevista_parto), link: `#/animais/${c.matriz_id}` }));
   const limDiag = addDias(hoje, -param('dias_diagnostico_gestacao'));
   cobs.filter((c) => c.situacao === 'aguardando_diagnostico' && c.data_cobertura <= limDiag && ativo(c.matriz_id)).forEach((c) => add({
     chave: `diag:${c.id}`, grupo: 'reproducao', nivel: 'aviso', data: addDias(c.data_cobertura, param('dias_diagnostico_gestacao')),
-    titulo: `Diagnóstico de gestação — matriz ${brinco(c.matriz_id)}`, texto: `coberta em ${fmtData(c.data_cobertura)}`, link: `#/animais/${c.matriz_id}` }));
+    titulo: `Diagnóstico de gestação — vaca ${brinco(c.matriz_id)}`, texto: `coberta em ${fmtData(c.data_cobertura)}`, link: `#/animais/${c.matriz_id}` }));
   const desmamados = new Set(desm.map((d) => d.bezerro_id));
   const limDesm = addDias(hoje, param('dias_alerta_desmame'));
   animais.filter((a) => a.conta_no_rebanho && a.categoria_grupo === 'bezerro' && a.origem === 'nascido' && a.data_nascimento && !desmamados.has(a.id)).forEach((a) => {

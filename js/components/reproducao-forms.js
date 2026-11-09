@@ -70,7 +70,7 @@ export async function abrirCobertura(matrizFixa = null, aoSalvar) {
   const animais = matrizFixa ? [matrizFixa] : await carregarAnimais();
   if (!animais) return;
   const femeas = animais.filter(ehFemeaReprodutiva);
-  if (!matrizFixa && !femeas.length) return toast('Não há novilhas ou matrizes ativas cadastradas.', 'aviso');
+  if (!matrizFixa && !femeas.length) return toast('Não há novilhas ou vacas ativas cadastradas.', 'aviso');
   const reprod = store.base.reprodutores.filter((r) => r.ativo);
   const gest = param('periodo_gestacao_dias');
 
@@ -78,8 +78,8 @@ export async function abrirCobertura(matrizFixa = null, aoSalvar) {
     titulo: 'Registrar cobertura / inseminação',
     largo: true,
     html: `<form id="f-cob" class="grade" style="gap:14px">
-      ${matrizFixa ? `<div class="alerta"><i data-lucide="heart"></i><div>Matriz <b>${esc(matrizFixa.brinco)}</b>${matrizFixa.nome ? ` — ${esc(matrizFixa.nome)}` : ''}</div></div>`
-        : `<div class="campo"><label>Matrizes cobertas <span class="obrig">*</span></label><div id="sel-matrizes"></div>
+      ${matrizFixa ? `<div class="alerta"><i data-lucide="heart"></i><div>Vaca <b>${esc(matrizFixa.brinco)}</b>${matrizFixa.nome ? ` — ${esc(matrizFixa.nome)}` : ''}</div></div>`
+        : `<div class="campo"><label>Vacas cobertas <span class="obrig">*</span></label><div id="sel-matrizes"></div>
             <span class="ajuda">Marque uma ou várias (ex.: lote de IATF no mesmo dia).</span></div>`}
       <div class="campo"><label>Tipo <span class="obrig">*</span></label><div class="opcoes-radio">
         ${Object.entries(ROTULO_TIPO_COB).map(([k, r], i) => `<label><input type="radio" name="tipo" value="${k}" ${i === 0 ? 'checked' : ''} required> ${esc(r)}</label>`).join('')}</div></div>
@@ -87,7 +87,7 @@ export async function abrirCobertura(matrizFixa = null, aoSalvar) {
         <div class="campo"><label for="c-rep">Touro (doador do sêmen)</label><select id="c-rep">${opcoes(reprod, { rotulo: nomeReprodutor, vazio: 'Não informado' })}<option value="__novo">+ Cadastrar outro touro / sêmen</option></select>
           <span class="ajuda">Touros do rebanho e sêmens já cadastrados aparecem aqui.</span></div>
         <div class="campo"><label for="c-data" id="c-data-rot">Data da cobertura <span class="obrig">*</span></label><input id="c-data" type="date" required max="${hojeISO()}" value="${hojeISO()}">
-          <span class="ajuda" id="c-fim-ajuda">Monta natural: data em que a matriz entrou com o touro.</span></div>
+          <span class="ajuda" id="c-fim-ajuda">Monta natural: data em que a vaca entrou com o touro.</span></div>
         <div class="campo oculto" id="c-novo-campo" style="grid-column:1/-1"><div class="grade grade-2" style="gap:14px">
           <div class="campo"><label for="c-novo-nome">Nome do touro (doador do sêmen) <span class="obrig">*</span></label><input id="c-novo-nome" placeholder="Ex.: Nelore CFM Ímpeto"></div>
           <div class="campo"><label for="c-novo-raca">Raça do touro</label><select id="c-novo-raca">${opcoes(store.base.racas.filter((x) => x.ativo), { vazio: 'Não informada' })}</select></div></div>
@@ -101,7 +101,7 @@ export async function abrirCobertura(matrizFixa = null, aoSalvar) {
         <div class="campo"><label for="c-resp">Responsável</label><input id="c-resp" value="${esc(store.perfil?.nome || '')}"></div>
       </div>
       <div class="campo"><label for="c-obs">Observações</label><textarea id="c-obs" rows="2"></textarea></div>
-      <p class="small muted" style="margin:0">Se a matriz já tinha uma cobertura sem diagnóstico, ela passa a ser considerada vazia (repetição de cio).</p>
+      <p class="small muted" style="margin:0">Se a vaca já tinha uma cobertura sem diagnóstico, ela passa a ser considerada vazia (repetição de cio).</p>
     </form>`,
     rodape: '<button class="btn" data-fechar>Cancelar</button><button class="btn btn-primario" type="submit" form="f-cob">Salvar cobertura</button>',
   });
@@ -130,7 +130,7 @@ export async function abrirCobertura(matrizFixa = null, aoSalvar) {
   f.addEventListener('submit', async (e) => {
     e.preventDefault();
     const ids = selecionadas();
-    if (!ids.length) return toast('Selecione ao menos uma matriz.', 'erro');
+    if (!ids.length) return toast('Selecione ao menos uma vaca.', 'erro');
     const tipo = tipoAtual();
     let reprodutorId = f.querySelector('#c-rep').value || null;
     const btn = el.querySelector('[type=submit]'); btn.disabled = true;
@@ -158,7 +158,7 @@ export async function abrirCobertura(matrizFixa = null, aoSalvar) {
           data_cobertura: data.value, data_fim: tipo === 'monta_natural' ? f.querySelector('#c-fim').value || null : null,
           previsao_manual: manual.checked, data_prevista_parto: manual.checked ? prev.value || null : null,
           responsavel_nome: textoOuNulo(f.querySelector('#c-resp').value), observacoes: textoOuNulo(f.querySelector('#c-obs').value),
-        }, `Cobertura da matriz ${brinco}`);
+        }, `Cobertura da vaca ${brinco}`);
         if (r.sincronizado) ok++; else fila++;
       } catch (err) { erros.push(`${brinco}: ${traduzirErro(err)}`); }
     }
@@ -196,10 +196,10 @@ export async function abrirDiagnostico(matrizFixa = null, aoSalvar) {
         <div class="campo"><label for="d-met">Método</label><select id="d-met"><option>Ultrassom</option><option>Palpação retal</option><option>Exame de sangue</option><option>Outro</option></select></div>
         <div class="campo"><label for="d-resp">Responsável / veterinário</label><input id="d-resp" value="${esc(store.perfil?.nome || '')}"></div>
       </div>
-      <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Matriz</th><th>Cobertura</th><th>Resultado</th><th>Idade gestacional (dias)</th></tr></thead>
+      <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Vaca</th><th>Cobertura</th><th>Resultado</th><th>Idade gestacional (dias)</th></tr></thead>
         <tbody id="d-linhas"></tbody></table></div>
       ${matrizFixa ? '' : '<div id="d-add"></div>'}
-      <p class="small muted" style="margin:0">Deixe o resultado em branco para as matrizes que não foram examinadas. Sem cobertura registrada, informe a idade gestacional estimada para calcular a previsão de parto.</p>
+      <p class="small muted" style="margin:0">Deixe o resultado em branco para as vacas que não foram examinadas. Sem cobertura registrada, informe a idade gestacional estimada para calcular a previsão de parto.</p>
     </form>`,
     rodape: '<button class="btn" data-fechar>Cancelar</button><button class="btn btn-primario" type="submit" form="f-diag">Salvar diagnósticos</button>',
   });
@@ -211,12 +211,12 @@ export async function abrirDiagnostico(matrizFixa = null, aoSalvar) {
         <td class="small">${c ? `${fmtData(c.data_cobertura)}<br>${diasEntre(c.data_cobertura, hojeISO())} dias` : '<span class="muted">sem cobertura</span>'}</td>
         <td><select data-res><option value="">—</option><option value="prenhe">Prenhe</option><option value="vazia">Vazia</option><option value="inconclusivo">Inconclusivo</option></select></td>
         <td><input data-idade inputmode="numeric" style="max-width:110px" placeholder="${c ? 'opcional' : 'se prenhe'}"></td></tr>`;
-    }).join('') : '<tr><td colspan="4" class="muted">Nenhuma matriz aguardando diagnóstico. Adicione abaixo pelo brinco.</td></tr>';
+    }).join('') : '<tr><td colspan="4" class="muted">Nenhuma vaca aguardando diagnóstico. Adicione abaixo pelo brinco.</td></tr>';
   };
   desenhar();
   if (!matrizFixa) {
     const slot = el.querySelector('#d-add');
-    campoAnimal(slot, animais, { id: 'd-nova', rotulo: 'Adicionar outra matriz', obrigatorio: false, filtro: (a) => a.sexo === 'F' && a.conta_no_rebanho });
+    campoAnimal(slot, animais, { id: 'd-nova', rotulo: 'Adicionar outra vaca', obrigatorio: false, filtro: (a) => a.sexo === 'F' && a.conta_no_rebanho });
     slot.addEventListener('animal', (e) => {
       if (e.detail && !linhas.includes(e.detail.id)) { linhas = [...linhas, e.detail.id]; desenhar(); slot.querySelector('input').value = ''; }
     });
@@ -225,7 +225,7 @@ export async function abrirDiagnostico(matrizFixa = null, aoSalvar) {
     e.preventDefault();
     const itens = [...corpo.querySelectorAll('tr[data-id]')].map((tr) => ({ id: tr.dataset.id, res: tr.querySelector('[data-res]').value, idade: numOuNulo(tr.querySelector('[data-idade]').value) }))
       .filter((x) => x.res);
-    if (!itens.length) return toast('Informe o resultado de ao menos uma matriz.', 'erro');
+    if (!itens.length) return toast('Informe o resultado de ao menos uma vaca.', 'erro');
     const btn = el.querySelector('[type=submit]'); btn.disabled = true;
     let ok = 0, fila = 0; const erros = [];
     for (const it of itens) {
@@ -235,7 +235,7 @@ export async function abrirDiagnostico(matrizFixa = null, aoSalvar) {
           propriedade_id: store.prop.id, matriz_id: it.id, cobertura_id: c?.situacao === 'aguardando_diagnostico' ? c.id : null,
           data_diagnostico: el.querySelector('#d-data').value, resultado: it.res, metodo: el.querySelector('#d-met').value,
           idade_gestacional_dias: it.idade, responsavel_nome: textoOuNulo(el.querySelector('#d-resp').value),
-        }, `Diagnóstico da matriz ${a.brinco}: ${it.res}`);
+        }, `Diagnóstico da vaca ${a.brinco}: ${it.res}`);
         if (r.sincronizado) ok++; else fila++;
       } catch (err) { erros.push(`${a.brinco}: ${traduzirErro(err)}`); }
     }
@@ -300,7 +300,7 @@ export async function abrirNascimento(matrizFixa = null, aoSalvar) {
       const r = store.base.reprodutores.find((x) => x.id === cobAtual.reprodutor_id);
       infoCob.textContent = `Cobertura vinculada: ${fmtData(cobAtual.data_cobertura)}${r ? ` com ${nomeReprodutor(r)}` : ''} · previsão de parto ${fmtData(cobAtual.data_prevista_parto)}.`;
       if (r && !f.querySelector('#n-pai').value) f.querySelector('#n-pai').value = r.id;
-    } else infoCob.textContent = 'Nenhuma cobertura em aberto registrada para esta matriz (o parto será registrado assim mesmo).';
+    } else infoCob.textContent = 'Nenhuma cobertura em aberto registrada para esta vaca (o parto será registrado assim mesmo).';
   };
   if (!matrizFixa) {
     const slot = f.querySelector('#n-mae');
@@ -344,7 +344,7 @@ export async function abrirNascimento(matrizFixa = null, aoSalvar) {
     const btn = f.querySelector('[type=submit]'); btn.disabled = true;
     try {
       const r = await chamar('registrar_nascimento', { p_dados: dados },
-        vivo ? `Nascimento do bezerro ${dados.brinco} (mãe ${mae.brinco})` : `${ROTULO_RESULTADO[resultado]} — matriz ${mae.brinco}`);
+        vivo ? `Nascimento do bezerro ${dados.brinco} (mãe ${mae.brinco})` : `${ROTULO_RESULTADO[resultado]} — vaca ${mae.brinco}`);
       avisoResultado(r, vivo ? 'Nascimento' : 'Registro');
       fechar();
       if (vivo && r.sincronizado) toast(`Ficha do bezerro ${dados.brinco} criada.`, 'info');
@@ -424,7 +424,7 @@ export async function abrirDesmame(bezerroFixo = null, aoSalvar) {
 export async function excluirCobertura(c, brinco, aoSalvar) {
   if (!podeExcluir('reproducao')) return toast('Você não tem permissão para excluir coberturas.', 'erro');
   const ok = await confirmar({ titulo: 'Excluir cobertura', perigo: true, botao: 'Excluir',
-    mensagem: `Excluir a cobertura de <b>${fmtData(c.data_cobertura)}</b> da matriz <b>${esc(brinco || '')}</b>?<br><br>Se houver diagnóstico de gestação ligado a ela, ele também será excluído. A situação da matriz é recalculada pelos registros que ficarem. Esta ação não pode ser desfeita.` });
+    mensagem: `Excluir a cobertura de <b>${fmtData(c.data_cobertura)}</b> da vaca <b>${esc(brinco || '')}</b>?<br><br>Se houver diagnóstico de gestação ligado a ela, ele também será excluído. A situação da matriz é recalculada pelos registros que ficarem. Esta ação não pode ser desfeita.` });
   if (!ok) return;
   try {
     exigirConexao();

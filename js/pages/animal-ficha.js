@@ -240,15 +240,15 @@ export async function render(el, [id]) {
       if (a.sexo === 'M') {
         const nomeMat = (id) => esc(cobTouro.find((c) => c.matriz_id === id)?.matriz?.brinco || '—');
         return `<div class="dados-lista">${dado('Cadastrado como reprodutor', reprodutor ? 'Sim' : 'Não')}${dado('Coberturas registradas', fmtNum(cobTouro.length))}
-            ${dado('Matrizes vinculadas', fmtNum(new Set(cobTouro.map((c) => c.matriz_id)).size))}${dado('Filhos registrados', fmtNum(filhosPai.length))}</div>
+            ${dado('Vacas vinculadas', fmtNum(new Set(cobTouro.map((c) => c.matriz_id)).size))}${dado('Filhos registrados', fmtNum(filhosPai.length))}</div>
           ${cobTouro.length ? `<h3 style="margin:18px 0 8px">Utilização</h3><ul class="linha-tempo">${cobTouro.map((c) => `<li><div class="quando">${fmtData(c.data_cobertura)}</div>
-            Matriz <a href="#/animais/${c.matriz_id}">${nomeMat(c.matriz_id)}</a> · ${esc({ monta_natural: 'monta natural', inseminacao: 'inseminação', iatf: 'IATF', tetf: 'TETF' }[c.tipo])} · ${esc(ROTULO_SIT_COB[c.situacao])}</li>`).join('')}</ul>` : '<p class="small muted">Nenhuma cobertura registrada com este reprodutor.</p>'}`;
+            Vaca <a href="#/animais/${c.matriz_id}">${nomeMat(c.matriz_id)}</a> · ${esc({ monta_natural: 'monta natural', inseminacao: 'inseminação', iatf: 'IATF', tetf: 'TETF' }[c.tipo])} · ${esc(ROTULO_SIT_COB[c.situacao])}</li>`).join('')}</ul>` : '<p class="small muted">Nenhuma cobertura registrada com este reprodutor.</p>'}`;
       }
       const partos = nascimentos.filter((n) => n.resultado !== 'aborto');
       const abortos = nascimentos.filter((n) => n.resultado === 'aborto');
       const ultimo = partos[0];
       const aberta = coberturas.find((c) => ['prenhe', 'aguardando_diagnostico'].includes(c.situacao));
-      const matriz = ehMatriz ? '' : '<div class="alerta small" style="margin-bottom:12px"><i data-lucide="info"></i><div>Esta fêmea ainda não está na categoria novilha/matriz.</div></div>';
+      const matriz = ehMatriz ? '' : '<div class="alerta small" style="margin-bottom:12px"><i data-lucide="info"></i><div>Esta fêmea ainda não está na categoria novilha ou vaca.</div></div>';
       return `${matriz}${botoes(`<button class="btn" data-repro="cobertura"><i data-lucide="heart"></i> Registrar cobertura</button>
           <button class="btn" data-repro="diagnostico"><i data-lucide="scan-search"></i> Diagnóstico</button>
           <button class="btn btn-primario" data-repro="nascimento"><i data-lucide="baby"></i> Registrar parto</button>`)}
