@@ -12,6 +12,8 @@ import {
 import { incluir, chamar, exigirConexao } from '../sync.js';
 import { listarAnimais, campoAnimal } from './animais-comum.js';
 
+/** Situação da cobertura em texto (TETF sem diagnóstico = aguardando confirmação). */
+export const rotuloSitCob = (c) => (c.tipo === 'tetf' && c.situacao === 'aguardando_diagnostico' ? 'Aguardando confirmação TETF' : ROTULO_SIT_COB[c.situacao]);
 export const ROTULO_TIPO_COB = { monta_natural: 'Monta natural', inseminacao: 'Inseminação artificial (IA)', iatf: 'IATF', tetf: 'TETF (transferência de embrião)' };
 const ROTULO_DATA_COB = { monta_natural: 'Data da cobertura', inseminacao: 'Data da inseminação', iatf: 'Data da IATF', tetf: 'Data da TETF' };
 // TETF: o embrião transferido já tem cerca de 7 dias (mesma regra do servidor)

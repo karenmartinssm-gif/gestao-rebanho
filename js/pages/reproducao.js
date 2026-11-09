@@ -15,7 +15,7 @@ import { grafico, CORES } from '../components/graficos.js';
 const pl = (n, um, varios) => `${fmtNum(n)} ${n === 1 ? um : varios}`;
 const ABAS = [['geral', 'Visão geral'], ['matrizes', 'Vacas e novilhas'], ['coberturas', 'Coberturas'], ['nascimentos', 'Nascimentos'], ['desmames', 'Desmames'], ['reprodutores', 'Touros e sêmen']];
 const CHAVE_ABA = 'rebanho.repro.aba';
-const classeSit = { prenhe: 'ativo', proxima_parto: 'aviso', vazia: 'inativo', aguardando_diagnostico: 'info', coberta: 'info', em_reproducao: '', pos_parto: '' };
+const classeSit = { prenhe: 'ativo', proxima_parto: 'aviso', vazia: 'inativo', aguardando_diagnostico: 'info', aguardando_confirmacao_te: 'info', coberta: 'info', em_reproducao: '', pos_parto: '' };
 
 async function q(promessa) {
   const { data, error } = await promessa;
@@ -121,7 +121,7 @@ export async function render(el) {
     const listas = {
       ativas: ['Vacas e novilhas ativas', ativas.map((m) => ({ id: m.a.id, info: sitTxt(m) }))],
       prenhes: ['Prenhes', doSit('proxima_parto', 'prenhe').map((m) => ({ id: m.a.id, grupo: m.sit === 'proxima_parto' ? 0 : 1, ordem: m.cob?.data_prevista_parto ? Date.parse(m.cob.data_prevista_parto) : 0, info: m.cob?.data_prevista_parto ? `Parto previsto ${fmtData(m.cob.data_prevista_parto)}` : sitTxt(m) }))],
-      aguardando: ['Aguardando diagnóstico', doSit('aguardando_diagnostico', 'coberta').map((m) => ({ id: m.a.id, info: m.cob?.data_cobertura ? `Coberta em ${fmtData(m.cob.data_cobertura)}` : sitTxt(m) }))],
+      aguardando: ['Aguardando diagnóstico', doSit('aguardando_diagnostico', 'coberta', 'aguardando_confirmacao_te').map((m) => ({ id: m.a.id, info: m.cob?.data_cobertura ? `Coberta em ${fmtData(m.cob.data_cobertura)}` : sitTxt(m) }))],
       vazias: ['Vazias', doSit('vazia').map((m) => ({ id: m.a.id, info: 'Vazia' }))],
       partos30: ['Partos nos próximos 30 dias', lPartos30.map((m) => ({ id: m.a.id, ordem: Date.parse(m.cob.data_prevista_parto), info: `Parto previsto ${fmtData(m.cob.data_prevista_parto)}` }))],
       aoPe: ['Bezerros ao pé (sem desmame)', lAoPe.map((a) => ({ id: a.id, mae: maeDe.get(a.id), info: a.sexo ? ROTULO_SEXO[a.sexo] : '' }))],
@@ -130,7 +130,7 @@ export async function render(el) {
       <div class="grade grade-kpi" style="margin-bottom:20px">
         <div class="card kpi clicavel" role="button" tabindex="0" data-lista="ativas" title="Ver quais animais" destaque"><span class="rotulo"><i data-lucide="heart"></i>Vacas e novilhas ativas</span><span class="valor">${fmtNum(ativas.length)}</span></div>
         <div class="card kpi clicavel" role="button" tabindex="0" data-lista="prenhes" title="Ver quais animais""><span class="rotulo"><i data-lucide="heart-pulse"></i>Prenhes</span><span class="valor">${fmtNum(contaSit('prenhe') + contaSit('proxima_parto'))}</span><span class="detalhe">${fmtNum(contaSit('proxima_parto'))} próximas do parto</span></div>
-        <div class="card kpi clicavel" role="button" tabindex="0" data-lista="aguardando" title="Ver quais animais""><span class="rotulo"><i data-lucide="scan-search"></i>Aguardando diagnóstico</span><span class="valor">${fmtNum(contaSit('aguardando_diagnostico') + contaSit('coberta'))}</span></div>
+        <div class="card kpi clicavel" role="button" tabindex="0" data-lista="aguardando" title="Ver quais animais""><span class="rotulo"><i data-lucide="scan-search"></i>Aguardando diagnóstico</span><span class="valor">${fmtNum(contaSit('aguardando_diagnostico') + contaSit('coberta') + contaSit('aguardando_confirmacao_te'))}</span></div>
         <div class="card kpi clicavel" role="button" tabindex="0" data-lista="vazias" title="Ver quais animais""><span class="rotulo"><i data-lucide="heart-off"></i>Vazias</span><span class="valor">${fmtNum(contaSit('vazia'))}</span></div>
         <div class="card kpi clicavel" role="button" tabindex="0" data-lista="partos30" title="Ver quais animais""><span class="rotulo"><i data-lucide="calendar-clock"></i>Partos nos próximos 30 dias</span><span class="valor">${fmtNum(partos30)}</span></div>
         <div class="card kpi clicavel" role="button" tabindex="0" data-lista="aoPe" title="Ver quais animais""><span class="rotulo"><i data-lucide="baby"></i>Bezerros ao pé (sem desmame)</span><span class="valor">${fmtNum(aoPe)}</span></div>
@@ -339,7 +339,7 @@ export async function render(el) {
         { chave: 'tipo', titulo: 'Tipo', valor: (c) => F.ROTULO_TIPO_COB[c.tipo], render: (c) => esc(F.ROTULO_TIPO_COB[c.tipo]) },
         { chave: 'rep', titulo: 'Touro / sêmen', valor: (c) => nomeRep(c.reprodutor_id), render: (c) => `${esc(nomeRep(c.reprodutor_id))}${c.acasalamento ? `<div class="small muted">${esc(c.acasalamento)}</div>` : ''}` },
         { chave: 'prev', titulo: 'Previsão de parto', valor: (c) => c.data_prevista_parto, render: (c) => `${fmtData(c.data_prevista_parto)}${c.previsao_manual ? ' <span class="badge" title="Corrigida manualmente ou pelo diagnóstico">ajustada</span>' : ''}` },
-        { chave: 'situacao', titulo: 'Situação', valor: (c) => F.ROTULO_SIT_COB[c.situacao], render: (c) => `<span class="badge ${{ prenhe: 'ativo', vazia: 'inativo', parida: 'sucesso', aborto: 'perigo', aguardando_diagnostico: 'info' }[c.situacao] ?? ''}">${esc(F.ROTULO_SIT_COB[c.situacao])}</span>` },
+        { chave: 'situacao', titulo: 'Situação', valor: (c) => F.rotuloSitCob(c), render: (c) => `<span class="badge ${{ prenhe: 'ativo', vazia: 'inativo', parida: 'sucesso', aborto: 'perigo', aguardando_diagnostico: 'info' }[c.situacao] ?? ''}">${esc(F.rotuloSitCob(c))}</span>` },
         { chave: 'resp', titulo: 'Responsável', render: (c) => esc(c.responsavel_nome || '—') },
         ...(editar || excluir ? [{ chave: 'acao', titulo: '', render: (c) => `<span class="acoes">${editar && c.situacao === 'aguardando_diagnostico' && porId.get(c.matriz_id)?.conta_no_rebanho ? `<button class="btn btn-sm" data-diag="${c.matriz_id}">Diagnóstico</button>` : ''}${excluir && !['parida', 'aborto'].includes(c.situacao) ? `<button class="btn btn-sm btn-texto" data-excluir-cob="${c.id}" title="Excluir cobertura" aria-label="Excluir cobertura"><i data-lucide="trash-2"></i></button>` : ''}</span>` }] : []),
       ],

@@ -109,6 +109,8 @@ export function desempenhoMatriz(id, { nascimentos, desmames, animais }) {
 /** Situação exibida: refina a situação gravada com prazos (aguardando diagnóstico / próxima do parto). */
 export function situacaoExibida(situacao, cobAberta, { diasDiag, diasAlertaParto }) {
   const hoje = hojeISO();
+  // TETF ainda sem diagnóstico: aguarda a confirmação da prenhez
+  if (['coberta', 'aguardando_diagnostico'].includes(situacao) && cobAberta?.tipo === 'tetf' && cobAberta.situacao === 'aguardando_diagnostico') return 'aguardando_confirmacao_te';
   if (situacao === 'coberta' && cobAberta && cobAberta.data_cobertura <= addDias(hoje, -diasDiag)) return 'aguardando_diagnostico';
   if (situacao === 'prenhe' && cobAberta?.data_prevista_parto && cobAberta.data_prevista_parto <= addDias(hoje, diasAlertaParto)) return 'proxima_parto';
   return situacao;

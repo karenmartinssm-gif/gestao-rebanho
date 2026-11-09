@@ -97,6 +97,7 @@ export const ROTULO_MOV = {
 export const ROTULO_SITUACAO_REPRO = {
   vazia: 'Vazia', em_reproducao: 'Em reprodução', coberta: 'Coberta', aguardando_diagnostico: 'Aguardando diagnóstico',
   prenhe: 'Prenhe', proxima_parto: 'Próxima do parto', pos_parto: 'Recuperação pós-parto',
+  aguardando_confirmacao_te: 'Aguardando confirmação TETF',
 };
 
 // ---------- Mensagens ----------

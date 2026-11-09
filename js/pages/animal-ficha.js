@@ -2,12 +2,13 @@
 // FICHA INDIVIDUAL DO ANIMAL
 // =====================================================================
 import { sb, BUCKET } from '../supabase.js';
-import { store, pode, ehProprietario, nomePasto, podeExcluir } from '../store.js';
+import { store, pode, ehProprietario, nomePasto, podeExcluir, param } from '../store.js';
 import {
   esc, icones, toast, traduzirErro, fmtData, fmtDataHora, fmtKg, fmtNum, fmtMoeda, idadeTexto, diasEntre, hojeISO,
   vazio, erroCarga, badgeStatus, montarTabela, confirmar, abrirModal, ROTULO_SEXO, ROTULO_ORIGEM, ROTULO_MOV, ROTULO_SITUACAO_REPRO,
 } from '../ui.js';
-import { ROTULO_SIT_COB } from '../components/reproducao-forms.js';
+import { rotuloSitCob } from '../components/reproducao-forms.js';
+import { situacaoExibida } from '../components/reproducao-indicadores.js';
 import { grafico, CORES } from '../components/graficos.js';
 import { exigirConexao } from '../sync.js';
 
@@ -261,7 +262,7 @@ export async function render(el, [id]) {
         return `<div class="dados-lista">${dado('Cadastrado como reprodutor', reprodutor ? 'Sim' : 'Não')}${dado('Coberturas registradas', fmtNum(cobTouro.length))}
             ${dado('Vacas vinculadas', fmtNum(new Set(cobTouro.map((c) => c.matriz_id)).size))}${dado('Filhos registrados', fmtNum(filhosPai.length))}</div>
           ${cobTouro.length ? `<h3 style="margin:18px 0 8px">Utilização</h3><ul class="linha-tempo">${cobTouro.map((c) => `<li><div class="quando">${fmtData(c.data_cobertura)}</div>
-            Vaca <a href="#/animais/${c.matriz_id}">${nomeMat(c.matriz_id)}</a> · ${esc({ monta_natural: 'monta natural', inseminacao: 'inseminação', iatf: 'IATF', tetf: 'TETF' }[c.tipo])} · ${esc(ROTULO_SIT_COB[c.situacao])}</li>`).join('')}</ul>` : '<p class="small muted">Nenhuma cobertura registrada com este reprodutor.</p>'}`;
+            Vaca <a href="#/animais/${c.matriz_id}">${nomeMat(c.matriz_id)}</a> · ${esc({ monta_natural: 'monta natural', inseminacao: 'inseminação', iatf: 'IATF', tetf: 'TETF' }[c.tipo])} · ${esc(rotuloSitCob(c))}</li>`).join('')}</ul>` : '<p class="small muted">Nenhuma cobertura registrada com este reprodutor.</p>'}`;
       }
       const partos = nascimentos.filter((n) => n.resultado !== 'aborto');
       const abortos = nascimentos.filter((n) => n.resultado === 'aborto');
@@ -272,7 +273,7 @@ export async function render(el, [id]) {
           <button class="btn" data-repro="diagnostico"><i data-lucide="scan-search"></i> Diagnóstico</button>
           <button class="btn btn-primario" data-repro="nascimento"><i data-lucide="baby"></i> Registrar parto</button>`)}
         <div class="dados-lista">
-          ${dado('Situação reprodutiva', matrizRow ? `<span class="badge">${esc(ROTULO_SITUACAO_REPRO[matrizRow.situacao_reprodutiva])}</span>${!matrizRow.apta_reproducao ? ' <span class="badge perigo">descarte</span>' : ''}` : '—')}
+          ${dado('Situação reprodutiva', matrizRow ? `<span class="badge">${esc(ROTULO_SITUACAO_REPRO[situacaoExibida(matrizRow.situacao_reprodutiva, coberturas.find((c) => ['aguardando_diagnostico', 'prenhe'].includes(c.situacao)), { diasDiag: param('dias_diagnostico_gestacao'), diasAlertaParto: param('dias_alerta_parto') })])}</span>${!matrizRow.apta_reproducao ? ' <span class="badge perigo">descarte</span>' : ''}` : '—')}
           ${aberta ? dado('Touro da gestação', esc(nomeTouro(aberta.reprodutor_id) || (aberta.tipo === 'tetf' ? 'ver acasalamento' : 'não informado'))) : ''}
           ${aberta?.situacao === 'prenhe' ? dado('Previsão de parto', fmtData(aberta.data_prevista_parto)) : ''}
           ${dado('Número de partos', fmtNum(partos.length))}${dado('Bezerros nascidos vivos', fmtNum(nascimentos.filter((n) => n.resultado === 'vivo').length))}
@@ -281,7 +282,7 @@ export async function render(el, [id]) {
         </div>
         ${!coberturas.length && !nascimentos.length ? `<div style="margin-top:16px">${vazio({ icone: 'heart', titulo: 'Sem histórico reprodutivo', texto: 'Registre coberturas, diagnósticos e partos pelos botões acima ou em Reprodução e cria.' })}</div>` : `
         <h3 style="margin:18px 0 8px">Linha do tempo</h3><ul class="linha-tempo">${[
-          ...coberturas.map((c) => ({ d: c.data_cobertura, t: `Cobertura (${({ monta_natural: 'monta natural', iatf: 'IATF', tetf: 'TETF', inseminacao: 'inseminação' })[c.tipo] || c.tipo}${nomeTouro(c.reprodutor_id) ? ` · ${nomeTouro(c.reprodutor_id)}` : ''}${c.acasalamento ? ` · ${c.acasalamento}` : ''}) · ${ROTULO_SIT_COB[c.situacao]}${c.data_prevista_parto && ['prenhe', 'aguardando_diagnostico'].includes(c.situacao) ? ` · parto previsto ${fmtData(c.data_prevista_parto)}` : ''}` })),
+          ...coberturas.map((c) => ({ d: c.data_cobertura, t: `Cobertura (${({ monta_natural: 'monta natural', iatf: 'IATF', tetf: 'TETF', inseminacao: 'inseminação' })[c.tipo] || c.tipo}${nomeTouro(c.reprodutor_id) ? ` · ${nomeTouro(c.reprodutor_id)}` : ''}${c.acasalamento ? ` · ${c.acasalamento}` : ''}) · ${rotuloSitCob(c)}${c.data_prevista_parto && ['prenhe', 'aguardando_diagnostico'].includes(c.situacao) ? ` · parto previsto ${fmtData(c.data_prevista_parto)}` : ''}` })),
           ...diagnosticos.map((x) => ({ d: x.data_diagnostico, t: `Diagnóstico de gestação: ${x.resultado}${x.metodo ? ` (${x.metodo})` : ''}` })),
           ...nascimentos.map((n) => ({ d: n.data_nascimento, t: n.resultado === 'aborto' ? 'Aborto' : n.resultado === 'natimorto' ? 'Parto — natimorto' : 'Parto — bezerro vivo' })),
         ].sort((x, y) => y.d.localeCompare(x.d)).map((e) => `<li><div class="quando">${fmtData(e.d)}</div>${esc(e.t)}</li>`).join('')}</ul>`}`;
