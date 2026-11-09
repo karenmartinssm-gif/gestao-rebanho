@@ -821,3 +821,7 @@ button.ficha-foto { border: 0; padding: 0; font: inherit; }
 .titulo-secao { font-size: 1.05rem; margin: 4px 0 10px; }
 .titulo-secao .muted { font-weight: 500; }
 .tabela .col-acao { width: 1%; white-space: nowrap; }
+
+/* Reprodução › Coberturas: quadros IA e TE */
+.cob-resumo { display: grid; grid-template-columns: repeat(2, minmax(0, 260px)); gap: 16px; margin-bottom: 16px; }
+@media (max-width: 720px) { .cob-resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }

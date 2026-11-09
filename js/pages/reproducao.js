@@ -261,7 +261,18 @@ export async function render(el) {
   // ---------------- COBERTURAS ----------------
   function abaCoberturas() {
     const excluir = podeExcluir('reproducao');
-    painel.innerHTML = `<div class="card">${coberturas.length ? '<div id="t-cob"></div>' : vazio({ icone: 'heart', titulo: 'Nenhuma cobertura registrada', texto: 'Registre montas naturais, inseminações e IATF para acompanhar a previsão de parto e a taxa de prenhez.', acao: editar ? '<button class="btn btn-primario" data-novo>Registrar cobertura</button>' : '' })}</div>`;
+    const validas = coberturas.filter((c) => c.situacao !== 'cancelada');
+    const doTipo = (...t) => validas.filter((c) => t.includes(c.tipo));
+    const ia = doTipo('inseminacao', 'iatf'), te = doTipo('tetf');
+    const nIatf = doTipo('iatf').length, nIa = doTipo('inseminacao').length;
+    const conferir = te.filter((c) => c.situacao === 'aguardando_diagnostico').length;
+    const resumo = coberturas.length ? `<div class="cob-resumo">
+        <div class="card kpi"><span class="rotulo"><i data-lucide="syringe"></i>Inseminação artificial (IA)</span><span class="valor">${fmtNum(ia.length)}</span>
+          <span class="detalhe">${[nIatf && `${fmtNum(nIatf)} IATF`, nIa && `${fmtNum(nIa)} IA convencional`].filter(Boolean).join(' · ') || 'Nenhuma registrada'}</span></div>
+        <div class="card kpi"><span class="rotulo"><i data-lucide="microscope"></i>Transferência de embrião (TE)</span><span class="valor">${fmtNum(te.length)}</span>
+          <span class="detalhe">${conferir ? `${fmtNum(conferir)} aguardando confirmação` : te.length ? 'Todas conferidas' : 'Nenhuma registrada'}</span></div>
+      </div>` : '';
+    painel.innerHTML = `${resumo}<div class="card">${coberturas.length ? '<div id="t-cob"></div>' : vazio({ icone: 'heart', titulo: 'Nenhuma cobertura registrada', texto: 'Registre montas naturais, inseminações e IATF para acompanhar a previsão de parto e a taxa de prenhez.', acao: editar ? '<button class="btn btn-primario" data-novo>Registrar cobertura</button>' : '' })}</div>`;
     painel.querySelector('[data-novo]')?.addEventListener('click', () => F.abrirCobertura(null, recarregar));
     if (!coberturas.length) return;
     montarTabela(painel.querySelector('#t-cob'), {

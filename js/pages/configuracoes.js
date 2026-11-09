@@ -12,6 +12,7 @@ const CLASSES = { vacina: 'Vacina', vermifugacao: 'Vermifugação', medicamento:
 const PARAMS = [
   ['periodo_gestacao_dias', 'Período gestacional (dias)', 'Usado para calcular a previsão de parto a partir da cobertura. Confirme o valor com seu veterinário.'],
   ['dias_diagnostico_gestacao', 'Dias após a cobertura para o diagnóstico', 'A partir de quantos dias a cobertura aparece como "diagnóstico pendente".'],
+  ['dias_conferir_te', 'Dias após a TE para conferir', 'A partir de quantos dias a transferência de embrião (TETF) aparece em Pendências como "conferir TE".'],
   ['dias_alerta_parto', 'Alerta de parto (dias de antecedência)', ''],
   ['idade_desmame_dias', 'Idade prevista de desmame (dias)', 'Usada só para o alerta de desmame previsto.'],
   ['dias_alerta_desmame', 'Alerta de desmame (dias de antecedência)', ''],

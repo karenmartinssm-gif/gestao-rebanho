@@ -35,7 +35,7 @@ export async function carregarAvisos(forcar = false) {
   const q = async (x) => { const { data, error } = await x; if (error) throw error; return data || []; };
   const [animais, cobs, desm, manejos, supl, sanit, rec, desp] = await Promise.all([
     listarAnimais(),
-    todos(() => sb.from('coberturas').select('id, matriz_id, data_cobertura, data_prevista_parto, situacao').eq('propriedade_id', p).in('situacao', ['prenhe', 'aguardando_diagnostico']).order('id')),
+    todos(() => sb.from('coberturas').select('id, matriz_id, data_cobertura, data_prevista_parto, situacao, tipo').eq('propriedade_id', p).in('situacao', ['prenhe', 'aguardando_diagnostico']).order('id')),
     todos(() => sb.from('desmames').select('id, bezerro_id').eq('propriedade_id', p).order('id')),
     todos(() => sb.from('manejos_sanitarios').select('id, tipo_manejo_id, lote_id, proxima_aplicacao, proxima_resolvida, situacao, carencia_ate, manejo_animais(animal_id)')
       .eq('propriedade_id', p).eq('proxima_resolvida', false).not('proxima_aplicacao', 'is', null).neq('situacao', 'cancelado').order('id'), 500),
@@ -69,7 +69,11 @@ export async function carregarAvisos(forcar = false) {
     chave: `parto:${c.id}:${c.data_prevista_parto}`, grupo: 'reproducao', nivel: c.data_prevista_parto < hoje ? 'perigo' : 'aviso', data: c.data_prevista_parto,
     titulo: `Parto previsto — vaca ${brinco(c.matriz_id)}`, texto: prazo(c.data_prevista_parto), link: `#/animais/${c.matriz_id}` }));
   const limDiag = addDias(hoje, -param('dias_diagnostico_gestacao'));
-  cobs.filter((c) => c.situacao === 'aguardando_diagnostico' && c.data_cobertura <= limDiag && ativo(c.matriz_id)).forEach((c) => add({
+  const limTE = addDias(hoje, -param('dias_conferir_te'));
+  cobs.filter((c) => c.tipo === 'tetf' && c.situacao === 'aguardando_diagnostico' && c.data_cobertura <= limTE && ativo(c.matriz_id)).forEach((c) => add({
+    chave: `te:${c.id}`, grupo: 'reproducao', nivel: 'aviso', data: addDias(c.data_cobertura, param('dias_conferir_te')),
+    titulo: `Conferir TE — vaca ${brinco(c.matriz_id)}`, texto: `transferência em ${fmtData(c.data_cobertura)}`, link: `#/animais/${c.matriz_id}` }));
+  cobs.filter((c) => c.tipo !== 'tetf' && c.situacao === 'aguardando_diagnostico' && c.data_cobertura <= limDiag && ativo(c.matriz_id)).forEach((c) => add({
     chave: `diag:${c.id}`, grupo: 'reproducao', nivel: 'aviso', data: addDias(c.data_cobertura, param('dias_diagnostico_gestacao')),
     titulo: `Diagnóstico de gestação — vaca ${brinco(c.matriz_id)}`, texto: `coberta em ${fmtData(c.data_cobertura)}`, link: `#/animais/${c.matriz_id}` }));
   const desmamados = new Set(desm.map((d) => d.bezerro_id));

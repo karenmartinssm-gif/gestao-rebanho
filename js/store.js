@@ -15,6 +15,7 @@ export const estadoCarga = { offline: false };
 export const PARAMETROS_PADRAO = {
   periodo_gestacao_dias: 290,
   dias_diagnostico_gestacao: 45,
+  dias_conferir_te: 7,
   dias_alerta_parto: 30,
   idade_desmame_dias: 210,
   dias_alerta_desmame: 30,
