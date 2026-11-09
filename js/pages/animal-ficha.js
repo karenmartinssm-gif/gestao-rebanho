@@ -69,6 +69,18 @@ export async function render(el, [id]) {
     for (let i = lista.length - 1; i >= 0; i--) if (!lista[i][campo]) lista.splice(i, 1);
   }
 
+  // Vendas em que o animal saiu (valor, comprador) — só aparece para quem pode ver o comercial
+  const idsVenda = [...new Set(movs.map((m) => m.movimentacao.venda_id).filter(Boolean))];
+  let vendas = new Map();
+  if (idsVenda.length) {
+    const { data } = await sb.from('vendas').select('*').in('id', idsVenda);
+    vendas = new Map((data || []).map((v) => [v.id, v]));
+  }
+  const porCabeca = (v) => Number(v.valor_total) / (Number(v.quantidade) || 1);
+  const vendaSaida = [...movs].filter((m) => vendas.has(m.movimentacao.venda_id))
+    .sort((x, y) => y.movimentacao.data_movimentacao.localeCompare(x.movimentacao.data_movimentacao))[0]?.movimentacao.venda_id;
+  const vSaida = vendas.get(vendaSaida);
+
   // Nomes dos usuários que registraram eventos
   const idsUsuarios = [...new Set([...hist.map((h) => h.usuario_id), ...pesagens.map((p) => p.criado_por), ...movs.map((m) => m.movimentacao?.criado_por)].filter(Boolean))];
   const usuarios = new Map((idsUsuarios.length ? await q(sb.from('usuarios').select('id, nome, email').in('id', idsUsuarios)) : []).map((u) => [u.id, u.nome || u.email]));
@@ -100,7 +112,8 @@ export async function render(el, [id]) {
   el.innerHTML = `
     <div class="acoes" style="margin-bottom:12px"><a class="btn btn-texto" href="#/animais"><i data-lucide="arrow-left"></i> Rebanho</a></div>
     ${!ativo ? `<div class="alerta ${a.status === 'morto' ? 'perigo' : 'aviso'}" style="margin-bottom:16px"><i data-lucide="archive"></i><div>
-      Animal <b>${esc(a.status_nome.toLowerCase())}</b>${a.data_saida ? ` em ${fmtData(a.data_saida)}` : ''}. A ficha e o histórico estão preservados e não contam no rebanho ativo.</div></div>` : ''}
+      Animal <b>${esc(a.status_nome.toLowerCase())}</b>${a.data_saida ? ` em ${fmtData(a.data_saida)}` : ''}${vSaida ? ` para <b>${esc(vSaida.comprador)}</b> por <b>${fmtMoeda(porCabeca(vSaida))}</b>${Number(vSaida.quantidade) > 1 ? ` (valor por cabeça · venda de ${fmtNum(vSaida.quantidade)} animais, total ${fmtMoeda(vSaida.valor_total)})` : ''}` : ''}. A ficha e o histórico estão preservados e não contam no rebanho ativo.
+      ${vSaida ? `<div style="margin-top:6px"><button type="button" class="btn btn-sm" data-ver-venda="${vSaida.id}"><i data-lucide="hand-coins"></i> Ver venda</button></div>` : ''}</div></div>` : ''}
     <div class="card"><div class="card-corpo">
       <div class="ficha-topo">
         ${(() => {
@@ -182,6 +195,12 @@ export async function render(el, [id]) {
   });
   el.querySelector('[data-acao=pesagem]')?.addEventListener('click', () => import('../components/pesagem.js').then((m) => m.abrirPesagem(a, recarregar)));
   el.querySelector('[data-acao=saida]')?.addEventListener('click', () => import('../components/saida.js').then((m) => m.abrirSaida(a, { aoSalvar: recarregar })));
+  // "Ver venda" (aviso do topo e aba Movimentações) abre o detalhe da venda
+  el.verVenda = (vid) => import('../components/comercial-forms.js').then((m) => m.abrirDetalheComercial('venda', vendas.get(vid), recarregar));
+  if (!el.ouveVenda) {
+    el.ouveVenda = true;
+    el.addEventListener('click', (e) => { const b = e.target.closest('[data-ver-venda]'); if (b) el.verVenda?.(b.dataset.verVenda); });
+  }
   el.querySelector('[data-acao=venda]')?.addEventListener('click', () => import('../components/comercial-forms.js').then((m) => m.abrirVenda({ animais: [a.id] }, recarregar)));
   el.querySelector('[data-acao=desmame]')?.addEventListener('click', () => import('../components/reproducao-forms.js').then((m) => m.abrirDesmame(a, recarregar)));
   el.querySelector('[data-acao=excluir]')?.addEventListener('click', () => import('../components/excluir-animal.js').then((m) => m.excluirAnimal(a, () => { location.hash = '#/animais'; })));
@@ -354,6 +373,13 @@ export async function render(el, [id]) {
         { chave: 'para', titulo: 'Destino', render: (m) => esc([nomePasto(store.base.pastos.find((p) => p.id === m.movimentacao.pasto_destino_id)), store.base.lotes.find((l) => l.id === m.movimentacao.lote_destino_id)?.nome, m.movimentacao.status_destino && store.base.status.find((s) => s.codigo === m.movimentacao.status_destino)?.nome].filter(Boolean).join(' / ') || '—') },
         { chave: 'motivo', titulo: 'Motivo / causa', render: (m) => esc([m.movimentacao.motivo, m.movimentacao.causa].filter(Boolean).join(' — ') || '—') },
         { chave: 'resp', titulo: 'Responsável', render: (m) => esc(m.movimentacao.responsavel_nome || usuarios.get(m.movimentacao.criado_por) || '—') },
+        ...(vendas.size ? [{ chave: 'valor', titulo: 'Valor da venda', classe: 'dir', valor: (m) => (vendas.has(m.movimentacao.venda_id) ? porCabeca(vendas.get(m.movimentacao.venda_id)) : null),
+          render: (m) => {
+            const v = vendas.get(m.movimentacao.venda_id);
+            if (!v) return '—';
+            return `<b>${fmtMoeda(porCabeca(v))}</b>${Number(v.quantidade) > 1 ? `<div class="small muted">por cabeça · total ${fmtMoeda(v.valor_total)}</div>` : ''}
+              <div class="small muted">${esc(v.comprador)}</div><button type="button" class="btn btn-texto btn-sm" data-ver-venda="${v.id}">Ver venda</button>`;
+          } }] : []),
       ],
       linhas: [...movs].sort((x, y) => (y.movimentacao.data_movimentacao + y.criado_em).localeCompare(x.movimentacao.data_movimentacao + x.criado_em)),
     }),
