@@ -233,7 +233,7 @@ export async function abrirDiagnostico(matrizFixa = null, aoSalvar) {
     : [...ultima.values()].filter((c) => c.situacao === 'aguardando_diagnostico' && porId.get(c.matriz_id)?.conta_no_rebanho).map((c) => c.matriz_id);
 
   const { el, fechar } = abrirModal({
-    titulo: 'Diagnóstico de gestação',
+    titulo: 'Confirmar prenhez',
     largo: true,
     html: `<form id="f-diag" class="grade" style="gap:14px">
       <div class="grade grade-3" style="gap:14px">
@@ -246,7 +246,7 @@ export async function abrirDiagnostico(matrizFixa = null, aoSalvar) {
       ${matrizFixa ? '' : '<div id="d-add"></div>'}
       <p class="small muted" style="margin:0">Deixe o resultado em branco para as vacas que não foram examinadas. Sem cobertura registrada, informe a idade gestacional estimada para calcular a previsão de parto.</p>
     </form>`,
-    rodape: '<button class="btn" data-fechar>Cancelar</button><button class="btn btn-primario" type="submit" form="f-diag">Salvar diagnósticos</button>',
+    rodape: '<button class="btn" data-fechar>Cancelar</button><button class="btn btn-primario" type="submit" form="f-diag">Salvar</button>',
   });
   const corpo = el.querySelector('#d-linhas');
   const desenhar = () => {

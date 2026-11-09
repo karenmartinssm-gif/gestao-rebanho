@@ -124,7 +124,7 @@ export const ARTIGOS = [
     id: 'diagnostico', assunto: 'reproducao', titulo: 'Como registrar o diagnóstico de prenhez (toque ou ultrassom)',
     chaves: 'vaca diagnostico prenhe prenha prenhez gestacao toque ultrassom ultrasom vazia emprenhou confirmar',
     passos: [
-      'Abra a ficha da vaca e toque em <b>Diagnóstico</b>. Também dá em <b>Reprodução e cria</b> › <b>Diagnóstico</b>.',
+      'Abra a ficha da vaca e toque em <b>Confirmar prenhez</b>. Também dá em <b>Reprodução e cria</b> › <b>Confirmar prenhez</b>.',
       'Informe a data e o resultado: prenhe ou vazia.',
       'Toque em <b>Salvar</b>.',
     ],
