@@ -289,12 +289,11 @@ table.tabela { width: 100%; border-collapse: collapse; font-size: .9rem; }
 @keyframes gira { to { transform: rotate(360deg); } }
 
 /* ---------- Telas de acesso ---------- */
-.tela-acesso { min-height: 100vh; display: grid; grid-template-columns: 1.1fr 1fr; }
-.acesso-arte { background: linear-gradient(160deg, var(--verde-800), var(--verde-950)); color: #e3ece5; padding: 48px; display: flex; flex-direction: column; justify-content: space-between; }
-.acesso-arte h1 { color: #fff; font-size: 2rem; margin-top: 18px; }
-.acesso-arte p { color: #b9ccbe; max-width: 420px; }
-.acesso-arte ul { padding-left: 18px; color: #cbdacf; }
-.acesso-form { display: flex; align-items: center; justify-content: center; padding: 32px 20px; background: var(--fundo); }
+.tela-acesso { min-height: 100vh; display: flex; }
+.acesso-form { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 32px 20px; background: var(--fundo); }
+.acesso-marca { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.acesso-logo { width: 88px; height: 88px; background: var(--verde-700); -webkit-mask: url(../img/cabeca-branca.png) center / contain no-repeat; mask: url(../img/cabeca-branca.png) center / contain no-repeat; }
+.acesso-marca h1 { font-size: 1.6rem; color: var(--verde-900); }
 .acesso-caixa { width: 100%; max-width: 400px; }
 .acesso-caixa .card-corpo { padding: 28px; display: flex; flex-direction: column; gap: 14px; }
 .abas-acesso { display: flex; gap: 4px; background: #eceeea; padding: 4px; border-radius: 9px; }
@@ -315,8 +314,6 @@ table.tabela { width: 100%; border-collapse: collapse; font-size: .9rem; }
   .principal { margin-left: 0; }
   .btn-menu { display: inline-flex; }
   .grade-2, .grade-3 { grid-template-columns: 1fr; }
-  .tela-acesso { grid-template-columns: 1fr; }
-  .acesso-arte { display: none; }
 }
 @media (max-width: 720px) {
   body { font-size: 16px; }

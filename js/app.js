@@ -226,15 +226,8 @@ function telaConfiguracao(msg) {
 function telaLogin(modo = 'entrar') {
   raiz.innerHTML = `
   <div class="tela-acesso">
-    <section class="acesso-arte">
-      <div><div class="marca-logo" style="width:48px;height:48px;font-size:1.1rem"><img src="img/cabeca-branca.png" alt="Rebanho Pucci"></div>
-        <h1>Gestão de Rebanho</h1>
-        <p>Controle de cria para gado de corte: animais, reprodução, sanidade, pastagens, pesagens e financeiro em um só lugar.</p>
-        <ul><li>Ficha individual com todo o histórico</li><li>Indicadores calculados a partir dos seus registros</li><li>Funciona no computador, tablet e celular</li></ul>
-      </div>
-      <p class="small">Os dados ficam no banco de dados da sua conta Supabase, protegidos por usuário e propriedade.</p>
-    </section>
     <section class="acesso-form">
+      <div class="acesso-marca"><span class="acesso-logo" role="img" aria-label="Logo Rebanho Pucci"></span><h1>Rebanho Pucci</h1></div>
       <div class="card acesso-caixa"><div class="card-corpo">
         <div class="abas-acesso" role="tablist">
           <button data-modo="entrar" class="${modo === 'entrar' ? 'ativa' : ''}">Entrar</button>
