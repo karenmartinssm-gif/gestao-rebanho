@@ -377,8 +377,7 @@ export async function render(el, [id]) {
           render: (m) => {
             const v = vendas.get(m.movimentacao.venda_id);
             if (!v) return '—';
-            return `<b>${fmtMoeda(porCabeca(v))}</b>${Number(v.quantidade) > 1 ? `<div class="small muted">por cabeça · total ${fmtMoeda(v.valor_total)}</div>` : ''}
-              <div class="small muted">${esc(v.comprador)}</div><button type="button" class="btn btn-texto btn-sm" data-ver-venda="${v.id}">Ver venda</button>`;
+            return `<b>${fmtMoeda(porCabeca(v))}</b>${Number(v.quantidade) > 1 ? `<div class="small muted">por cabeça · total ${fmtMoeda(v.valor_total)}</div>` : ''}`;
           } }] : []),
       ],
       linhas: [...movs].sort((x, y) => (y.movimentacao.data_movimentacao + y.criado_em).localeCompare(x.movimentacao.data_movimentacao + x.criado_em)),

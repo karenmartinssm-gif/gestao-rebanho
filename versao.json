@@ -1,5 +1,5 @@
 {
-  "gerado_em": "2026-11-09T18:44:12",
+  "gerado_em": "2026-11-09T18:49:59",
   "arquivos": {
     "css/styles.css": "4d5123b6c4",
     "js/app.js": "dc9b65a1ae",
@@ -29,7 +29,7 @@
     "js/pages/ajuda.js": "06a09fec33",
     "js/pages/alimentacao.js": "2b9c993349",
     "js/pages/animais.js": "7fc3cf2da7",
-    "js/pages/animal-ficha.js": "0540cb1607",
+    "js/pages/animal-ficha.js": "fb9938b04a",
     "js/pages/animal-form.js": "12c151aedc",
     "js/pages/configuracoes.js": "53b40432d5",
     "js/pages/equipe.js": "6f8d8b1162",
