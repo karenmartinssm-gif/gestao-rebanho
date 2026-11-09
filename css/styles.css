@@ -817,3 +817,7 @@ button.ficha-foto { border: 0; padding: 0; font: inherit; }
   .nasc-pizza { grid-column: 1 / -1; grid-row: 2; }
   .nasc-pizza-area { height: 140px; }
 }
+
+.titulo-secao { font-size: 1.05rem; margin: 4px 0 10px; }
+.titulo-secao .muted { font-weight: 500; }
+.tabela .col-acao { width: 1%; white-space: nowrap; }

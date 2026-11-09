@@ -331,10 +331,41 @@ export async function render(el) {
     const idade = param('idade_desmame_dias');
     const pendentes = animais.filter((a) => a.conta_no_rebanho && a.categoria_grupo === 'bezerro' && !desmamados.has(a.id));
     const previstos = pendentes.filter((a) => a.data_nascimento && addDias(a.data_nascimento, idade) <= addDias(hojeISO(), param('dias_alerta_desmame')));
+    const hoje = hojeISO();
+    const dataPrev = (x) => addDias(x.data_nascimento, idade);
+    previstos.sort((x, y) => dataPrev(x).localeCompare(dataPrev(y)));
     painel.innerHTML = `
-      ${previstos.length ? `<div class="alerta aviso" style="margin-bottom:14px"><i data-lucide="milk-off"></i><div><b>${previstos.length} bezerro(s)</b> com desmame previsto nos próximos ${param('dias_alerta_desmame')} dias ou atrasado: ${previstos.slice(0, 12).map((a) => esc(a.brinco)).join(', ')}${previstos.length > 12 ? '…' : ''}</div></div>` : ''}
+      ${previstos.length ? `<h2 class="titulo-secao">Desmame previsto <span class="muted">(${fmtNum(previstos.length)})</span></h2>
+        <p class="small muted" style="margin:-4px 0 10px">Bezerros que chegam à idade de desmame (${fmtNum(idade)} dias) nos próximos ${param('dias_alerta_desmame')} dias ou que já passaram dela.</p>
+        <div class="card" style="margin-bottom:20px"><div id="t-prev"></div></div>` : ''}
+      <h2 class="titulo-secao">Desmames realizados <span class="muted">(${fmtNum(desmames.length)})</span></h2>
       <div class="card">${desmames.length ? '<div id="t-desm"></div>' : vazio({ icone: 'milk-off', titulo: 'Nenhum desmame registrado', texto: `Há ${pendentes.length} bezerro(s) ativo(s) sem desmame.`, acao: editar && pendentes.length ? '<button class="btn btn-primario" data-novo>Registrar desmame</button>' : '' })}</div>`;
     painel.querySelector('[data-novo]')?.addEventListener('click', () => F.abrirDesmame(null, recarregar));
+    if (previstos.length) {
+      const boxPrev = painel.querySelector('#t-prev');
+      montarTabela(boxPrev, {
+        busca: false,
+        colunas: [
+          { chave: 'brinco', titulo: 'Bezerro', primaria: true, valor: (a) => a.brinco, render: (a) => linkAnimal(a.id) },
+          { chave: 'mae', titulo: 'Mãe', valor: (a) => porId.get(a.mae_id)?.brinco, render: (a) => (a.mae_id ? linkAnimal(a.mae_id) : '—') },
+          { chave: 'sexo', titulo: 'Sexo', valor: (a) => ROTULO_SEXO[a.sexo], render: (a) => esc(ROTULO_SEXO[a.sexo] || '—') },
+          { chave: 'nasc', titulo: 'Nascimento', valor: (a) => a.data_nascimento, render: (a) => fmtData(a.data_nascimento) },
+          { chave: 'idade', titulo: 'Idade', valor: (a) => a.data_nascimento, render: (a) => idadeTexto(a.data_nascimento) },
+          { chave: 'prev', titulo: 'Desmame previsto', valor: dataPrev, render: (a) => {
+            const d = dataPrev(a); const atraso = d < hoje ? Math.round((Date.parse(hoje) - Date.parse(d)) / 864e5) : 0;
+            return `${fmtData(d)}${atraso ? ` <span class="badge perigo">${fmtNum(atraso)} ${atraso === 1 ? 'dia' : 'dias'} de atraso</span>` : ''}`;
+          } },
+          ...(editar ? [{ chave: 'acao', titulo: '', classe: 'col-acao', render: (a) => `<button class="btn btn-sm" data-desmamar="${a.id}"><i data-lucide="milk-off"></i> Registrar desmame</button>` }] : []),
+        ],
+        linhas: previstos,
+        aoClicar: (id) => { location.hash = `#/animais/${id}`; },
+      });
+      boxPrev.addEventListener('click', (e) => {
+        const b = e.target.closest('[data-desmamar]'); if (!b) return;
+        e.stopPropagation();
+        F.abrirDesmame(porId.get(b.dataset.desmamar), recarregar);
+      });
+    }
     if (!desmames.length) return;
     montarTabela(painel.querySelector('#t-desm'), {
       colunas: [
