@@ -28,6 +28,7 @@ const MENU = [
   { rota: 'relatorios', titulo: 'Relatórios', icone: 'file-text' },
   { rota: 'equipe', titulo: 'Equipe e permissões', icone: 'users', dono: true },
   { rota: 'configuracoes', titulo: 'Configurações', icone: 'settings', perm: 'configuracoes' },
+  { rota: 'ajuda', titulo: 'Ajuda', icone: 'circle-help' },
 ];
 
 // ---------- Rotas ----------
@@ -49,6 +50,7 @@ const ROTAS = [
   { re: /^movimentacoes$/, pagina: () => import('./pages/movimentacoes.js'), titulo: 'Movimentações' },
   { re: /^financeiro$/, pagina: () => import('./pages/financeiro.js'), titulo: 'Financeiro', perm: 'financeiro' },
   { re: /^relatorios(?:\/([a-z]+))?$/, pagina: () => import('./pages/relatorios.js'), titulo: 'Relatórios' },
+  { re: /^ajuda$/, pagina: () => import('./pages/ajuda.js'), titulo: 'Ajuda' },
 ];
 
 export function navegar(rota) { location.hash = `#/${rota}`; }
