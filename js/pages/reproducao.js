@@ -4,7 +4,7 @@
 import { sb } from '../supabase.js';
 import { store, pode, param, carregarBase, podeExcluir } from '../store.js';
 import {
-  esc, icones, fmtData, fmtNum, fmtKg, fmtPct, idadeTexto, hojeISO, addDias, montarTabela, vazio, erroCarga, baixarCSV, ROTULO_SITUACAO_REPRO, ROTULO_SEXO,
+  esc, icones, abrirModal, fmtData, fmtNum, fmtKg, fmtPct, idadeTexto, hojeISO, addDias, montarTabela, vazio, erroCarga, baixarCSV, ROTULO_SITUACAO_REPRO, ROTULO_SEXO,
 } from '../ui.js';
 import { listarAnimais } from '../components/animais-comum.js';
 import { calcularIndicadores, desempenhoMatriz, situacaoExibida } from '../components/reproducao-indicadores.js';
@@ -87,35 +87,79 @@ export async function render(el) {
   };
   el.querySelector('.abas').addEventListener('click', (e) => { const b = e.target.closest('[data-aba]'); if (b) mostrar(b.dataset.aba); });
 
+  // Lista dos animais por trás de um número (abre ao clicar no quadro)
+  function abrirLista(titulo, itens) {
+    const ordenados = [...itens].filter((it) => porId.get(it.id))
+      .sort((x, y) => (x.grupo ?? 0) - (y.grupo ?? 0) || (x.ordem ?? 0) - (y.ordem ?? 0) || String(porId.get(x.id).brinco).localeCompare(String(porId.get(y.id).brinco), 'pt-BR', { numeric: true }));
+    const linha = (it) => {
+      const a = porId.get(it.id);
+      const mae = it.mae && porId.get(it.mae);
+      return `<li><a href="#/animais/${a.id}" data-fechar><b>${esc(a.brinco)}</b>${a.nome ? ` <span class="muted">${esc(a.nome)}</span>` : ''}</a>
+        <span class="small muted">${esc([a.categoria_nome, a.data_nascimento ? idadeTexto(a.data_nascimento) : '', mae ? `mãe ${mae.brinco}` : ''].filter(Boolean).join(' · '))}</span>
+        ${it.info ? `<span class="small lista-info">${esc(it.info)}</span>` : ''}</li>`;
+    };
+    abrirModal({
+      titulo: `${titulo} (${fmtNum(ordenados.length)})`,
+      html: ordenados.length ? `<p class="small muted" style="margin:0 0 10px">Toque no brinco para abrir a ficha do animal.</p><ul class="lista-animais">${ordenados.map(linha).join('')}</ul>`
+        : '<p class="muted">Nenhum animal neste número.</p>',
+    });
+  }
+
   // ---------------- VISÃO GERAL ----------------
   function abaGeral() {
     const anos = [...new Set([...coberturas.map((c) => c.data_cobertura), ...nascimentos.map((n) => n.data_nascimento)].map((d) => d.slice(0, 4)))].sort().reverse();
     const hoje = hojeISO();
-    const contaSit = (s) => ativas.filter((m) => m.sit === s).length;
-    const partos30 = ativas.filter((m) => m.cob?.situacao === 'prenhe' && m.cob.data_prevista_parto && m.cob.data_prevista_parto <= addDias(hoje, 30)).length;
-    const aoPe = animais.filter((a) => a.conta_no_rebanho && a.categoria_grupo === 'bezerro' && a.origem === 'nascido' && !desmamados.has(a.id)).length;
+    const doSit = (...ss) => ativas.filter((m) => ss.includes(m.sit));
+    const contaSit = (s) => doSit(s).length;
+    const lPartos30 = ativas.filter((m) => m.cob?.situacao === 'prenhe' && m.cob.data_prevista_parto && m.cob.data_prevista_parto <= addDias(hoje, 30));
+    const partos30 = lPartos30.length;
+    const lAoPe = animais.filter((a) => a.conta_no_rebanho && a.categoria_grupo === 'bezerro' && a.origem === 'nascido' && !desmamados.has(a.id));
+    const aoPe = lAoPe.length;
+    const maeDe = new Map(nascimentos.filter((n) => n.bezerro_id).map((n) => [n.bezerro_id, n.matriz_id]));
+    const sitTxt = (m) => ROTULO_SITUACAO_REPRO[m.sit] || '';
+    const listas = {
+      ativas: ['Vacas e novilhas ativas', ativas.map((m) => ({ id: m.a.id, info: sitTxt(m) }))],
+      prenhes: ['Prenhes', doSit('proxima_parto', 'prenhe').map((m) => ({ id: m.a.id, grupo: m.sit === 'proxima_parto' ? 0 : 1, ordem: m.cob?.data_prevista_parto ? Date.parse(m.cob.data_prevista_parto) : 0, info: m.cob?.data_prevista_parto ? `Parto previsto ${fmtData(m.cob.data_prevista_parto)}` : sitTxt(m) }))],
+      aguardando: ['Aguardando diagnóstico', doSit('aguardando_diagnostico', 'coberta').map((m) => ({ id: m.a.id, info: m.cob?.data_cobertura ? `Coberta em ${fmtData(m.cob.data_cobertura)}` : sitTxt(m) }))],
+      vazias: ['Vazias', doSit('vazia').map((m) => ({ id: m.a.id, info: 'Vazia' }))],
+      partos30: ['Partos nos próximos 30 dias', lPartos30.map((m) => ({ id: m.a.id, ordem: Date.parse(m.cob.data_prevista_parto), info: `Parto previsto ${fmtData(m.cob.data_prevista_parto)}` }))],
+      aoPe: ['Bezerros ao pé (sem desmame)', lAoPe.map((a) => ({ id: a.id, mae: maeDe.get(a.id), info: a.sexo ? ROTULO_SEXO[a.sexo] : '' }))],
+    };
     painel.innerHTML = `
       <div class="grade grade-kpi" style="margin-bottom:20px">
-        <div class="card kpi destaque"><span class="rotulo"><i data-lucide="heart"></i>Vacas e novilhas ativas</span><span class="valor">${fmtNum(ativas.length)}</span></div>
-        <div class="card kpi"><span class="rotulo"><i data-lucide="heart-pulse"></i>Prenhes</span><span class="valor">${fmtNum(contaSit('prenhe') + contaSit('proxima_parto'))}</span><span class="detalhe">${fmtNum(contaSit('proxima_parto'))} próximas do parto</span></div>
-        <div class="card kpi"><span class="rotulo"><i data-lucide="scan-search"></i>Aguardando diagnóstico</span><span class="valor">${fmtNum(contaSit('aguardando_diagnostico') + contaSit('coberta'))}</span></div>
-        <div class="card kpi"><span class="rotulo"><i data-lucide="heart-off"></i>Vazias</span><span class="valor">${fmtNum(contaSit('vazia'))}</span></div>
-        <div class="card kpi"><span class="rotulo"><i data-lucide="calendar-clock"></i>Partos nos próximos 30 dias</span><span class="valor">${fmtNum(partos30)}</span></div>
-        <div class="card kpi"><span class="rotulo"><i data-lucide="baby"></i>Bezerros ao pé (sem desmame)</span><span class="valor">${fmtNum(aoPe)}</span></div>
+        <div class="card kpi clicavel" role="button" tabindex="0" data-lista="ativas" title="Ver quais animais" destaque"><span class="rotulo"><i data-lucide="heart"></i>Vacas e novilhas ativas</span><span class="valor">${fmtNum(ativas.length)}</span></div>
+        <div class="card kpi clicavel" role="button" tabindex="0" data-lista="prenhes" title="Ver quais animais""><span class="rotulo"><i data-lucide="heart-pulse"></i>Prenhes</span><span class="valor">${fmtNum(contaSit('prenhe') + contaSit('proxima_parto'))}</span><span class="detalhe">${fmtNum(contaSit('proxima_parto'))} próximas do parto</span></div>
+        <div class="card kpi clicavel" role="button" tabindex="0" data-lista="aguardando" title="Ver quais animais""><span class="rotulo"><i data-lucide="scan-search"></i>Aguardando diagnóstico</span><span class="valor">${fmtNum(contaSit('aguardando_diagnostico') + contaSit('coberta'))}</span></div>
+        <div class="card kpi clicavel" role="button" tabindex="0" data-lista="vazias" title="Ver quais animais""><span class="rotulo"><i data-lucide="heart-off"></i>Vazias</span><span class="valor">${fmtNum(contaSit('vazia'))}</span></div>
+        <div class="card kpi clicavel" role="button" tabindex="0" data-lista="partos30" title="Ver quais animais""><span class="rotulo"><i data-lucide="calendar-clock"></i>Partos nos próximos 30 dias</span><span class="valor">${fmtNum(partos30)}</span></div>
+        <div class="card kpi clicavel" role="button" tabindex="0" data-lista="aoPe" title="Ver quais animais""><span class="rotulo"><i data-lucide="baby"></i>Bezerros ao pé (sem desmame)</span><span class="valor">${fmtNum(aoPe)}</span></div>
       </div>
       <div class="filtro-periodo"><h2 style="margin:0">Indicadores do período</h2>
         <select id="periodo" aria-label="Período"><option value="12m">Últimos 12 meses</option>${anos.map((y) => `<option value="${y}">Ano de ${y}</option>`).join('')}</select>
         <span class="small muted" id="periodo-txt"></span></div>
       <div class="grade grade-3" id="indicadores"></div>
       <p class="small muted">Os indicadores consideram apenas eventos registrados no sistema. Quando o denominador é zero, o indicador aparece como “—”.</p>`;
+    let listasPeriodo = {};
+    const abrirDoCartao = (alvo) => {
+      if (alvo.closest('details')) return;   // "Como é calculado" abre normalmente
+      const k = alvo.closest('[data-lista]');
+      if (k) { abrirLista(...listas[k.dataset.lista]); return; }
+      const kp = alvo.closest('[data-lista-periodo]');
+      if (kp) abrirLista(...listasPeriodo[kp.dataset.listaPeriodo]);
+    };
+    painel.addEventListener('click', (e) => abrirDoCartao(e.target));
+    painel.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.clicavel')) { e.preventDefault(); abrirDoCartao(e.target); } });
     const sel = painel.querySelector('#periodo');
     const desenhar = () => {
       const v = sel.value;
       const [ini, fim] = v === '12m' ? [addDias(hoje, -365), hoje] : [`${v}-01-01`, `${v}-12-31`];
       painel.querySelector('#periodo-txt').textContent = `${fmtData(ini)} a ${fmtData(fim)}`;
       const r = calcularIndicadores(dados, ini, fim, param('periodo_gestacao_dias'), param('idade_desmame_dias'));
-      const card = (titulo, valor, conta, formula) => `<div class="card indicador"><span class="small muted" style="font-weight:600">${titulo}</span>
-        <span class="valor">${valor}</span><span class="conta">${conta}</span>
+      listasPeriodo = { prenhez: ['Taxa de prenhez', r.prenhez.itens], natalidade: ['Taxa de natalidade', r.natalidade.itens], desmame: ['Taxa de desmame', r.desmame.itens],
+        mortalidade: ['Mortalidade de bezerros', r.mortalidade.itens], iep: ['Intervalo entre partos', r.iep.itens], peso: ['Peso médio ao desmame', r.pesoDesmame.itens] };
+      const chaves = { 'Taxa de prenhez': 'prenhez', 'Taxa de natalidade': 'natalidade', 'Taxa de desmame': 'desmame', 'Mortalidade de bezerros': 'mortalidade', 'Intervalo entre partos': 'iep', 'Peso médio ao desmame': 'peso' };
+      const card = (titulo, valor, conta, formula) => `<div class="card indicador clicavel" role="button" tabindex="0" data-lista-periodo="${chaves[titulo]}" title="Ver quais animais"><span class="small muted" style="font-weight:600">${titulo}</span>
+        <span class="valor">${valor}</span><span class="conta">${conta}</span><span class="small ver-animais"><i data-lucide="list"></i> Ver animais</span>
         <details><summary>Como é calculado</summary>${formula}</details></div>`;
       painel.querySelector('#indicadores').innerHTML = [
         card('Taxa de prenhez', fmtPct(r.prenhez.valor), `${pl(r.prenhez.num, 'prenhe', 'prenhes')} de ${pl(r.prenhez.den, 'fêmea diagnosticada', 'fêmeas diagnosticadas')}${r.prenhez.extra ? ` · ${r.prenhez.extra} sem diagnóstico ainda` : ''}`,
@@ -131,6 +175,7 @@ export async function render(el) {
         card('Peso médio ao desmame', r.pesoDesmame.valor ? fmtKg(r.pesoDesmame.valor) : '—', `${r.pesoDesmame.n} desmame(s) com peso registrado${r.pesoDesmame.idade ? ` · idade média ${fmtNum(r.pesoDesmame.idade)} dias` : ''}`,
           'Média dos pesos informados nos desmames do período. Desmames sem peso não entram na média.'),
       ].join('');
+      icones();
     };
     sel.addEventListener('change', desenhar);
     desenhar();

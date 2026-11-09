@@ -772,3 +772,16 @@ button.ficha-foto { border: 0; padding: 0; font: inherit; }
   .cartao-animal .acoes-linha { flex: none; gap: 6px; }
   .cartao-animal .btn-acao { width: 36px; height: 36px; border-radius: 9px; }
 }
+
+/* Quadros clicáveis (Reprodução › Visão geral) e lista de animais */
+.card.clicavel { cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
+.card.clicavel:hover, .card.clicavel:focus-visible { border-color: var(--verde-700); box-shadow: 0 3px 12px rgba(30, 60, 40, .12); transform: translateY(-1px); outline: none; }
+.kpi.destaque.clicavel:hover { border-color: var(--verde-950); }
+.indicador .ver-animais { display: inline-flex; align-items: center; gap: 4px; color: var(--verde-700); font-weight: 500; }
+.indicador .ver-animais svg { width: 14px; height: 14px; }
+.lista-animais { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.lista-animais li { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px; padding: 9px 2px; border-bottom: 1px solid var(--borda); }
+.lista-animais li:last-child { border-bottom: 0; }
+.lista-animais li a { text-decoration: none; }
+.lista-animais li > .muted { grid-column: 1; }
+.lista-animais .lista-info { grid-column: 2; grid-row: 1 / span 2; align-self: center; text-align: right; color: var(--verde-800); }

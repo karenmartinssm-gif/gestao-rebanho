@@ -1,7 +1,7 @@
 {
-  "gerado_em": "2026-11-09T18:31:25",
+  "gerado_em": "2026-11-09T18:36:35",
   "arquivos": {
-    "css/styles.css": "301188b947",
+    "css/styles.css": "4d5123b6c4",
     "js/app.js": "dc9b65a1ae",
     "js/components/ajuda-conteudo.js": "34e9ccf7b7",
     "js/components/alimentacao-forms.js": "0dcbfee3f9",
@@ -21,7 +21,7 @@
     "js/components/pesagem.js": "e1533c97e0",
     "js/components/relatorios-def.js": "fb5fc6ec0b",
     "js/components/reproducao-forms.js": "a2c1b1de31",
-    "js/components/reproducao-indicadores.js": "abaa3fba89",
+    "js/components/reproducao-indicadores.js": "5eba7f6ad3",
     "js/components/saida.js": "7fd1a1d180",
     "js/components/sanidade-forms.js": "3f51b2e5e4",
     "js/components/transferencia.js": "636d139989",
@@ -41,7 +41,7 @@
     "js/pages/pendencias.js": "8402ef59c7",
     "js/pages/pesagens.js": "2df6f8ba31",
     "js/pages/relatorios.js": "3e4a7cde25",
-    "js/pages/reproducao.js": "44f349ce68",
+    "js/pages/reproducao.js": "de8dfc9574",
     "js/pages/sanidade.js": "c4d88f682e",
     "js/store.js": "882149f95c",
     "js/supabase.js": "642653d165",

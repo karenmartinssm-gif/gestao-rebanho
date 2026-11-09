@@ -21,19 +21,25 @@ export function calcularIndicadores({ animais, coberturas, nascimentos, desmames
   const expostas = new Set(cobPeriodo.map((c) => c.matriz_id));
   const diagnosticadas = new Set(cobPeriodo.filter((c) => ['prenhe', 'vazia', 'parida', 'aborto'].includes(c.situacao)).map((c) => c.matriz_id));
   const prenhes = new Set(cobPeriodo.filter((c) => ['prenhe', 'parida', 'aborto'].includes(c.situacao)).map((c) => c.matriz_id));
-  const prenhez = { valor: pct(prenhes.size, diagnosticadas.size), num: prenhes.size, den: diagnosticadas.size, extra: expostas.size - diagnosticadas.size };
+  const prenhez = { valor: pct(prenhes.size, diagnosticadas.size), num: prenhes.size, den: diagnosticadas.size, extra: expostas.size - diagnosticadas.size,
+    // quem entra na conta (para a lista ao clicar no quadro)
+    itens: [...expostas].map((id) => ({ id, info: prenhes.has(id) ? 'Prenhe' : diagnosticadas.has(id) ? 'Vazia' : 'Sem diagnóstico ainda', grupo: prenhes.has(id) ? 0 : diagnosticadas.has(id) ? 1 : 2 })) };
 
   // 2) TAXA DE NATALIDADE (nascidos no período ÷ fêmeas expostas ~1 gestação antes)
   const iniExp = addDias(ini, -gest), fimExp = addDias(fim, -gest);
   const expostasAntes = new Set(validas.filter((c) => no(c.data_cobertura, iniExp, fimExp)).map((c) => c.matriz_id));
   const nascPeriodo = nascimentos.filter((n) => no(n.data_nascimento, ini, fim));
   const vivos = nascPeriodo.filter((n) => n.resultado === 'vivo');
-  const natalidade = { valor: pct(vivos.length, expostasAntes.size), num: vivos.length, den: expostasAntes.size, iniExp, fimExp };
+  const maesVivos = new Set(vivos.map((n) => n.matriz_id));
+  const natalidade = { valor: pct(vivos.length, expostasAntes.size), num: vivos.length, den: expostasAntes.size, iniExp, fimExp,
+    itens: [...vivos.map((n) => ({ id: n.bezerro_id, info: `Nasceu vivo em ${n.data_nascimento.split('-').reverse().join('/')}`, mae: n.matriz_id, grupo: 0 })),
+      ...[...expostasAntes].filter((id) => !maesVivos.has(id)).map((id) => ({ id, info: 'Vaca exposta sem bezerro vivo no período', grupo: 1 }))] };
 
   // 3) TAXA DE DESMAME (coorte nascida no período, só bezerros que já atingiram a idade de desmame)
   const elegiveis = vivos.filter((n) => n.bezerro_id && addDias(n.data_nascimento, idadeDesmame) <= hoje);
   const desmamados = elegiveis.filter((n) => desm.has(n.bezerro_id));
-  const desmame = { valor: pct(desmamados.length, elegiveis.length), num: desmamados.length, den: elegiveis.length, aguardando: vivos.length - elegiveis.length };
+  const desmame = { valor: pct(desmamados.length, elegiveis.length), num: desmamados.length, den: elegiveis.length, aguardando: vivos.length - elegiveis.length,
+    itens: elegiveis.map((n) => ({ id: n.bezerro_id, mae: n.matriz_id, info: desm.has(n.bezerro_id) ? 'Desmamado' : 'Ainda não desmamado', grupo: desm.has(n.bezerro_id) ? 0 : 1 })) };
 
   // 4) MORTALIDADE DE BEZERROS (nascidos vivos no período que morreram antes do desmame)
   const mortos = vivos.filter((n) => {
@@ -46,20 +52,24 @@ export function calcularIndicadores({ animais, coberturas, nascimentos, desmames
     valor: pct(mortos.length, vivos.length), num: mortos.length, den: vivos.length,
     natimortos: nascPeriodo.filter((n) => n.resultado === 'natimorto').length,
     abortos: nascPeriodo.filter((n) => n.resultado === 'aborto').length,
+    itens: [...mortos.map((n) => ({ id: n.bezerro_id, mae: n.matriz_id, info: 'Morreu antes do desmame', grupo: 0 })),
+      ...nascPeriodo.filter((n) => n.resultado !== 'vivo').map((n) => ({ id: n.matriz_id, info: `${n.resultado === 'aborto' ? 'Aborto' : 'Natimorto'} (vaca)`, grupo: 1 }))],
   };
 
   // 5) INTERVALO ENTRE PARTOS (pares de partos consecutivos da mesma matriz; 2º parto no período)
   const partosPorMatriz = agruparPartos(nascimentos);
   const intervalos = [];
-  partosPorMatriz.forEach((lista) => {
-    for (let i = 1; i < lista.length; i++) if (no(lista[i], ini, fim)) intervalos.push(diasEntre(lista[i - 1], lista[i]));
+  const itensIep = [];
+  partosPorMatriz.forEach((lista, mid) => {
+    for (let i = 1; i < lista.length; i++) if (no(lista[i], ini, fim)) { const d = diasEntre(lista[i - 1], lista[i]); intervalos.push(d); itensIep.push({ id: mid, info: `${d} dias entre partos`, ordem: -d }); }
   });
-  const iep = { valor: intervalos.length ? intervalos.reduce((s, x) => s + x, 0) / intervalos.length : null, n: intervalos.length, matrizes: new Set() };
+  const iep = { valor: intervalos.length ? intervalos.reduce((s, x) => s + x, 0) / intervalos.length : null, n: intervalos.length, matrizes: new Set(), itens: itensIep };
 
   // 6) PESO E IDADE AO DESMAME (desmames no período, com peso registrado)
   const desmPeriodo = desmames.filter((d) => no(d.data_desmame, ini, fim));
   const comPeso = desmPeriodo.filter((d) => d.peso_desmame);
   const pesoDesmame = { valor: comPeso.length ? comPeso.reduce((s, d) => s + Number(d.peso_desmame), 0) / comPeso.length : null, n: comPeso.length,
+    itens: comPeso.map((d) => ({ id: d.bezerro_id, info: `${Number(d.peso_desmame).toLocaleString('pt-BR')} kg ao desmame`, ordem: -Number(d.peso_desmame) })),
     idade: desmPeriodo.filter((d) => d.idade_dias).length ? desmPeriodo.filter((d) => d.idade_dias).reduce((s, d) => s + d.idade_dias, 0) / desmPeriodo.filter((d) => d.idade_dias).length : null };
 
   return { prenhez, natalidade, desmame, mortalidade, iep, pesoDesmame };
