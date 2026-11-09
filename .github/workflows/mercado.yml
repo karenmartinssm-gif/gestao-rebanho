@@ -1,0 +1,38 @@
+# Atualiza o mercado.json (fechamento do mercado pecuário de SP) em dias úteis.
+name: Mercado pecuário
+
+on:
+  schedule:
+    - cron: '0 21 * * 1-5'   # 18h de Brasília
+    - cron: '0 11 * * 2-6'   # 8h de Brasília (pega fechamentos publicados à noite)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: mercado
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Buscar cotações
+        run: python3 .github/mercado.py mercado.json
+      - name: Gravar se mudou
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- mercado.json && git ls-files --error-unmatch mercado.json >/dev/null 2>&1; then
+            echo "Sem mudança."; exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add mercado.json
+          git commit -m "Mercado: cotações de SP atualizadas"
+          git push
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" || true
