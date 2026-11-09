@@ -166,7 +166,7 @@ export async function render(el) {
     </div>
 
     <div class="painel-baixo ${comPendencia.length ? '' : 'sem-pend'}">
-      ${comPendencia.length ? `<section id="pendencias">
+      ${comPendencia.length ? `<section id="pendencias" style="--pc3:${Math.min(comPendencia.length, 3)};--pc2:${Math.min(comPendencia.length, 2)}">
         <div class="painel-sec-titulo"><h2><i data-lucide="bell-ring"></i> Atenção e pendências</h2>
           <a class="btn btn-sm" href="#/pendencias">Ver todas as pendências</a></div>
         ${htmlPendencias(comPendencia)}

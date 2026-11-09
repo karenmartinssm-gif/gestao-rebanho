@@ -741,3 +741,8 @@ button.ficha-foto { border: 0; padding: 0; font: inherit; }
   .ajuda-item summary { padding: 12px 14px; }
   .ajuda-corpo { padding: 10px 14px 14px; }
 }
+
+/* Painel: quadros de pendência ocupam a largura toda, seja 1, 2 ou 3 */
+.painel-baixo .pendencias { grid-template-columns: repeat(var(--pc3, 3), minmax(0, 1fr)); }
+@media (max-width: 1100px) { .painel-baixo .pendencias { grid-template-columns: repeat(var(--pc2, 2), minmax(0, 1fr)); } }
+@media (max-width: 720px) { .painel-baixo .pendencias { grid-template-columns: minmax(0, 1fr); } }

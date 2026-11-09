@@ -1,7 +1,7 @@
 {
-  "gerado_em": "2026-11-09T09:49:27",
+  "gerado_em": "2026-11-09T12:33:49",
   "arquivos": {
-    "css/styles.css": "c33dc18422",
+    "css/styles.css": "861cf8f9f4",
     "js/app.js": "09c499b6d5",
     "js/components/ajuda-conteudo.js": "34e9ccf7b7",
     "js/components/alimentacao-forms.js": "0dcbfee3f9",
@@ -36,7 +36,7 @@
     "js/pages/financeiro.js": "9f1a350133",
     "js/pages/graficos.js": "bace3d50b5",
     "js/pages/movimentacoes.js": "529d81e5ba",
-    "js/pages/painel.js": "a341aa2533",
+    "js/pages/painel.js": "c29afc8640",
     "js/pages/pastagens.js": "ff98c5b91d",
     "js/pages/pendencias.js": "8402ef59c7",
     "js/pages/pesagens.js": "2df6f8ba31",
