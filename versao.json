@@ -1,5 +1,5 @@
 {
-  "gerado_em": "2026-11-08T15:48:06",
+  "gerado_em": "2026-11-09T07:22:57",
   "arquivos": {
     "css/styles.css": "c0b77b435c",
     "js/app.js": "214aa3b535",
@@ -34,7 +34,7 @@
     "js/pages/financeiro.js": "9f1a350133",
     "js/pages/graficos.js": "bace3d50b5",
     "js/pages/movimentacoes.js": "529d81e5ba",
-    "js/pages/painel.js": "73d85b7573",
+    "js/pages/painel.js": "fc57f204c0",
     "js/pages/pastagens.js": "ff98c5b91d",
     "js/pages/pendencias.js": "8554f3e988",
     "js/pages/pesagens.js": "2df6f8ba31",

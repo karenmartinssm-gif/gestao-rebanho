@@ -37,6 +37,7 @@ export async function render(el) {
   const ativos = animais.filter((a) => a.conta_no_rebanho);
   const ativo = (id) => porId.get(id)?.conta_no_rebanho;
   const conta = (f) => ativos.filter(f).length;
+  const registrados = conta((a) => a.registrado);
   const grupo = (g) => conta((a) => a.categoria_grupo === g);
 
   const nascMes = animais.filter((a) => a.origem === 'nascido' && a.data_nascimento?.startsWith(mesAtual)).length;
@@ -95,7 +96,7 @@ export async function render(el) {
     <div class="kpi-faixa">
       <div class="kpi-grupo kpi-principal">
         ${kpi('Animais ativos', ativos.length, 'tag', porSexo(() => true), true, '#/animais?situacao=ativos')}
-        ${kpi('Animais registrados', conta((a) => a.registrado), 'badge-check', `de ${fmtNum(ativos.length)} ativos`, false, '#/animais?registro=sim')}
+        ${kpi('Animais registrados', registrados, 'badge-check', `${fmtNum(ativos.length ? Math.round(registrados / ativos.length * 100) : 0)}% do rebanho`, false, '#/animais?registro=sim')}
       </div>
       <div class="kpi-divisor" aria-hidden="true"></div>
       <div class="kpi-grupo">
