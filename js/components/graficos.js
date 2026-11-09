@@ -14,10 +14,10 @@ export function grafico(canvas, config) {
     maintainAspectRatio: false,
     locale: 'pt-BR',
     plugins: {
-      legend: { display: config.type === 'doughnut', position: 'bottom', labels: { boxWidth: 12, boxHeight: 12, padding: 12 } },
+      legend: { display: ['doughnut', 'pie'].includes(config.type), position: 'bottom', labels: { boxWidth: 12, boxHeight: 12, padding: 12 } },
       tooltip: { backgroundColor: '#1b3524', padding: 10, cornerRadius: 6 },
     },
-    scales: config.type === 'doughnut' ? undefined : {
+    scales: ['doughnut', 'pie'].includes(config.type) ? undefined : {
       x: { grid: { display: false } },
       y: { beginAtZero: config.beginAtZero !== false, ticks: { precision: 0 } },
     },

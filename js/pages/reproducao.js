@@ -10,6 +10,7 @@ import { listarAnimais } from '../components/animais-comum.js';
 import { calcularIndicadores, desempenhoMatriz, situacaoExibida } from '../components/reproducao-indicadores.js';
 import * as F from '../components/reproducao-forms.js';
 import { todos } from '../components/consulta.js';
+import { grafico } from '../components/graficos.js';
 
 const pl = (n, um, varios) => `${fmtNum(n)} ${n === 1 ? um : varios}`;
 const ABAS = [['geral', 'Visão geral'], ['matrizes', 'Vacas e novilhas'], ['coberturas', 'Coberturas'], ['nascimentos', 'Nascimentos'], ['desmames', 'Desmames'], ['reprodutores', 'Touros e sêmen']];
@@ -286,9 +287,29 @@ export async function render(el) {
 
   // ---------------- NASCIMENTOS ----------------
   function abaNascimentos() {
-    painel.innerHTML = `<div class="card">${nascimentos.length ? '<div id="t-nasc"></div>' : vazio({ icone: 'baby', titulo: 'Nenhum nascimento registrado', texto: 'Ao registrar um nascimento, a ficha do bezerro é criada automaticamente e vinculada à mãe e ao pai.', acao: editar ? '<button class="btn btn-primario" data-novo>Registrar nascimento</button>' : '' })}</div>`;
+    const nRes = (r) => nascimentos.filter((n) => n.resultado === r).length;
+    const [vivos, abortos, natimortos] = [nRes('vivo'), nRes('aborto'), nRes('natimorto')];
+    const media = (l) => (l.length ? l.reduce((s, n) => s + Number(n.peso_nascimento), 0) / l.length : null);
+    const comPeso = nascimentos.filter((n) => n.resultado === 'vivo' && Number(n.peso_nascimento) > 0);
+    const [pM, pF] = ['M', 'F'].map((sx) => media(comPeso.filter((n) => n.sexo === sx)));
+    const resumo = nascimentos.length ? `<div class="nasc-resumo">
+        <div class="card kpi destaque"><span class="rotulo"><i data-lucide="baby"></i>Total de nascimentos</span><span class="valor">${fmtNum(nascimentos.length)}</span>
+          <span class="detalhe">${fmtNum(vivos)} ${vivos === 1 ? 'bezerro vivo' : 'bezerros vivos'}</span></div>
+        <div class="card nasc-pizza"><span class="rotulo-card">Resultado dos partos</span><div class="nasc-pizza-area"><canvas id="g-nasc" aria-label="Gráfico: bezerros vivos, abortos e natimortos"></canvas></div></div>
+        <div class="card kpi"><span class="rotulo"><i data-lucide="scale"></i>Peso médio ao nascer</span><span class="valor">${media(comPeso) ? fmtKg(media(comPeso)) : '—'}</span>
+          <span class="detalhe">${comPeso.length ? `${fmtNum(comPeso.length)} ${comPeso.length === 1 ? 'bezerro pesado' : 'bezerros pesados'}` : 'Nenhum peso registrado'}${pM || pF ? `<br>${[pM && `Machos ${fmtKg(pM)}`, pF && `Fêmeas ${fmtKg(pF)}`].filter(Boolean).join(' · ')}` : ''}</span></div>
+      </div>` : '';
+    painel.innerHTML = `${resumo}<div class="card">${nascimentos.length ? '<div id="t-nasc"></div>' : vazio({ icone: 'baby', titulo: 'Nenhum nascimento registrado', texto: 'Ao registrar um nascimento, a ficha do bezerro é criada automaticamente e vinculada à mãe e ao pai.', acao: editar ? '<button class="btn btn-primario" data-novo>Registrar nascimento</button>' : '' })}</div>`;
     painel.querySelector('[data-novo]')?.addEventListener('click', () => F.abrirNascimento(null, recarregar));
     if (!nascimentos.length) return;
+    // pizza: maior para o menor
+    const fatias = [['Bezerro vivo', vivos, '#2e5a3d'], ['Aborto', abortos, '#b5654a'], ['Natimorto', natimortos, '#c9a43a']].filter((f) => f[1] > 0).sort((a, b) => b[1] - a[1]);
+    grafico(painel.querySelector('#g-nasc'), {
+      type: 'pie',
+      data: { labels: fatias.map(([t, n]) => `${t}: ${fmtNum(n)}`), datasets: [{ data: fatias.map((f) => f[1]), backgroundColor: fatias.map((f) => f[2]), borderColor: '#fff', borderWidth: 2 }] },
+      options: { plugins: { legend: { display: true, position: 'right', labels: { boxWidth: 12, boxHeight: 12, padding: 10 } },
+        tooltip: { backgroundColor: '#1b3524', padding: 10, cornerRadius: 6, callbacks: { label: (c) => ` ${fmtNum(c.raw)} (${fmtNum((c.raw / nascimentos.length) * 100, 0)}%)` } } } },
+    });
     montarTabela(painel.querySelector('#t-nasc'), {
       colunas: [
         { chave: 'data_nascimento', titulo: 'Data', primaria: true, render: (n) => fmtData(n.data_nascimento) },

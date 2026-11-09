@@ -1,7 +1,7 @@
 {
-  "gerado_em": "2026-11-09T18:55:38",
+  "gerado_em": "2026-11-09T18:58:52",
   "arquivos": {
-    "css/styles.css": "0dd0c7be6a",
+    "css/styles.css": "4f11056d80",
     "js/app.js": "dc9b65a1ae",
     "js/components/ajuda-conteudo.js": "34e9ccf7b7",
     "js/components/alimentacao-forms.js": "0dcbfee3f9",
@@ -15,7 +15,7 @@
     "js/components/excluir-animal.js": "d2a3ddaa49",
     "js/components/exportar.js": "76e06417f9",
     "js/components/financeiro-forms.js": "9b9b5fcb81",
-    "js/components/graficos.js": "89d9f774d7",
+    "js/components/graficos.js": "cb17d97e8d",
     "js/components/instalar.js": "5d7db8167e",
     "js/components/pendencias.js": "90cf308486",
     "js/components/pesagem.js": "e1533c97e0",
@@ -41,7 +41,7 @@
     "js/pages/pendencias.js": "8402ef59c7",
     "js/pages/pesagens.js": "2df6f8ba31",
     "js/pages/relatorios.js": "3e4a7cde25",
-    "js/pages/reproducao.js": "d72cc31494",
+    "js/pages/reproducao.js": "0b1ff16c35",
     "js/pages/sanidade.js": "c4d88f682e",
     "js/store.js": "882149f95c",
     "js/supabase.js": "642653d165",
