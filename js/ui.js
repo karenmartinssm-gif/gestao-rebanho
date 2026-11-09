@@ -248,7 +248,7 @@ export function montarTabela(container, { colunas, linhas, porPagina = 25, aoCli
     desenhar();
   });
   pag.addEventListener('click', (e) => { const b = e.target.closest('[data-p]'); if (b) { pagina += Number(b.dataset.p); desenhar(); } });
-  if (aoClicar) tbody.addEventListener('click', (e) => { const tr = e.target.closest('tr[data-id]'); if (tr && !e.target.closest('a,button')) aoClicar(tr.dataset.id); });
+  if (aoClicar) tbody.addEventListener('click', (e) => { const tr = e.target.closest('tr[data-id]'); if (tr && !e.target.closest('a,button,label,input')) aoClicar(tr.dataset.id); });
   desenhar();
   return { atualizar(novas) { linhas = novas; desenhar(); } };
 }

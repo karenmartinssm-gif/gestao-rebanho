@@ -4,6 +4,7 @@
 import { store, pode, nomePasto, podeExcluir } from '../store.js';
 import { esc, icones, fmtNum, montarTabela, vazio, erroCarga, badgeStatus, opcoes, fmtData, toast, traduzirErro, ROTULO_SEXO } from '../ui.js';
 import { listarAnimais } from '../components/animais-comum.js';
+import { sb, BUCKET } from '../supabase.js';
 
 const FAIXAS = [
   { v: '0-12', r: 'Até 12 meses', min: 0, max: 12 },
@@ -141,7 +142,31 @@ export async function render(el) {
   sincronizarCat();
   // "Mais filtros" começa sempre fechado; os filtros ativos aparecem nos chips e no contador
 
+  // Celular: cada animal vira um cartão compacto (foto, brinco, situação e um resumo numa linha)
+  const urlsFoto = new Map();
+  const acoesHtml = (a) => `<span class="acoes-linha">
+      ${editar ? `<a class="btn-acao" href="#/animais/${a.id}/editar" title="Editar" aria-label="Editar o animal ${esc(a.brinco)}"><i data-lucide="pencil"></i></a>` : ''}
+      ${excluir ? `<button type="button" class="btn-acao perigo" data-excluir-animal="${a.id}" title="Excluir" aria-label="Excluir o animal ${esc(a.brinco)}"><i data-lucide="trash-2"></i></button>` : ''}</span>`;
+  const cartao = (a) => {
+    const url = a.foto_path && urlsFoto.get(a.foto_path);
+    const foto = url ? `<span class="ca-foto"><img src="${esc(url)}" alt="" loading="lazy"></span>`
+      : editar ? `<label class="ca-foto vazia" title="Adicionar foto"><i data-lucide="camera"></i><span>Adicionar foto</span>
+          <input type="file" accept="image/*" class="oculto" data-foto-lista="${a.id}" aria-label="Adicionar foto do animal ${esc(a.brinco)}"></label>`
+      : '<span class="ca-foto vazia"><i data-lucide="camera"></i></span>';
+    const resumo = [a.categoria_nome ? `<b>${esc(a.categoria_nome)}</b>` : '', esc(ROTULO_SEXO[a.sexo] || ''), esc(a.raca_nome || ''),
+    ].filter(Boolean);
+    const local = [esc(idadeCurta(a.idade_meses) || ''), a.peso_atual ? esc(pesoCurto(a.peso_atual)) : '',
+      a.pasto_codigo ? `Pasto ${esc(a.pasto_codigo)}` : '', a.lote_nome ? `Lote ${esc(a.lote_nome)}` : ''].filter(Boolean);
+    return `<div class="cartao-animal">${foto}
+      <div class="ca-info"><div class="ca-titulo"><b>Brinco ${esc(a.brinco)}</b>${badgeStatus(a)}</div>
+        ${a.nome ? `<div class="ca-nome">${esc(a.nome)}</div>` : ''}
+        <div class="ca-resumo">${resumo.map((x) => `<span>${x}</span>`).join('')}</div>
+        ${local.length ? `<div class="ca-local">${local.map((x) => `<span>${x}</span>`).join('')}</div>` : ''}</div>
+      ${editar || excluir ? acoesHtml(a) : ''}</div>`;
+  };
+
   const colunas = [
+    { chave: 'cartao', titulo: 'Animal', classe: 'col-cartao', valor: (a) => a.brinco, render: cartao },
     { chave: 'brinco', titulo: 'Brinco', primaria: true, render: (a) => `<b>${esc(a.brinco)}</b>${a.nome ? ` <span class="muted small">${esc(a.nome)}</span>` : ''}`, valor: (a) => a.brinco },
     { chave: 'sexo', titulo: 'Sexo', render: (a) => ROTULO_SEXO[a.sexo], valor: (a) => ROTULO_SEXO[a.sexo] },
     { chave: 'categoria_nome', titulo: 'Categoria' },
@@ -152,9 +177,7 @@ export async function render(el) {
     { chave: 'pasto_codigo', titulo: 'Pasto', render: (a) => esc(a.pasto_codigo || '—') },
     { chave: 'lote_nome', titulo: 'Lote', render: (a) => esc(a.lote_nome || '—') },
     { chave: 'status_nome', titulo: 'Status', render: badgeStatus },
-    ...(editar || excluir ? [{ chave: 'acoes', titulo: 'Ações', classe: 'dir col-acoes', valor: () => null, render: (a) => `<span class="acoes-linha">
-      ${editar ? `<a class="btn-acao" href="#/animais/${a.id}/editar" title="Editar" aria-label="Editar o animal ${esc(a.brinco)}"><i data-lucide="pencil"></i></a>` : ''}
-      ${excluir ? `<button type="button" class="btn-acao perigo" data-excluir-animal="${a.id}" title="Excluir" aria-label="Excluir o animal ${esc(a.brinco)}"><i data-lucide="trash-2"></i></button>` : ''}</span>` }] : []),
+    ...(editar || excluir ? [{ chave: 'acoes', titulo: 'Ações', classe: 'dir col-acoes', valor: () => null, render: acoesHtml }] : []),
   ];
 
   const filtrar = () => {
@@ -189,6 +212,35 @@ export async function render(el) {
   const tabela = montarTabela(el.querySelector('#tabela'), {
     colunas, linhas: filtrar(), busca: false, vazioHtml, semTotal: true,
     aoClicar: (id) => { location.hash = `#/animais/${id}`; },
+  });
+
+  // Fotos dos cartões do celular (endereços temporários do arquivo privado), sem travar a lista
+  const comFoto = [...new Set(animais.map((a) => a.foto_path).filter(Boolean))];
+  if (comFoto.length && window.matchMedia('(max-width: 720px)').matches) {
+    (async () => {
+      try {
+        for (let i = 0; i < comFoto.length; i += 200) {
+          const r = await sb.storage.from(BUCKET).createSignedUrls(comFoto.slice(i, i + 200), 3600);
+          (r.data || []).forEach((x) => x.signedUrl && urlsFoto.set(x.path, x.signedUrl));
+        }
+        if (urlsFoto.size && el.isConnected) { tabela.atualizar(filtrar()); icones(); }
+      } catch { /* sem internet: fica o ícone da câmera */ }
+    })();
+  }
+  // "Adicionar foto" direto do cartão
+  el.addEventListener('change', async (e) => {
+    const inp = e.target.closest('[data-foto-lista]'); if (!inp) return;
+    const arq = inp.files[0]; const a = animais.find((x) => x.id === inp.dataset.fotoLista);
+    if (!arq || !a) return;
+    if (!arq.type.startsWith('image/')) { toast('Escolha uma imagem (foto).', 'erro'); return; }
+    const quadro = inp.closest('.ca-foto');
+    try {
+      quadro.classList.add('enviando');
+      const { enviarFoto } = await import('./animal-form.js');
+      toast('Enviando foto…', 'info');
+      const ok = await enviarFoto(a, arq, { tipo: 'foto', definirComoPrincipal: true });
+      if (ok) { toast('Foto salva.'); window.dispatchEvent(new HashChangeEvent('hashchange')); } else quadro.classList.remove('enviando');
+    } catch (err) { quadro.classList.remove('enviando'); toast(traduzirErro(err), 'erro'); }
   });
 
   // Filtros ativos e "Limpar filtros"

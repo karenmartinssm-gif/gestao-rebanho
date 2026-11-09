@@ -1,7 +1,7 @@
 {
-  "gerado_em": "2026-11-09T12:33:49",
+  "gerado_em": "2026-11-09T12:48:57",
   "arquivos": {
-    "css/styles.css": "861cf8f9f4",
+    "css/styles.css": "7d2c33ed79",
     "js/app.js": "09c499b6d5",
     "js/components/ajuda-conteudo.js": "34e9ccf7b7",
     "js/components/alimentacao-forms.js": "0dcbfee3f9",
@@ -28,7 +28,7 @@
     "js/config.js": "abc61473f7",
     "js/pages/ajuda.js": "06a09fec33",
     "js/pages/alimentacao.js": "2b9c993349",
-    "js/pages/animais.js": "3d982609db",
+    "js/pages/animais.js": "7fc3cf2da7",
     "js/pages/animal-ficha.js": "9c389ebe2b",
     "js/pages/animal-form.js": "12c151aedc",
     "js/pages/configuracoes.js": "9a85a0ffab",
@@ -46,6 +46,6 @@
     "js/store.js": "882149f95c",
     "js/supabase.js": "642653d165",
     "js/sync.js": "f5c3dce5c2",
-    "js/ui.js": "e559b224f6"
+    "js/ui.js": "81a635dc36"
   }
 }

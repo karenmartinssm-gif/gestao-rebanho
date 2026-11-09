@@ -746,3 +746,32 @@ button.ficha-foto { border: 0; padding: 0; font: inherit; }
 .painel-baixo .pendencias { grid-template-columns: repeat(var(--pc3, 3), minmax(0, 1fr)); }
 @media (max-width: 1100px) { .painel-baixo .pendencias { grid-template-columns: repeat(var(--pc2, 2), minmax(0, 1fr)); } }
 @media (max-width: 720px) { .painel-baixo .pendencias { grid-template-columns: minmax(0, 1fr); } }
+
+/* Rebanho: cartão compacto no celular (no computador continua a tabela) */
+.tabela-rebanho .col-cartao { display: none; }
+@media (max-width: 720px) {
+  .tabela-rebanho table.tabela.responsiva tr { padding: 0; }
+  .tabela-rebanho table.tabela.responsiva td { display: none; }
+  .tabela-rebanho table.tabela.responsiva td.col-cartao { display: block; padding: 0; text-align: left; }
+  .tabela-rebanho table.tabela.responsiva td.col-cartao::before { content: none; }
+  .tabela-rebanho table.tabela.responsiva td[colspan] { display: block; }
+  .cartao-animal { display: flex; align-items: center; gap: 10px; padding: 11px 12px; }
+  .ca-foto { flex: none; width: 58px; height: 58px; border-radius: 10px; overflow: hidden; background: var(--musgo-100); color: var(--verde-700);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; position: relative; }
+  .ca-foto img { width: 100%; height: 100%; object-fit: cover; }
+  .ca-foto svg { width: 20px; height: 20px; }
+  .ca-foto span { font-size: .6rem; line-height: 1.1; text-align: center; color: var(--texto-2); padding: 0 3px; }
+  label.ca-foto { cursor: pointer; }
+  .ca-foto.enviando { opacity: .5; pointer-events: none; }
+  .ca-info { flex: 1; min-width: 0; }
+  .ca-titulo { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+  .ca-titulo b { font-size: 1rem; color: var(--texto); }
+  .ca-titulo .badge { font-size: .7rem; padding: 1px 7px; }
+  .ca-nome { font-size: .82rem; color: var(--texto-2); margin-top: 1px; }
+  .ca-resumo { display: flex; flex-wrap: wrap; gap: 2px 0; margin-top: 3px; font-size: .8rem; color: var(--texto-2); }
+  .ca-resumo span:not(:last-child)::after, .ca-local span:not(:last-child)::after { content: "·"; margin: 0 4px; color: var(--texto-3); }
+  .ca-resumo b { color: var(--texto); font-weight: 600; }
+  .ca-local { display: flex; flex-wrap: wrap; font-size: .78rem; color: var(--texto-3); margin-top: 2px; }
+  .cartao-animal .acoes-linha { flex: none; gap: 6px; }
+  .cartao-animal .btn-acao { width: 36px; height: 36px; border-radius: 9px; }
+}
