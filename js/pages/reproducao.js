@@ -293,6 +293,7 @@ export async function render(el) {
     const PROC = { ia: ['IA', ['inseminacao', 'iatf']], te: ['TE', ['tetf']] };
     const RES = { prenhe: ['prenhes', ['prenhe', 'parida']], aborto: ['abortos', ['aborto']] };
     const filtro = { proc: null, res: null, touro: null };
+    const doadoraTxt = (c) => (c.doadora_id ? (porId.get(c.doadora_id)?.brinco || '') : (c.doadora_externa || ''));
     const touroDe = (c) => (c.reprodutor_id ? nomeRep(c.reprodutor_id) : 'Não informado');
     const linhas = () => coberturas.filter((c) => (!filtro.proc || PROC[filtro.proc][1].includes(c.tipo))
       && (!filtro.res || RES[filtro.res][1].includes(c.situacao))
@@ -337,15 +338,17 @@ export async function render(el) {
         { chave: 'data_cobertura', titulo: 'Data', primaria: true, render: (c) => `${fmtData(c.data_cobertura)}${c.data_fim ? ` a ${fmtData(c.data_fim)}` : ''}` },
         { chave: 'matriz', titulo: 'Vaca', valor: (c) => porId.get(c.matriz_id)?.brinco, render: (c) => linkAnimal(c.matriz_id) },
         { chave: 'tipo', titulo: 'Tipo', valor: (c) => F.ROTULO_TIPO_COB[c.tipo], render: (c) => esc(F.ROTULO_TIPO_COB[c.tipo]) },
-        { chave: 'rep', titulo: 'Touro / sêmen', valor: (c) => nomeRep(c.reprodutor_id), render: (c) => `${esc(nomeRep(c.reprodutor_id))}${c.acasalamento ? `<div class="small muted">${esc(c.acasalamento)}</div>` : ''}` },
+        { chave: 'rep', titulo: 'Touro / sêmen', valor: (c) => nomeRep(c.reprodutor_id), render: (c) => `${esc(nomeRep(c.reprodutor_id))}${c.acasalamento ? `<div class="small muted">${esc(c.acasalamento)}</div>` : ''}${doadoraTxt(c) ? `<div class="small muted">Doadora: ${esc(doadoraTxt(c))}</div>` : ''}` },
         { chave: 'prev', titulo: 'Previsão de parto', valor: (c) => c.data_prevista_parto, render: (c) => `${fmtData(c.data_prevista_parto)}${c.previsao_manual ? ' <span class="badge" title="Corrigida manualmente ou pelo diagnóstico">ajustada</span>' : ''}` },
         { chave: 'situacao', titulo: 'Situação', valor: (c) => F.rotuloSitCob(c), render: (c) => `<span class="badge ${{ prenhe: 'ativo', vazia: 'inativo', parida: 'sucesso', aborto: 'perigo', aguardando_diagnostico: 'info' }[c.situacao] ?? ''}">${esc(F.rotuloSitCob(c))}</span>` },
         { chave: 'resp', titulo: 'Responsável', render: (c) => esc(c.responsavel_nome || '—') },
-        ...(editar || excluir ? [{ chave: 'acao', titulo: '', render: (c) => `<span class="acoes">${editar && c.situacao === 'aguardando_diagnostico' && porId.get(c.matriz_id)?.conta_no_rebanho ? `<button class="btn btn-sm" data-diag="${c.matriz_id}">Diagnóstico</button>` : ''}${excluir && !['parida', 'aborto'].includes(c.situacao) ? `<button class="btn btn-sm btn-texto" data-excluir-cob="${c.id}" title="Excluir cobertura" aria-label="Excluir cobertura"><i data-lucide="trash-2"></i></button>` : ''}</span>` }] : []),
+        ...(editar || excluir ? [{ chave: 'acao', titulo: '', render: (c) => `<span class="acoes">${editar && c.situacao !== 'cancelada' ? `<button class="btn btn-sm btn-texto" data-editar-cob="${c.id}" title="Editar cobertura" aria-label="Editar cobertura"><i data-lucide="pencil"></i></button>` : ''}${editar && c.situacao === 'aguardando_diagnostico' && porId.get(c.matriz_id)?.conta_no_rebanho ? `<button class="btn btn-sm" data-diag="${c.matriz_id}">Diagnóstico</button>` : ''}${excluir && !['parida', 'aborto'].includes(c.situacao) ? `<button class="btn btn-sm btn-texto" data-excluir-cob="${c.id}" title="Excluir cobertura" aria-label="Excluir cobertura"><i data-lucide="trash-2"></i></button>` : ''}</span>` }] : []),
       ],
       linhas: linhas(),
     });
     painel.querySelector('#t-cob').addEventListener('click', (e) => {
+      const ed = e.target.closest('[data-editar-cob]');
+      if (ed) { const c = coberturas.find((y) => y.id === ed.dataset.editarCob); F.abrirCobertura(porId.get(c.matriz_id), recarregar, c); return; }
       const x = e.target.closest('[data-excluir-cob]');
       if (x) { const c = coberturas.find((y) => y.id === x.dataset.excluirCob); F.excluirCobertura(c, porId.get(c.matriz_id)?.brinco, recarregar); return; }
       const b = e.target.closest('[data-diag]'); if (!b) return;

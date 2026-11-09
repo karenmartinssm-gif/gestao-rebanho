@@ -1,5 +1,5 @@
 {
-  "gerado_em": "2026-11-09T19:35:18",
+  "gerado_em": "2026-11-09T20:20:57",
   "arquivos": {
     "css/styles.css": "4e9bc57bba",
     "js/app.js": "dc9b65a1ae",
@@ -20,7 +20,7 @@
     "js/components/pendencias.js": "cc4fe1cd37",
     "js/components/pesagem.js": "e1533c97e0",
     "js/components/relatorios-def.js": "fb5fc6ec0b",
-    "js/components/reproducao-forms.js": "ef6a734326",
+    "js/components/reproducao-forms.js": "a82ae76887",
     "js/components/reproducao-indicadores.js": "bc02e92294",
     "js/components/saida.js": "7fd1a1d180",
     "js/components/sanidade-forms.js": "3f51b2e5e4",
@@ -29,7 +29,7 @@
     "js/pages/ajuda.js": "06a09fec33",
     "js/pages/alimentacao.js": "2b9c993349",
     "js/pages/animais.js": "816f3500ce",
-    "js/pages/animal-ficha.js": "397517b90f",
+    "js/pages/animal-ficha.js": "8bf391e146",
     "js/pages/animal-form.js": "12c151aedc",
     "js/pages/configuracoes.js": "a775d67f16",
     "js/pages/equipe.js": "6f8d8b1162",
@@ -41,7 +41,7 @@
     "js/pages/pendencias.js": "8402ef59c7",
     "js/pages/pesagens.js": "2df6f8ba31",
     "js/pages/relatorios.js": "3e4a7cde25",
-    "js/pages/reproducao.js": "79949e3a1d",
+    "js/pages/reproducao.js": "b19e239ffb",
     "js/pages/sanidade.js": "c4d88f682e",
     "js/store.js": "af7d48d6ab",
     "js/supabase.js": "642653d165",

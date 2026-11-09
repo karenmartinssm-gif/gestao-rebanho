@@ -67,45 +67,55 @@ function listaMultipla(container, animais, { detalhe = () => '' } = {}) {
 // ---------------------------------------------------------------------
 // COBERTURA (individual ou em lote)
 // ---------------------------------------------------------------------
-export async function abrirCobertura(matrizFixa = null, aoSalvar) {
+export async function abrirCobertura(matrizFixa = null, aoSalvar, existente = null) {
   if (semPermissao()) return;
-  const animais = matrizFixa ? [matrizFixa] : await carregarAnimais();
-  if (!animais) return;
+  if (existente) { try { exigirConexao(); } catch (e) { return toast(e.message, 'aviso', 7000); } }
+  const todosAnimais = await carregarAnimais();
+  if (!todosAnimais) return;
+  const animais = matrizFixa ? [matrizFixa] : todosAnimais;
   const femeas = animais.filter(ehFemeaReprodutiva);
   if (!matrizFixa && !femeas.length) return toast('Não há novilhas ou vacas ativas cadastradas.', 'aviso');
-  const reprod = store.base.reprodutores.filter((r) => r.ativo);
+  const reprod = store.base.reprodutores.filter((r) => r.ativo || r.id === existente?.reprodutor_id);
   const gest = param('periodo_gestacao_dias');
+  const ed = existente || {};
+  // Doadoras possíveis (TETF): fêmeas cadastradas, menos a própria receptora
+  const doadoras = todosAnimais.filter((x) => x.sexo === 'F' && x.id !== matrizFixa?.id);
+  const doadoraAtual = ed.doadora_id ? (todosAnimais.find((x) => x.id === ed.doadora_id)?.brinco || '') : (ed.doadora_externa || '');
 
   const { el, fechar } = abrirModal({
-    titulo: 'Registrar cobertura / inseminação',
+    titulo: existente ? 'Editar cobertura' : 'Registrar cobertura / inseminação',
     largo: true,
     html: `<form id="f-cob" class="grade" style="gap:14px">
       ${matrizFixa ? `<div class="alerta"><i data-lucide="heart"></i><div>Vaca <b>${esc(matrizFixa.brinco)}</b>${matrizFixa.nome ? ` — ${esc(matrizFixa.nome)}` : ''}</div></div>`
         : `<div class="campo"><label>Vacas cobertas <span class="obrig">*</span></label><div id="sel-matrizes"></div>
             <span class="ajuda">Marque uma ou várias (ex.: lote de IATF no mesmo dia).</span></div>`}
       <div class="campo"><label>Tipo <span class="obrig">*</span></label><div class="opcoes-radio">
-        ${Object.entries(ROTULO_TIPO_COB).map(([k, r], i) => `<label><input type="radio" name="tipo" value="${k}" ${i === 0 ? 'checked' : ''} required> ${esc(r)}</label>`).join('')}</div></div>
+        ${Object.entries(ROTULO_TIPO_COB).map(([k, r], i) => `<label><input type="radio" name="tipo" value="${k}" ${(existente ? ed.tipo === k : i === 0) ? 'checked' : ''} required> ${esc(r)}</label>`).join('')}</div></div>
       <div class="grade grade-2" style="gap:14px">
-        <div class="campo"><label for="c-rep">Touro (doador do sêmen)</label><select id="c-rep">${opcoes(reprod, { rotulo: nomeReprodutor, vazio: 'Não informado' })}<option value="__novo">+ Cadastrar outro touro / sêmen</option></select>
+        <div class="campo"><label for="c-rep">Touro (doador do sêmen)</label><select id="c-rep">${opcoes(reprod, { rotulo: nomeReprodutor, vazio: 'Não informado', selecionado: ed.reprodutor_id })}<option value="__novo">+ Cadastrar outro touro / sêmen</option></select>
           <span class="ajuda">Touros do rebanho e sêmens já cadastrados aparecem aqui.</span></div>
-        <div class="campo"><label for="c-data" id="c-data-rot">Data da cobertura <span class="obrig">*</span></label><input id="c-data" type="date" required max="${hojeISO()}" value="${hojeISO()}">
+        <div class="campo"><label for="c-data" id="c-data-rot">Data da cobertura <span class="obrig">*</span></label><input id="c-data" type="date" required max="${hojeISO()}" value="${ed.data_cobertura || hojeISO()}">
           <span class="ajuda" id="c-fim-ajuda">Monta natural: data em que a vaca entrou com o touro.</span></div>
         <div class="campo oculto" id="c-novo-campo" style="grid-column:1/-1"><div class="grade grade-2" style="gap:14px">
           <div class="campo"><label for="c-novo-nome">Nome do touro (doador do sêmen) <span class="obrig">*</span></label><input id="c-novo-nome" placeholder="Ex.: Nelore CFM Ímpeto"></div>
           <div class="campo"><label for="c-novo-raca">Raça do touro</label><select id="c-novo-raca">${opcoes(store.base.racas.filter((x) => x.ativo), { vazio: 'Não informada' })}</select></div></div>
           <span class="ajuda">O touro fica cadastrado como sêmen e passa a aparecer na lista nas próximas vezes.</span></div>
-        <div class="campo" id="c-fim-campo"><label for="c-fim">Fim da monta (opcional)</label><input id="c-fim" type="date" max="${hojeISO()}"></div>
-        <div class="campo oculto" id="c-acas-campo"><label for="c-acas">Acasalamento / lacre</label><input id="c-acas" placeholder="Ex.: embrião TE-07 · lacre do sêmen 12345">
+        <div class="campo" id="c-fim-campo"><label for="c-fim">Fim da monta (opcional)</label><input id="c-fim" type="date" max="${hojeISO()}" value="${ed.data_fim || ''}"></div>
+        <div class="campo oculto" id="c-acas-campo"><label for="c-acas">Acasalamento / lacre</label><input id="c-acas" placeholder="Ex.: embrião TE-07 · lacre do sêmen 12345" value="${esc(ed.acasalamento || '')}">
           <span class="ajuda">Registro do embrião e do sêmen usados.</span></div>
-        <div class="campo"><label for="c-prev">Previsão de parto</label><input id="c-prev" type="date" readonly>
-          <label class="check small"><input type="checkbox" id="c-manual"> Corrigir a previsão manualmente</label>
+        <div class="campo oculto" id="c-doad-campo"><label for="c-doad">Vaca doadora (do óvulo)</label>
+          <input id="c-doad" list="c-doad-lista" autocomplete="off" placeholder="Brinco da doadora ou nome/registro de fora" value="${esc(doadoraAtual)}">
+          <datalist id="c-doad-lista">${doadoras.map((x) => `<option value="${esc(x.brinco)}">${esc([x.nome, x.categoria_nome].filter(Boolean).join(' · '))}</option>`).join('')}</datalist>
+          <span class="ajuda" id="c-doad-ajuda">Se for do rebanho, escolha pelo brinco. Se for de fora, escreva o nome ou o registro.</span></div>
+        <div class="campo"><label for="c-prev">Previsão de parto</label><input id="c-prev" type="date" ${ed.previsao_manual ? '' : 'readonly'} value="${ed.data_prevista_parto || ''}">
+          <label class="check small"><input type="checkbox" id="c-manual" ${ed.previsao_manual ? 'checked' : ''}> Corrigir a previsão manualmente</label>
           <span class="ajuda" id="c-prev-ajuda">Calculada: data da cobertura + ${gest} dias (ajuste em Configurações › Parâmetros).</span></div>
-        <div class="campo"><label for="c-resp">Responsável</label><input id="c-resp" value="${esc(store.perfil?.nome || '')}"></div>
+        <div class="campo"><label for="c-resp">Responsável</label><input id="c-resp" value="${esc(existente ? (ed.responsavel_nome || '') : (store.perfil?.nome || ''))}"></div>
       </div>
-      <div class="campo"><label for="c-obs">Observações</label><textarea id="c-obs" rows="2"></textarea></div>
-      <p class="small muted" style="margin:0">Se a vaca já tinha uma cobertura sem diagnóstico, ela passa a ser considerada vazia (repetição de cio).</p>
+      <div class="campo"><label for="c-obs">Observações</label><textarea id="c-obs" rows="2">${esc(ed.observacoes || '')}</textarea></div>
+      ${existente ? '' : '<p class="small muted" style="margin:0">Se a vaca já tinha uma cobertura sem diagnóstico, ela passa a ser considerada vazia (repetição de cio).</p>'}
     </form>`,
-    rodape: '<button class="btn" data-fechar>Cancelar</button><button class="btn btn-primario" type="submit" form="f-cob">Salvar cobertura</button>',
+    rodape: `<button class="btn" data-fechar>Cancelar</button><button class="btn btn-primario" type="submit" form="f-cob">${existente ? 'Salvar alterações' : 'Salvar cobertura'}</button>`,
   });
   const f = el.querySelector('form');
   const selecionadas = matrizFixa ? () => [matrizFixa.id]
@@ -119,6 +129,7 @@ export async function abrirCobertura(matrizFixa = null, aoSalvar) {
     const t = tipoAtual(); const mn = t === 'monta_natural';
     f.querySelector('#c-fim-campo').classList.toggle('oculto', !mn); f.querySelector('#c-fim-ajuda').classList.toggle('oculto', !mn);
     f.querySelector('#c-acas-campo').classList.toggle('oculto', mn);
+    f.querySelector('#c-doad-campo').classList.toggle('oculto', t !== 'tetf');
     f.querySelector('#c-data-rot').innerHTML = `${ROTULO_DATA_COB[t]} <span class="obrig">*</span>`;
     f.querySelector('#c-prev-ajuda').textContent = t === 'tetf'
       ? `Calculada: data da TETF + ${gest - 7} dias (${gest} de gestação menos 7 dias de idade do embrião).`
@@ -127,7 +138,19 @@ export async function abrirCobertura(matrizFixa = null, aoSalvar) {
   };
   f.querySelector('#c-rep').addEventListener('change', (e) => f.querySelector('#c-novo-campo').classList.toggle('oculto', e.target.value !== '__novo'));
   f.querySelectorAll('input[name=tipo]').forEach((r) => r.addEventListener('change', ajustarTipo));
-  ajustarTipo(); recalc();
+  ajustarTipo(); if (!existente) recalc();
+  // Doadora: brinco do rebanho vira vínculo; texto livre fica como doadora de fora
+  const doadoraDados = () => {
+    const v = f.querySelector('#c-doad').value.trim();
+    if (!v) return { doadora_id: null, doadora_externa: null };
+    const x = doadoras.find((d) => d.brinco.trim().toUpperCase() === v.toUpperCase());
+    return x ? { doadora_id: x.id, doadora_externa: null } : { doadora_id: null, doadora_externa: v };
+  };
+  f.querySelector('#c-doad').addEventListener('input', () => {
+    const d = doadoraDados();
+    f.querySelector('#c-doad-ajuda').textContent = d.doadora_id ? `Doadora do rebanho: brinco ${doadoras.find((x) => x.id === d.doadora_id).brinco}.`
+      : d.doadora_externa ? 'Doadora de fora do rebanho (fica guardado o que foi escrito).' : 'Se for do rebanho, escolha pelo brinco. Se for de fora, escreva o nome ou o registro.';
+  });
 
   f.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -150,6 +173,25 @@ export async function abrirCobertura(matrizFixa = null, aoSalvar) {
         } catch (err) { btn.disabled = false; return toast(traduzirErro(err), 'erro', 8000); }
       }
     }
+    if (existente) {
+      try {
+        const alt = {
+          reprodutor_id: reprodutorId, tipo,
+          acasalamento: tipo === 'monta_natural' ? null : textoOuNulo(f.querySelector('#c-acas').value),
+          data_cobertura: data.value, data_fim: tipo === 'monta_natural' ? f.querySelector('#c-fim').value || null : null,
+          previsao_manual: manual.checked, data_prevista_parto: manual.checked ? prev.value || null : null,
+          responsavel_nome: textoOuNulo(f.querySelector('#c-resp').value), observacoes: textoOuNulo(f.querySelector('#c-obs').value),
+        };
+        if (tipo === 'tetf') Object.assign(alt, doadoraDados());
+        else if (ed.doadora_id || ed.doadora_externa) Object.assign(alt, { doadora_id: null, doadora_externa: null });
+        const { error } = await sb.from('coberturas').update(alt).eq('id', existente.id);
+        if (error) throw error;
+        toast('Cobertura alterada e confirmada pelo servidor.');
+        fechar(); aoSalvar?.();
+      } catch (err) { toast(traduzirErro(err), 'erro', 8000); }
+      btn.disabled = false;
+      return;
+    }
     let ok = 0, fila = 0; const erros = [];
     for (const id of ids) {
       const brinco = animais.find((a) => a.id === id)?.brinco;
@@ -160,6 +202,7 @@ export async function abrirCobertura(matrizFixa = null, aoSalvar) {
           data_cobertura: data.value, data_fim: tipo === 'monta_natural' ? f.querySelector('#c-fim').value || null : null,
           previsao_manual: manual.checked, data_prevista_parto: manual.checked ? prev.value || null : null,
           responsavel_nome: textoOuNulo(f.querySelector('#c-resp').value), observacoes: textoOuNulo(f.querySelector('#c-obs').value),
+          ...(tipo === 'tetf' ? doadoraDados() : {}),
         }, `Cobertura da vaca ${brinco}`);
         if (r.sincronizado) ok++; else fila++;
       } catch (err) { erros.push(`${brinco}: ${traduzirErro(err)}`); }

@@ -55,6 +55,10 @@ export async function render(el, [id]) {
     q(sb.from('historico_alteracoes').select('*').eq('tabela', 'animais').eq('registro_id', id).order('criado_em', { ascending: false }).limit(200)),
   ]);
 
+  // Brinco das doadoras de embrião (TETF)
+  const idsDoadora = [...new Set(coberturas.map((c) => c.doadora_id).filter(Boolean))];
+  const brincoDoadora = new Map(idsDoadora.length ? (await q(sb.from('animais').select('id, brinco').in('id', idsDoadora))).map((x) => [x.id, x.brinco]) : []);
+  const doadoraTxt = (c) => (c.doadora_id ? brincoDoadora.get(c.doadora_id) || '' : c.doadora_externa || '');
   const [matrizRow, cobTouro] = await Promise.all([
     a.sexo === 'F' ? (async () => (await sb.from('matrizes').select('*').eq('animal_id', id).maybeSingle()).data)() : null,
     reprodutor ? q(sb.from('coberturas').select('*').eq('reprodutor_id', reprodutor.id).order('data_cobertura', { ascending: false })) : [],
@@ -274,7 +278,8 @@ export async function render(el, [id]) {
           <button class="btn btn-primario" data-repro="nascimento"><i data-lucide="baby"></i> Registrar parto</button>`)}
         <div class="dados-lista">
           ${dado('Situação reprodutiva', matrizRow ? `<span class="badge">${esc(ROTULO_SITUACAO_REPRO[situacaoExibida(matrizRow.situacao_reprodutiva, coberturas.find((c) => ['aguardando_diagnostico', 'prenhe'].includes(c.situacao)), { diasDiag: param('dias_diagnostico_gestacao'), diasAlertaParto: param('dias_alerta_parto') })])}</span>${!matrizRow.apta_reproducao ? ' <span class="badge perigo">descarte</span>' : ''}` : '—')}
-          ${aberta ? dado('Touro da gestação', esc(nomeTouro(aberta.reprodutor_id) || (aberta.tipo === 'tetf' ? 'ver acasalamento' : 'não informado'))) : ''}
+          ${aberta ? dado('Touro da gestação', esc(nomeTouro(aberta.reprodutor_id) || 'não informado')) : ''}
+          ${aberta?.tipo === 'tetf' ? dado('Vaca doadora (TE)', esc(doadoraTxt(aberta) || 'não informada')) : ''}
           ${aberta?.situacao === 'prenhe' ? dado('Previsão de parto', fmtData(aberta.data_prevista_parto)) : ''}
           ${dado('Número de partos', fmtNum(partos.length))}${dado('Bezerros nascidos vivos', fmtNum(nascimentos.filter((n) => n.resultado === 'vivo').length))}
           ${dado('Abortos', fmtNum(abortos.length))}${dado('Último parto', ultimo ? fmtData(ultimo.data_nascimento) : '—')}
@@ -282,10 +287,10 @@ export async function render(el, [id]) {
         </div>
         ${!coberturas.length && !nascimentos.length ? `<div style="margin-top:16px">${vazio({ icone: 'heart', titulo: 'Sem histórico reprodutivo', texto: 'Registre coberturas, diagnósticos e partos pelos botões acima ou em Reprodução e cria.' })}</div>` : `
         <h3 style="margin:18px 0 8px">Linha do tempo</h3><ul class="linha-tempo">${[
-          ...coberturas.map((c) => ({ d: c.data_cobertura, t: `Cobertura (${({ monta_natural: 'monta natural', iatf: 'IATF', tetf: 'TETF', inseminacao: 'inseminação' })[c.tipo] || c.tipo}${nomeTouro(c.reprodutor_id) ? ` · ${nomeTouro(c.reprodutor_id)}` : ''}${c.acasalamento ? ` · ${c.acasalamento}` : ''}) · ${rotuloSitCob(c)}${c.data_prevista_parto && ['prenhe', 'aguardando_diagnostico'].includes(c.situacao) ? ` · parto previsto ${fmtData(c.data_prevista_parto)}` : ''}` })),
+          ...coberturas.map((c) => ({ d: c.data_cobertura, cob: c.id, t: `Cobertura (${({ monta_natural: 'monta natural', iatf: 'IATF', tetf: 'TETF', inseminacao: 'inseminação' })[c.tipo] || c.tipo}${nomeTouro(c.reprodutor_id) ? ` · ${nomeTouro(c.reprodutor_id)}` : ''}${c.acasalamento ? ` · ${c.acasalamento}` : ''}${doadoraTxt(c) ? ` · doadora ${doadoraTxt(c)}` : ''}) · ${rotuloSitCob(c)}${c.data_prevista_parto && ['prenhe', 'aguardando_diagnostico'].includes(c.situacao) ? ` · parto previsto ${fmtData(c.data_prevista_parto)}` : ''}` })),
           ...diagnosticos.map((x) => ({ d: x.data_diagnostico, t: `Diagnóstico de gestação: ${x.resultado}${x.metodo ? ` (${x.metodo})` : ''}` })),
           ...nascimentos.map((n) => ({ d: n.data_nascimento, t: n.resultado === 'aborto' ? 'Aborto' : n.resultado === 'natimorto' ? 'Parto — natimorto' : 'Parto — bezerro vivo' })),
-        ].sort((x, y) => y.d.localeCompare(x.d)).map((e) => `<li><div class="quando">${fmtData(e.d)}</div>${esc(e.t)}</li>`).join('')}</ul>`}`;
+        ].sort((x, y) => y.d.localeCompare(x.d)).map((e) => `<li><div class="quando">${fmtData(e.d)}</div>${esc(e.t)}${e.cob && pode('reproducao') && coberturas.find((c) => c.id === e.cob)?.situacao !== 'cancelada' ? ` <button type="button" class="btn btn-texto btn-sm" data-editar-cob="${e.cob}"><i data-lucide="pencil"></i> Editar</button>` : ''}</li>`).join('')}</ul>`}`;
     },
 
     alimentacao: () => (fornec.length ? '<div class="card"><div id="t-fornec"></div></div>'
@@ -314,10 +319,15 @@ export async function render(el, [id]) {
   };
 
   const montar = {
-    reprodutivo: () => painel.querySelectorAll('[data-repro]').forEach((btn) => btn.addEventListener('click', () => import('../components/reproducao-forms.js').then((m) => {
-      const fn = { cobertura: m.abrirCobertura, diagnostico: m.abrirDiagnostico, nascimento: m.abrirNascimento }[btn.dataset.repro];
-      fn(a, (bez) => (bez ? (location.hash = `#/animais/${bez}`) : recarregar()));
-    }))),
+    reprodutivo: () => {
+      painel.querySelectorAll('[data-repro]').forEach((btn) => btn.addEventListener('click', () => import('../components/reproducao-forms.js').then((m) => {
+        const fn = { cobertura: m.abrirCobertura, diagnostico: m.abrirDiagnostico, nascimento: m.abrirNascimento }[btn.dataset.repro];
+        fn(a, (bez) => (bez ? (location.hash = `#/animais/${bez}`) : recarregar()));
+      })));
+      painel.querySelectorAll('[data-editar-cob]').forEach((btn) => btn.addEventListener('click', () => import('../components/reproducao-forms.js').then((m) => {
+        m.abrirCobertura(a, recarregar, coberturas.find((c) => c.id === btn.dataset.editarCob));
+      })));
+    },
     genealogia: () => filhos.length && montarTabela(painel.querySelector('#t-filhos'), {
       colunas: [{ chave: 'brinco', titulo: 'Brinco', primaria: true, render: linkAnimal }, { chave: 'sexo', titulo: 'Sexo', render: (x) => ROTULO_SEXO[x.sexo] },
         { chave: 'data_nascimento', titulo: 'Nascimento', render: (x) => fmtData(x.data_nascimento) }, { chave: 'status_nome', titulo: 'Status', render: badgeStatus }],
