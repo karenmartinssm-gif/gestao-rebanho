@@ -9,8 +9,8 @@ import { consultasPendencias, montarPendencias, htmlCardsPendencias, ligarCardsP
 export async function render(el) {
   let animais;
   try { animais = await listarAnimais(); } catch (e) { el.innerHTML = erroCarga(e); icones(); return; }
-  const [manejos, cobs, desm, estq] = await Promise.all(consultasPendencias(store.prop.id));
-  const { pend } = montarPendencias({ animais, manejos, cobs, desm, estq });
+  const [manejos, cobs, desm, estq, nasc] = await Promise.all(consultasPendencias(store.prop.id));
+  const { pend } = montarPendencias({ animais, manejos, cobs, desm, estq, nasc });
   const total = pend.reduce((s, b) => s + b.itens.length, 0);
   el.innerHTML = `
     <div class="cabecalho-pagina"><div><h1>Pendências</h1>

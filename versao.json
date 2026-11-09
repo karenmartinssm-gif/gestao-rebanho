@@ -1,5 +1,5 @@
 {
-  "gerado_em": "2026-11-09T07:22:57",
+  "gerado_em": "2026-11-09T07:41:48",
   "arquivos": {
     "css/styles.css": "c0b77b435c",
     "js/app.js": "214aa3b535",
@@ -16,7 +16,7 @@
     "js/components/financeiro-forms.js": "9b9b5fcb81",
     "js/components/graficos.js": "89d9f774d7",
     "js/components/instalar.js": "5d7db8167e",
-    "js/components/pendencias.js": "ebcd10aaf9",
+    "js/components/pendencias.js": "c98c2fbc4d",
     "js/components/pesagem.js": "e1533c97e0",
     "js/components/relatorios-def.js": "fd5e3a061d",
     "js/components/reproducao-forms.js": "d07ca4e3e0",
@@ -34,9 +34,9 @@
     "js/pages/financeiro.js": "9f1a350133",
     "js/pages/graficos.js": "bace3d50b5",
     "js/pages/movimentacoes.js": "529d81e5ba",
-    "js/pages/painel.js": "fc57f204c0",
+    "js/pages/painel.js": "43c832e557",
     "js/pages/pastagens.js": "ff98c5b91d",
-    "js/pages/pendencias.js": "8554f3e988",
+    "js/pages/pendencias.js": "8402ef59c7",
     "js/pages/pesagens.js": "2df6f8ba31",
     "js/pages/relatorios.js": "3e4a7cde25",
     "js/pages/reproducao.js": "fbf453ba6c",

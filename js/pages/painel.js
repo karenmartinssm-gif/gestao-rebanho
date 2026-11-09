@@ -28,7 +28,7 @@ export async function render(el) {
   let animais;
   try { animais = await listarAnimais(); } catch (e) { el.innerHTML = erroCarga(e); icones(); return; }
 
-  const [matr, manejos, cobs, desm, estq] = await Promise.all([
+  const [matr, manejos, cobs, desm, estq, nasc] = await Promise.all([
     consulta(sb.from('matrizes').select('animal_id, situacao_reprodutiva').eq('propriedade_id', p)),
     ...consultasPendencias(p, hoje),
   ]);
@@ -55,7 +55,7 @@ export async function render(el) {
   const cobertas = contaSit(matrizesAtivas, ['coberta', 'aguardando_diagnostico', 'em_reproducao']);
   const novilhasPrenhes = contaSit(doGrupo('novilha'), ['prenhe', 'proxima_parto']);
 
-  const { pend, emTratamento, manejosPend } = montarPendencias({ animais, manejos, cobs, desm, estq });
+  const { pend, emTratamento, manejosPend } = montarPendencias({ animais, manejos, cobs, desm, estq, nasc });
   const comPendencia = pend.filter((b) => b.itens.length).sort((x, y) => y.itens.length - x.itens.length);
 
   // Link para o Rebanho com as categorias do grupo já marcadas (ex.: Matrizes = Vaca, Primípara, Matriz)
