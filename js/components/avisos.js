@@ -9,6 +9,7 @@ import { ultimoBackup } from './backup.js';
 import { esc, hojeISO, addDias, diasEntre, fmtData, fmtNum, fmtMoeda, abrirModal, icones, vazio } from '../ui.js';
 import { listarAnimais } from './animais-comum.js';
 import { todos } from './consulta.js';
+import { consultaTemporadasAbertas, etapasPendentes, rotuloDia } from './temporadas.js';
 
 const chaveVistos = () => `rebanho.avisos.vistos.${store.usuario?.id}.${store.prop?.id}`;
 function lerVistos() { try { return new Set(JSON.parse(localStorage.getItem(chaveVistos()) || '[]')); } catch { return new Set(); } }
@@ -33,9 +34,9 @@ export async function carregarAvisos(forcar = false) {
   const p = store.prop.id;
   const hoje = hojeISO();
   const q = async (x) => { const { data, error } = await x; if (error) throw error; return data || []; };
-  const [animais, cobs, desm, manejos, supl, sanit, rec, desp] = await Promise.all([
+  const [animais, cobs, desm, manejos, supl, sanit, rec, desp, temps] = await Promise.all([
     listarAnimais(),
-    todos(() => sb.from('coberturas').select('id, matriz_id, data_cobertura, data_prevista_parto, situacao, tipo').eq('propriedade_id', p).in('situacao', ['prenhe', 'aguardando_diagnostico']).order('id')),
+    todos(() => sb.from('coberturas').select('*').eq('propriedade_id', p).in('situacao', ['prenhe', 'aguardando_diagnostico']).order('id')),
     todos(() => sb.from('desmames').select('id, bezerro_id').eq('propriedade_id', p).order('id')),
     todos(() => sb.from('manejos_sanitarios').select('id, tipo_manejo_id, lote_id, proxima_aplicacao, proxima_resolvida, situacao, carencia_ate, manejo_animais(animal_id)')
       .eq('propriedade_id', p).eq('proxima_resolvida', false).not('proxima_aplicacao', 'is', null).neq('situacao', 'cancelado').order('id'), 500),
@@ -43,6 +44,7 @@ export async function carregarAvisos(forcar = false) {
     q(sb.from('vw_estoque_sanitarios').select('id, nome, unidade, estoque_minimo, saldo, ativo').eq('propriedade_id', p).eq('ativo', true)),
     pode('financeiro') ? q(sb.from('receitas').select('id, descricao, valor, data_lancamento').eq('propriedade_id', p).neq('situacao', 'realizado')) : [],
     pode('financeiro') ? q(sb.from('despesas').select('id, descricao, valor, data_lancamento').eq('propriedade_id', p).neq('situacao', 'realizado')) : [],
+    q(consultaTemporadasAbertas(p)).catch(() => []),   // sem o SQL 021, fica sem avisos de temporada
   ]);
   const porId = new Map(animais.map((a) => [a.id, a]));
   const ativo = (id) => porId.get(id)?.conta_no_rebanho;
@@ -63,6 +65,13 @@ export async function carregarAvisos(forcar = false) {
       titulo: `${tipos.get(m.tipo_manejo_id)?.nome || 'Manejo'} — ${alvo}`, texto: prazo(m.proxima_aplicacao), link: '#/sanidade' });
   });
 
+  // Reprodução: etapas das temporadas de IATF/TETF
+  etapasPendentes(temps, limManejo).forEach(({ t, e, data, n }) => add({
+    chave: `temp:${t.id}:${e.chave}:${data}`, grupo: 'reproducao', nivel: data < hoje ? 'perigo' : 'aviso', data,
+    titulo: `${t.nome} — ${rotuloDia(t, e)} ${e.nome}`, texto: `${prazo(data)} · ${n} vaca(s)`, link: `#/reproducao?aba=temporadas&t=${t.id}` }));
+  const tempAbertas = new Set(temps.map((t) => t.id));
+  const daTemporada = (c) => c.temporada_id && tempAbertas.has(c.temporada_id);
+
   // Reprodução: partos, diagnósticos, desmames
   const limParto = addDias(hoje, param('dias_alerta_parto'));
   cobs.filter((c) => c.situacao === 'prenhe' && c.data_prevista_parto && c.data_prevista_parto <= limParto && ativo(c.matriz_id)).forEach((c) => add({
@@ -70,10 +79,10 @@ export async function carregarAvisos(forcar = false) {
     titulo: `Parto previsto — vaca ${brinco(c.matriz_id)}`, texto: prazo(c.data_prevista_parto), link: `#/animais/${c.matriz_id}` }));
   const limDiag = addDias(hoje, -param('dias_diagnostico_gestacao'));
   const limTE = addDias(hoje, -param('dias_conferir_te'));
-  cobs.filter((c) => c.tipo === 'tetf' && c.situacao === 'aguardando_diagnostico' && c.data_cobertura <= limTE && ativo(c.matriz_id)).forEach((c) => add({
+  cobs.filter((c) => c.tipo === 'tetf' && c.situacao === 'aguardando_diagnostico' && !daTemporada(c) && c.data_cobertura <= limTE && ativo(c.matriz_id)).forEach((c) => add({
     chave: `te:${c.id}`, grupo: 'reproducao', nivel: 'aviso', data: addDias(c.data_cobertura, param('dias_conferir_te')),
     titulo: `Confirmação de prenhez (TE) — vaca ${brinco(c.matriz_id)}`, texto: `transferência em ${fmtData(c.data_cobertura)}`, link: `#/animais/${c.matriz_id}` }));
-  cobs.filter((c) => c.tipo !== 'tetf' && c.situacao === 'aguardando_diagnostico' && c.data_cobertura <= limDiag && ativo(c.matriz_id)).forEach((c) => add({
+  cobs.filter((c) => c.tipo !== 'tetf' && c.situacao === 'aguardando_diagnostico' && !daTemporada(c) && c.data_cobertura <= limDiag && ativo(c.matriz_id)).forEach((c) => add({
     chave: `diag:${c.id}`, grupo: 'reproducao', nivel: 'aviso', data: addDias(c.data_cobertura, param('dias_diagnostico_gestacao')),
     titulo: `Diagnóstico de gestação — vaca ${brinco(c.matriz_id)}`, texto: `coberta em ${fmtData(c.data_cobertura)}`, link: `#/animais/${c.matriz_id}` }));
   const desmamados = new Set(desm.map((d) => d.bezerro_id));

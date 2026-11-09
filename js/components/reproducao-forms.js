@@ -42,13 +42,14 @@ function semPermissao() {
 }
 
 // Lista de seleção múltipla com busca (registro em lote)
-function listaMultipla(container, animais, { detalhe = () => '' } = {}) {
+export function listaMultipla(container, animais, { detalhe = () => '', marcados = [] } = {}) {
+  const marc = new Set(marcados);
   container.innerHTML = `
     <div class="busca-wrap" style="margin-bottom:8px"><i data-lucide="search"></i><input type="search" placeholder="Filtrar por brinco ou lote" data-filtro></div>
     <div class="acoes small" style="margin-bottom:6px"><button type="button" class="btn btn-sm" data-todos>Marcar visíveis</button>
       <button type="button" class="btn btn-sm" data-nenhum>Desmarcar todos</button><span class="muted" data-cont style="align-self:center">0 selecionadas</span></div>
     <div class="lista-selecao">${animais.map((a) => `<label class="check" data-busca="${esc(`${a.brinco} ${a.nome || ''} ${a.lote_nome || ''}`.toLowerCase())}">
-      <input type="checkbox" value="${a.id}"> <b>${esc(a.brinco)}</b> <span class="small muted">${esc(detalhe(a))}</span></label>`).join('')
+      <input type="checkbox" value="${a.id}" ${marc.has(a.id) ? 'checked' : ''}> <b>${esc(a.brinco)}</b> <span class="small muted">${esc(detalhe(a))}</span></label>`).join('')
       || '<p class="muted small">Nenhum animal disponível.</p>'}</div>`;
   const caixas = [...container.querySelectorAll('input[type=checkbox]')];
   const cont = container.querySelector('[data-cont]');
@@ -60,6 +61,7 @@ function listaMultipla(container, animais, { detalhe = () => '' } = {}) {
   container.querySelector('[data-todos]').addEventListener('click', () => { caixas.forEach((c) => { if (c.closest('label').style.display !== 'none') c.checked = true; }); atualizar(); });
   container.querySelector('[data-nenhum]').addEventListener('click', () => { caixas.forEach((c) => { c.checked = false; }); atualizar(); });
   caixas.forEach((c) => c.addEventListener('change', atualizar));
+  atualizar();
   icones();
   return () => caixas.filter((c) => c.checked).map((c) => c.value);
 }
@@ -67,13 +69,14 @@ function listaMultipla(container, animais, { detalhe = () => '' } = {}) {
 // ---------------------------------------------------------------------
 // COBERTURA (individual ou em lote)
 // ---------------------------------------------------------------------
-export async function abrirCobertura(matrizFixa = null, aoSalvar, existente = null) {
+// temporada (opcional): { id, nome, tipo, ids, data } — cobertura em lote das vacas de uma temporada de IATF/TETF
+export async function abrirCobertura(matrizFixa = null, aoSalvar, existente = null, temporada = null) {
   if (semPermissao()) return;
   if (existente) { try { exigirConexao(); } catch (e) { return toast(e.message, 'aviso', 7000); } }
   const todosAnimais = await carregarAnimais();
   if (!todosAnimais) return;
   const animais = matrizFixa ? [matrizFixa] : todosAnimais;
-  const femeas = animais.filter(ehFemeaReprodutiva);
+  const femeas = temporada ? animais.filter((a) => temporada.ids.includes(a.id)) : animais.filter(ehFemeaReprodutiva);
   if (!matrizFixa && !femeas.length) return toast('Não há novilhas ou vacas ativas cadastradas.', 'aviso');
   const reprod = store.base.reprodutores.filter((r) => r.ativo || r.id === existente?.reprodutor_id);
   const gest = param('periodo_gestacao_dias');
@@ -83,18 +86,18 @@ export async function abrirCobertura(matrizFixa = null, aoSalvar, existente = nu
   const doadoraAtual = ed.doadora_id ? (todosAnimais.find((x) => x.id === ed.doadora_id)?.brinco || '') : (ed.doadora_externa || '');
 
   const { el, fechar } = abrirModal({
-    titulo: existente ? 'Editar cobertura' : 'Registrar cobertura / inseminação',
+    titulo: existente ? 'Editar cobertura' : temporada ? `${temporada.nome} — ${temporada.tipo === 'tetf' ? 'transferência dos embriões' : 'inseminação'}` : 'Registrar cobertura / inseminação',
     largo: true,
     html: `<form id="f-cob" class="grade" style="gap:14px">
       ${matrizFixa ? `<div class="alerta"><i data-lucide="heart"></i><div>Vaca <b>${esc(matrizFixa.brinco)}</b>${matrizFixa.nome ? ` — ${esc(matrizFixa.nome)}` : ''}</div></div>`
         : `<div class="campo"><label>Vacas cobertas <span class="obrig">*</span></label><div id="sel-matrizes"></div>
-            <span class="ajuda">Marque uma ou várias (ex.: lote de IATF no mesmo dia).</span></div>`}
+            <span class="ajuda">${temporada ? 'Vacas da temporada (as que saíram do protocolo não aparecem). Desmarque as que não foram feitas.' : 'Marque uma ou várias (ex.: lote de IATF no mesmo dia).'}</span></div>`}
       <div class="campo"><label>Tipo <span class="obrig">*</span></label><div class="opcoes-radio">
-        ${Object.entries(ROTULO_TIPO_COB).map(([k, r], i) => `<label><input type="radio" name="tipo" value="${k}" ${(existente ? ed.tipo === k : i === 0) ? 'checked' : ''} required> ${esc(r)}</label>`).join('')}</div></div>
+        ${Object.entries(ROTULO_TIPO_COB).map(([k, r], i) => `<label><input type="radio" name="tipo" value="${k}" ${(existente ? ed.tipo === k : temporada ? temporada.tipo === k : i === 0) ? 'checked' : ''} ${temporada && temporada.tipo !== k ? 'disabled' : ''} required> ${esc(r)}</label>`).join('')}</div></div>
       <div class="grade grade-2" style="gap:14px">
         <div class="campo"><label for="c-rep">Touro (doador do sêmen)</label><select id="c-rep">${opcoes(reprod, { rotulo: nomeReprodutor, vazio: 'Não informado', selecionado: ed.reprodutor_id })}<option value="__novo">+ Cadastrar outro touro / sêmen</option></select>
           <span class="ajuda">Touros do rebanho e sêmens já cadastrados aparecem aqui.</span></div>
-        <div class="campo"><label for="c-data" id="c-data-rot">Data da cobertura <span class="obrig">*</span></label><input id="c-data" type="date" required max="${hojeISO()}" value="${ed.data_cobertura || hojeISO()}">
+        <div class="campo"><label for="c-data" id="c-data-rot">Data da cobertura <span class="obrig">*</span></label><input id="c-data" type="date" required max="${hojeISO()}" value="${ed.data_cobertura || (temporada?.data && temporada.data < hojeISO() ? temporada.data : hojeISO())}">
           <span class="ajuda" id="c-fim-ajuda">Monta natural: data em que a vaca entrou com o touro.</span></div>
         <div class="campo oculto" id="c-novo-campo" style="grid-column:1/-1"><div class="grade grade-2" style="gap:14px">
           <div class="campo"><label for="c-novo-nome">Nome do touro (doador do sêmen) <span class="obrig">*</span></label><input id="c-novo-nome" placeholder="Ex.: Nelore CFM Ímpeto"></div>
@@ -119,7 +122,7 @@ export async function abrirCobertura(matrizFixa = null, aoSalvar, existente = nu
   });
   const f = el.querySelector('form');
   const selecionadas = matrizFixa ? () => [matrizFixa.id]
-    : listaMultipla(el.querySelector('#sel-matrizes'), femeas, { detalhe: (a) => [a.categoria_nome, a.lote_nome && `lote ${a.lote_nome}`].filter(Boolean).join(' · ') });
+    : listaMultipla(el.querySelector('#sel-matrizes'), femeas, { detalhe: (a) => [a.categoria_nome, a.lote_nome && `lote ${a.lote_nome}`].filter(Boolean).join(' · '), marcados: temporada ? femeas.map((a) => a.id) : [] });
   const data = f.querySelector('#c-data'), prev = f.querySelector('#c-prev'), manual = f.querySelector('#c-manual');
   const tipoAtual = () => f.querySelector('input[name=tipo]:checked').value;
   const recalc = () => { if (!manual.checked && data.value) prev.value = addDias(data.value, diasGestacao(tipoAtual(), gest)); };
@@ -203,6 +206,7 @@ export async function abrirCobertura(matrizFixa = null, aoSalvar, existente = nu
           previsao_manual: manual.checked, data_prevista_parto: manual.checked ? prev.value || null : null,
           responsavel_nome: textoOuNulo(f.querySelector('#c-resp').value), observacoes: textoOuNulo(f.querySelector('#c-obs').value),
           ...(tipo === 'tetf' ? doadoraDados() : {}),
+          ...(temporada ? { temporada_id: temporada.id } : {}),
         }, `Cobertura da vaca ${brinco}`);
         if (r.sincronizado) ok++; else fila++;
       } catch (err) { erros.push(`${brinco}: ${traduzirErro(err)}`); }
@@ -211,14 +215,15 @@ export async function abrirCobertura(matrizFixa = null, aoSalvar, existente = nu
     if (erros.length) toast(`Não salvas — ${erros.join(' | ')}`, 'erro', 10000);
     if (ok) toast(`${ok} cobertura${ok > 1 ? 's' : ''} salva${ok > 1 ? 's' : ''} e confirmada${ok > 1 ? 's' : ''} pelo servidor.`);
     if (fila) toast(`Sem conexão: ${fila} cobertura(s) guardada(s) neste aparelho, ainda NÃO sincronizada(s).`, 'aviso', 8000);
-    if (ok || fila) { fechar(); aoSalvar?.(); }
+    if (ok || fila) { fechar(); aoSalvar?.({ data: data.value }); }
   });
 }
 
 // ---------------------------------------------------------------------
 // DIAGNÓSTICO DE GESTAÇÃO (individual ou em lote)
 // ---------------------------------------------------------------------
-export async function abrirDiagnostico(matrizFixa = null, aoSalvar) {
+// idsFixos (opcional): vacas que entram na lista (ex.: as de uma temporada de IATF/TETF)
+export async function abrirDiagnostico(matrizFixa = null, aoSalvar, idsFixos = null) {
   if (semPermissao()) return;
   const animais = await carregarAnimais();
   if (!animais) return;
@@ -229,7 +234,7 @@ export async function abrirDiagnostico(matrizFixa = null, aoSalvar) {
   const porId = new Map(animais.map((a) => [a.id, a]));
   const ultima = new Map();
   cobs.forEach((c) => ultima.set(c.matriz_id, c));
-  let linhas = matrizFixa ? [matrizFixa.id]
+  let linhas = matrizFixa ? [matrizFixa.id] : idsFixos ? idsFixos.filter((id) => porId.get(id))
     : [...ultima.values()].filter((c) => c.situacao === 'aguardando_diagnostico' && porId.get(c.matriz_id)?.conta_no_rebanho).map((c) => c.matriz_id);
 
   const { el, fechar } = abrirModal({
@@ -288,7 +293,7 @@ export async function abrirDiagnostico(matrizFixa = null, aoSalvar) {
     if (erros.length) toast(`Não salvos — ${erros.join(' | ')}`, 'erro', 10000);
     if (ok) toast(`${ok} diagnóstico(s) salvo(s) e confirmado(s) pelo servidor.`);
     if (fila) toast(`Sem conexão: ${fila} diagnóstico(s) guardado(s) neste aparelho, ainda NÃO sincronizado(s).`, 'aviso', 8000);
-    if (ok || fila) { fechar(); aoSalvar?.(); }
+    if (ok || fila) { fechar(); aoSalvar?.({ data: el.querySelector('#d-data').value }); }
   });
 }
 

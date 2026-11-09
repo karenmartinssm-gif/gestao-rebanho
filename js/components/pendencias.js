@@ -6,6 +6,7 @@
 import { sb } from '../supabase.js';
 import { store, param } from '../store.js';
 import { esc, fmtNum, fmtData, hojeISO, addDias, diasEntre, abrirModal, icones } from '../ui.js';
+import { consultaTemporadasAbertas, etapasPendentes, rotuloDia } from './temporadas.js';
 
 async function consulta(promessa) {
   const { data, error } = await promessa;
@@ -13,20 +14,21 @@ async function consulta(promessa) {
   return { data: data || [] };
 }
 
-/** Consultas usadas pelas pendências: [manejos, coberturas, desmames, estoque, partos]. */
+/** Consultas usadas pelas pendências: [manejos, coberturas, desmames, estoque, partos, temporadas]. */
 export function consultasPendencias(p, hoje = hojeISO()) {
   return [
     consulta(sb.from('manejos_sanitarios').select('id, tipo_manejo_id, data_aplicacao, proxima_aplicacao, proxima_resolvida, situacao, carencia_ate, manejo_animais(animal_id)')
       .eq('propriedade_id', p).or(`situacao.eq.em_andamento,and(proxima_aplicacao.not.is.null,proxima_resolvida.eq.false),carencia_ate.gte.${hoje}`)),
-    consulta(sb.from('coberturas').select('id, matriz_id, data_cobertura, data_prevista_parto, situacao, tipo').eq('propriedade_id', p).in('situacao', ['prenhe', 'aguardando_diagnostico', 'parida'])),
+    consulta(sb.from('coberturas').select('*').eq('propriedade_id', p).in('situacao', ['prenhe', 'aguardando_diagnostico', 'parida'])),
     consulta(sb.from('desmames').select('bezerro_id').eq('propriedade_id', p)),
     consulta(sb.from('vw_estoque_suplementos').select('id, nome, unidade, estoque_minimo, saldo, ativo').eq('propriedade_id', p).eq('ativo', true)),
     consulta(sb.from('nascimentos').select('matriz_id, cobertura_id, data_nascimento').eq('propriedade_id', p)),
+    consulta(consultaTemporadasAbertas(p)),
   ];
 }
 
 /** Monta os quadros de pendência a partir dos dados carregados. */
-export function montarPendencias({ animais, manejos, cobs, desm, estq, nasc = { data: [] } }) {
+export function montarPendencias({ animais, manejos, cobs, desm, estq, nasc = { data: [] }, temp = { data: [] } }) {
   const hoje = hojeISO();
   const porId = new Map(animais.map((a) => [a.id, a]));
   const ativos = animais.filter((a) => a.conta_no_rebanho);
@@ -69,18 +71,27 @@ export function montarPendencias({ animais, manejos, cobs, desm, estq, nasc = { 
   cobs.data.filter((c) => c.situacao === 'parida' && ativo(c.matriz_id) && !temParto(c))
     .forEach((c) => { if (!semParto.has(c.matriz_id) || semParto.get(c.matriz_id).data_cobertura < c.data_cobertura) semParto.set(c.matriz_id, c); });
 
+  // Temporadas de IATF/TETF: etapas do protocolo; as coberturas delas são acompanhadas pela própria temporada
+  const tempAbertas = new Set(temp.data.map((t) => t.id));
+  const daTemporada = (c) => c.temporada_id && tempAbertas.has(c.temporada_id);
+  const etapasTemp = etapasPendentes(temp.data, limiteManejo).map(({ t, e, data }) => [
+    `${t.nome} · ${rotuloDia(t, e)} ${e.nome}`, quando(data),
+    (t.temporada_animais || []).filter((x) => !x.saiu_etapa && ativo(x.animal_id)).map((x) => ({ id: x.animal_id, brinco: porId.get(x.animal_id).brinco })),
+    data < hoje, `#/reproducao?aba=temporadas&t=${t.id}`]);
+
   const pend = [
+    { titulo: 'Temporadas IATF/TETF', icone: 'calendar-range', itens: etapasTemp },
     { titulo: 'Vacinas próximas', icone: 'syringe', itens: porClasse('vacina').map((m) => [`${nomeTipo(m)} · ${descrAnimais(m)}`, quando(m.proxima_aplicacao), animaisDe(m), atrasado(m.proxima_aplicacao), '#/sanidade']) },
     { titulo: 'Vermifugações pendentes', icone: 'bug', itens: porClasse('vermifugacao').map((m) => [descrAnimais(m), quando(m.proxima_aplicacao), animaisDe(m), atrasado(m.proxima_aplicacao), '#/sanidade']) },
     { titulo: 'Outros manejos e retornos', icone: 'clipboard-list', itens: manejosPend.filter((m) => !['vacina', 'vermifugacao'].includes(tipoManejo.get(m.tipo_manejo_id)?.classe)).map((m) => [`${nomeTipo(m)} · ${descrAnimais(m)}`, quando(m.proxima_aplicacao), animaisDe(m), atrasado(m.proxima_aplicacao), '#/sanidade']) },
     { titulo: 'Previsões de parto', icone: 'baby', itens: cobs.data.filter((c) => c.situacao === 'prenhe' && c.data_prevista_parto && c.data_prevista_parto <= limiteParto && ativo(c.matriz_id)).sort((a, b) => a.data_prevista_parto.localeCompare(b.data_prevista_parto)).map((c) => [`Vaca ${porId.get(c.matriz_id).brinco}`, quando(c.data_prevista_parto), um(c.matriz_id), atrasado(c.data_prevista_parto), `#/animais/${c.matriz_id}?aba=reprodutivo`]) },
     { titulo: 'Partos sem registro', icone: 'clipboard-pen', itens: [...semParto.values()].sort((a, b) => porId.get(a.matriz_id).brinco.localeCompare(porId.get(b.matriz_id).brinco, 'pt-BR', { numeric: true })).map((c) => [`Vaca ${porId.get(c.matriz_id).brinco}`, '<span class="badge aviso">falta data do parto</span>', um(c.matriz_id), false, `#/animais/${c.matriz_id}?aba=reprodutivo`]) },
-    { titulo: 'Confirmação de prenhez', icone: 'microscope', itens: cobs.data.filter((c) => c.tipo === 'tetf' && c.situacao === 'aguardando_diagnostico' && ativo(c.matriz_id))
+    { titulo: 'Confirmação de prenhez', icone: 'microscope', itens: cobs.data.filter((c) => c.tipo === 'tetf' && c.situacao === 'aguardando_diagnostico' && !daTemporada(c) && ativo(c.matriz_id))
       .sort((a, b) => a.data_cobertura.localeCompare(b.data_cobertura)).map((c) => {
         const conferir = addDias(c.data_cobertura, param('dias_conferir_te'));
         return [`Vaca ${porId.get(c.matriz_id).brinco} · TE ${fmtData(c.data_cobertura)}`, quando(conferir), um(c.matriz_id), conferir < hoje, `#/animais/${c.matriz_id}?aba=reprodutivo`];
       }) },
-    { titulo: 'Diagnósticos de gestação pendentes', icone: 'scan-search', itens: cobs.data.filter((c) => c.tipo !== 'tetf' && c.situacao === 'aguardando_diagnostico' && c.data_cobertura <= limiteDiag && ativo(c.matriz_id)).map((c) => [`Vaca ${porId.get(c.matriz_id).brinco}`, `<span class="small muted">coberta ${fmtData(c.data_cobertura)}</span>`, um(c.matriz_id), false, `#/animais/${c.matriz_id}?aba=reprodutivo`]) },
+    { titulo: 'Diagnósticos de gestação pendentes', icone: 'scan-search', itens: cobs.data.filter((c) => c.tipo !== 'tetf' && c.situacao === 'aguardando_diagnostico' && !daTemporada(c) && c.data_cobertura <= limiteDiag && ativo(c.matriz_id)).map((c) => [`Vaca ${porId.get(c.matriz_id).brinco}`, `<span class="small muted">coberta ${fmtData(c.data_cobertura)}</span>`, um(c.matriz_id), false, `#/animais/${c.matriz_id}?aba=reprodutivo`]) },
     { titulo: 'Desmames previstos', icone: 'milk-off', itens: ativos.filter((a) => a.categoria_grupo === 'bezerro' && a.origem === 'nascido' && a.data_nascimento && !desmamados.has(a.id) && desmameEm(a) <= limiteDesmame).map((a) => [`Bezerro(a) ${a.brinco}`, quando(desmameEm(a)), um(a.id), atrasado(desmameEm(a)), `#/animais/${a.id}`]) },
     { titulo: 'Tratamentos em andamento', icone: 'stethoscope', itens: [...emTratamento].map((id) => [`Animal ${porId.get(id).brinco}`, '<span class="badge info">em andamento</span>', um(id), false, `#/animais/${id}`]) },
     { titulo: 'Fim de carência', icone: 'timer', itens: manejos.data.filter((m) => m.carencia_ate && m.carencia_ate >= hoje).map((m) => [`${nomeTipo(m)} · ${descrAnimais(m)}`, `<span class="small">até ${fmtData(m.carencia_ate)}</span>`, animaisDe(m), false, '#/sanidade']) },

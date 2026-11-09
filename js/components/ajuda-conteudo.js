@@ -121,6 +121,19 @@ export const ARTIGOS = [
     link: ['reproducao', 'Ir para Reprodução'],
   },
   {
+    id: 'temporada', assunto: 'reproducao', titulo: 'Como fazer uma temporada de IATF ou TETF',
+    chaves: 'temporada iatf tetf protocolo implante progesterona inseminacao transferencia embriao etapas d0 d7 d9 d16 estacao',
+    passos: [
+      'Vá em <b>Reprodução e cria</b> › aba <b>Temporadas IATF/TETF</b> e toque em <b>Nova temporada</b>.',
+      'Escolha IATF ou TETF, a data do D0 (colocação do implante) e marque as vacas e novilhas que entram.',
+      'O sistema monta as etapas com as datas (D0, D7, D9...). Quando fizer cada uma, toque em <b>Marcar como feito</b>.',
+      'Na inseminação ou na transferência, toque em <b>Registrar inseminação</b> / <b>Registrar transferência</b>: as coberturas de todas as vacas são registradas de uma vez.',
+      'No ultrassom, toque em <b>Confirmar prenhez</b>: a lista já vem com as vacas da temporada.',
+    ],
+    dica: 'Vaca que perdeu o implante ou saiu do protocolo: toque em <b>Vacas</b> e marque "Saiu do protocolo". As etapas aparecem em Pendências, no Painel e no sininho.',
+    link: ['reproducao', 'Ir para Reprodução'],
+  },
+  {
     id: 'diagnostico', assunto: 'reproducao', titulo: 'Como registrar o diagnóstico de prenhez (toque ou ultrassom)',
     chaves: 'vaca diagnostico prenhe prenha prenhez gestacao toque ultrassom ultrasom vazia emprenhou confirmar',
     passos: [

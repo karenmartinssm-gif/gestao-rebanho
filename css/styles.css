@@ -848,3 +848,19 @@ label.ca-foto:hover { background: var(--verde-50); }
 .badge-filtro.selecionado { border-color: currentColor; box-shadow: 0 0 0 1px currentColor; }
 .filtro-ativo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: -4px 0 10px; color: var(--texto-2); }
 .filtro-ativo[hidden] { display: none; }
+
+/* Temporadas de IATF / TETF */
+.temporada.destaque { box-shadow: 0 0 0 2px var(--musgo-500); }
+.etapas-temp { list-style: none; padding: 0; margin: 0; }
+.etapas-temp li { display: grid; grid-template-columns: 70px minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--borda); }
+.etapas-temp li:last-child { border-bottom: 0; }
+.etapas-temp .etapa-dia { font-weight: 700; color: var(--verde-900); font-variant-numeric: tabular-nums; }
+.etapas-temp .etapa-nome { display: flex; flex-direction: column; min-width: 0; }
+.etapas-temp li.feito .etapa-nome b { color: var(--texto-2); }
+.etapas-temp .etapa-acao { text-align: right; }
+.temporada .card-titulo { flex-wrap: wrap; }
+.temporada .card-titulo .acoes { display: flex; gap: 4px; align-items: center; margin-left: auto; }
+@media (max-width: 720px) {
+  .etapas-temp li { grid-template-columns: 56px minmax(0, 1fr); row-gap: 6px; }
+  .etapas-temp .etapa-status, .etapas-temp .etapa-acao { grid-column: 2; text-align: left; }
+}

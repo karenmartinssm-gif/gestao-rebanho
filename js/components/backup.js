@@ -14,7 +14,7 @@ export const FORMATO = 'rebanho-pucci-backup';
 // Ordem de restauração: cadastros primeiro, depois o que depende deles
 export const TABELAS = [
   'racas', 'categorias_animais', 'status_animais', 'tipos_manejo', 'tipos_capim', 'unidades_medida',
-  'pastagens', 'lotes', 'reprodutores', 'animais', 'matrizes', 'coberturas', 'diagnosticos_gestacao',
+  'pastagens', 'lotes', 'reprodutores', 'animais', 'matrizes', 'temporadas', 'temporada_animais', 'coberturas', 'diagnosticos_gestacao',
   'nascimentos', 'desmames', 'pesagens', 'compras', 'vendas', 'movimentacoes', 'movimentacao_animais',
   'produtos_sanitarios', 'protocolos_sanitarios', 'manejos_sanitarios', 'manejo_animais',
   'produtos_suplementacao', 'fornecimentos', 'fornecimento_animais', 'estoques', 'receitas', 'despesas', 'documentos',

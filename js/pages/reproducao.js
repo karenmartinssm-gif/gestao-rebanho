@@ -11,9 +11,10 @@ import { calcularIndicadores, desempenhoMatriz, situacaoExibida } from '../compo
 import * as F from '../components/reproducao-forms.js';
 import { todos } from '../components/consulta.js';
 import { grafico, CORES } from '../components/graficos.js';
+import { abaTemporadas } from '../components/temporadas.js';
 
 const pl = (n, um, varios) => `${fmtNum(n)} ${n === 1 ? um : varios}`;
-const ABAS = [['geral', 'Visão geral'], ['matrizes', 'Vacas e novilhas'], ['coberturas', 'Coberturas'], ['nascimentos', 'Nascimentos'], ['desmames', 'Desmames'], ['reprodutores', 'Touros e sêmen']];
+const ABAS = [['geral', 'Visão geral'], ['matrizes', 'Vacas e novilhas'], ['coberturas', 'Coberturas'], ['temporadas', 'Temporadas IATF/TETF'], ['nascimentos', 'Nascimentos'], ['desmames', 'Desmames'], ['reprodutores', 'Touros e sêmen']];
 const CHAVE_ABA = 'rebanho.repro.aba';
 const classeSit = { prenhe: 'ativo', proxima_parto: 'aviso', vazia: 'inativo', aguardando_diagnostico: 'info', aguardando_confirmacao_te: 'info', coberta: 'info', em_reproducao: '', pos_parto: '' };
 
@@ -36,6 +37,11 @@ export async function render(el) {
       todos(() => sb.from('desmames').select('*').eq('propriedade_id', p).order('data_desmame', { ascending: false }).order('id')),
     ]);
   } catch (e) { el.innerHTML = erroCarga(e); icones(); return; }
+  // Temporadas de IATF/TETF (se o SQL 021 ainda não foi rodado, a aba avisa)
+  let temporadas = [], erroTemporadas = null;
+  try {
+    temporadas = await todos(() => sb.from('temporadas').select('*, temporada_animais(id, animal_id, saiu_etapa, motivo_saida)').eq('propriedade_id', p).order('data_inicio', { ascending: false }).order('id'));
+  } catch (e) { erroTemporadas = e; console.warn(e); }
 
   const dados = { animais, matrizes, coberturas, nascimentos, desmames };
   const porId = new Map(animais.map((a) => [a.id, a]));
@@ -60,6 +66,11 @@ export async function render(el) {
 
   let aba = 'geral';
   try { aba = sessionStorage.getItem(CHAVE_ABA) || 'geral'; } catch { /* ignora */ }
+  // "#/reproducao?aba=temporadas&t=<id>" (vindo de Pendências / avisos) abre direto na temporada
+  const pedido = new URLSearchParams(location.hash.split('?')[1] || '');
+  if (pedido.get('aba')) aba = pedido.get('aba');
+  let destaque = pedido.get('t');
+  if (pedido.toString()) history.replaceState(null, '', '#/reproducao');   // não repete ao recarregar a página
 
   el.innerHTML = `
     <div class="cabecalho-pagina">
@@ -83,7 +94,7 @@ export async function render(el) {
     aba = k;
     try { sessionStorage.setItem(CHAVE_ABA, k); } catch { /* ignora */ }
     el.querySelectorAll('.aba').forEach((b) => b.classList.toggle('ativa', b.dataset.aba === k));
-    ({ geral: abaGeral, matrizes: abaMatrizes, coberturas: abaCoberturas, nascimentos: abaNascimentos, desmames: abaDesmames, reprodutores: abaReprodutores })[k]();
+    ({ geral: abaGeral, matrizes: abaMatrizes, coberturas: abaCoberturas, temporadas: abaTemp, nascimentos: abaNascimentos, desmames: abaDesmames, reprodutores: abaReprodutores })[k]();
     icones();
   };
   el.querySelector('.abas').addEventListener('click', (e) => { const b = e.target.closest('[data-aba]'); if (b) mostrar(b.dataset.aba); });
@@ -449,6 +460,14 @@ export async function render(el) {
       ],
       linhas: desmames,
     });
+  }
+
+  // ---------------- TEMPORADAS IATF / TETF ----------------
+  function abaTemp() {
+    const sitPorId = new Map(listaMatrizes.map((m) => [m.animal_id, ROTULO_SITUACAO_REPRO[m.sit] || '']));
+    const sitChave = new Map(listaMatrizes.map((m) => [m.animal_id, m.sit]));
+    abaTemporadas(painel, { porId, coberturas, sitPorId, sitChave, recarregar, abrirLista, temporadas, erroTabela: erroTemporadas, destaque });
+    destaque = null;
   }
 
   // ---------------- REPRODUTORES ----------------
