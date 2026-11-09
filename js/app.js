@@ -100,20 +100,25 @@ function desenharSino(n) {
 }
 
 // ---------- Layout ----------
+function menuRecolhido() {
+  try { return localStorage.getItem('menu.recolhido') === '1'; } catch { return false; }
+}
+
 function renderLayout() {
   const nome = store.perfil?.nome || store.usuario.email;
   const iniciais = nome.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('');
   raiz.innerHTML = `
-  <div class="app">
+  <div class="app${menuRecolhido() ? ' lateral-recolhida' : ''}">
     <aside class="lateral" aria-label="Menu principal">
       <div class="marca">
         <div class="marca-logo">GR</div>
-        <div><div class="marca-nome">Gestão de Rebanho</div><div class="marca-prop">${esc(store.prop.nome)}</div></div>
+        <div class="marca-texto"><div class="marca-nome">Gestão de Rebanho</div><div class="marca-prop">${esc(store.prop.nome)}</div></div>
+        <button type="button" class="btn-recolher" id="btn-recolher" title="Recolher menu" aria-label="Recolher menu"><i data-lucide="panel-left-close"></i></button>
       </div>
       <nav>
         ${MENU.filter((m) => !m.perm || pode(m.perm)).filter((m) => !m.dono || ehProprietario()).map((m) => m.grupo
           ? `<div class="nav-grupo">${esc(m.grupo)}</div>`
-          : `<a class="nav-item" href="#/${m.rota}" data-rota="${m.rota}"><i data-lucide="${m.icone}"></i>${esc(m.titulo)}${m.etapa ? `<span class="etapa" title="Disponível na etapa ${m.etapa}">E${m.etapa}</span>` : ''}</a>`).join('')}
+          : `<a class="nav-item" href="#/${m.rota}" data-rota="${m.rota}" title="${esc(m.titulo)}"><i data-lucide="${m.icone}"></i>${esc(m.titulo)}${m.etapa ? `<span class="etapa" title="Disponível na etapa ${m.etapa}">E${m.etapa}</span>` : ''}</a>`).join('')}
       </nav>
       <div class="rodape-lateral">
         ${store.vinculos.length > 1 ? `<label class="small" for="troca-prop" style="color:#a9bcae">Propriedade</label>
@@ -140,7 +145,22 @@ function renderLayout() {
   </div>`;
   icones();
 
-  document.getElementById('btn-menu').onclick = () => document.querySelector('.app').classList.add('menu-aberto');
+  const btnRecolher = document.getElementById('btn-recolher');
+  const marcarRecolher = () => {
+    const rec = document.querySelector('.app').classList.contains('lateral-recolhida');
+    btnRecolher.title = rec ? 'Abrir menu' : 'Recolher menu';
+    btnRecolher.setAttribute('aria-label', btnRecolher.title);
+    btnRecolher.innerHTML = `<i data-lucide="${rec ? 'panel-left-open' : 'panel-left-close'}"></i>`;
+    icones();
+  };
+  btnRecolher.onclick = () => {
+    const rec = document.querySelector('.app').classList.toggle('lateral-recolhida');
+    try { localStorage.setItem('menu.recolhido', rec ? '1' : '0'); } catch { /* sem armazenamento */ }
+    marcarRecolher();
+    window.dispatchEvent(new Event('resize'));   // gráficos se ajustam à nova largura
+  };
+  marcarRecolher();
+  document.getElementById('btn-menu').onclick = () => (window.innerWidth > 960 ? btnRecolher.click() : document.querySelector('.app').classList.add('menu-aberto'));
   document.querySelector('[data-fechar-menu]').onclick = () => document.querySelector('.app').classList.remove('menu-aberto');
   document.getElementById('btn-sair').onclick = async () => {
     if (sync.estado.pendentes && !confirm(`Há ${sync.estado.pendentes} registro(s) ainda não sincronizado(s) neste aparelho. Se sair agora, eles continuam guardados aqui e serão enviados no próximo acesso com este usuário. Sair mesmo assim?`)) return;

@@ -104,9 +104,8 @@ export async function render(el) {
   el.innerHTML = `
     <div class="boas-vindas">
       <div><h1>${saudacao}${primeiroNome ? `, ${esc(primeiroNome)}` : ''}!</h1>
-        <p>${esc(store.prop.nome.toUpperCase())} · decisões do dia em um só lugar.</p></div>
+        <p>${esc(store.prop.nome.toUpperCase())}</p></div>
       <div class="bv-data"><b>${esc(dataExtenso)}</b><span>Situação do rebanho em ${fmtData(hoje)}</span></div>
-      <span class="bv-marca" aria-hidden="true">${esc(store.prop.nome)}</span>
     </div>
 
     ${!animais.length ? `<div class="card" style="margin-bottom:20px">${vazio({ icone: 'tag', titulo: 'Nenhum animal cadastrado ainda',
