@@ -101,11 +101,36 @@ export async function render(el) {
   const temComp = ativos.length > 0;
   const pctDe = (n) => { const v = (n / (ativos.length || 1)) * 100; return v > 0 && v < 1 ? '<1' : String(Math.round(v)); };
 
+  // Quadros pequenos: só os que têm valor; 4 quadros ficam 2 em cima e 2 embaixo
+  const miniCards = [
+    kpi('Matrizes', grupo('matriz'), 'heart', [plural(prenhes, 'prenhe', 'prenhes'), posParto && `${fmtNum(posParto)} pós-parto`, cobertas && `${fmtNum(cobertas)} aguardando diagnóstico`, plural(vazias, 'vazia', 'vazias')].filter(Boolean).join(' · '), false, linkCats('matriz')),
+    kpi('Novilhas', grupo('novilha'), 'sprout', novilhasPrenhes ? plural(novilhasPrenhes, 'prenhe', 'prenhes') : '', false, linkCats('novilha')),
+    kpi('Bezerros', grupo('bezerro'), 'baby', porSexo((a) => a.categoria_grupo === 'bezerro'), false, linkCats('bezerro')),
+    kpi('Touros', grupo('touro'), 'shield', '', false, linkCats('touro')),
+    kpi('Outros (garrotes, bois…)', conta((a) => ['garrote', 'boi', 'outro'].includes(a.categoria_grupo)), 'layers', '', false, linkCats('garrote', 'boi', 'outro')),
+    kpi(`Nascimentos em ${nomeMes}`, nascMes, 'sunrise', '', false, '#/reproducao'),
+    kpi(`Mortes em ${nomeMes}`, mortesMes, 'circle-x', '', false, '#/animais?situacao=st:morto'),
+    kpi(`Vendidos em ${nomeMes}`, vendMes, 'handshake', `${fmtNum(vendAno)} no ano`, false, '#/animais?situacao=st:vendido'),
+    kpi('Em tratamento', emTratamento.size, 'stethoscope', '', false, '#/sanidade'),
+    kpi('Manejos pendentes', manejosPend.length, 'calendar-clock', `próximos ${param('dias_alerta_manejo')} dias e atrasados`, false, '#/sanidade'),
+  ].filter(Boolean);
+  const colsMini = miniCards.length === 4 ? 2 : Math.min(Math.max(miniCards.length, 1), 3);
+
   el.innerHTML = `
     <div class="boas-vindas">
       <div><h1>${saudacao}${primeiroNome ? `, ${esc(primeiroNome)}` : ''}!</h1>
         <p>${esc(store.prop.nome.toUpperCase())}</p></div>
       <div class="bv-data"><b>${esc(dataExtenso)}</b><span>Situação do rebanho em ${fmtData(hoje)}</span></div>
+    </div>
+
+    <div class="painel-busca">
+      <div class="busca-animal">
+        <i data-lucide="search"></i>
+        <input id="busca-animal" type="search" placeholder="Buscar animal — insira o número ou apelido" autocomplete="off" enterkeyhint="search"
+          role="combobox" aria-expanded="false" aria-controls="busca-sugestoes" aria-label="Buscar animal pelo número do brinco ou apelido">
+        <ul class="busca-sugestoes oculto" id="busca-sugestoes" role="listbox"></ul>
+      </div>
+      <a class="btn" href="#/animais" title="Ver rebanho" aria-label="Ver rebanho"><i data-lucide="tag"></i><span class="txt-ver"> Ver rebanho</span></a>
     </div>
 
     ${!animais.length ? `<div class="card" style="margin-bottom:20px">${vazio({ icone: 'tag', titulo: 'Nenhum animal cadastrado ainda',
@@ -119,17 +144,8 @@ export async function render(el) {
           ${kpi('Animais ativos', ativos.length, 'tag', porSexo(() => true), true, '#/animais?situacao=ativos')}
           ${kpi('Animais registrados', registrados, 'badge-check', `${fmtNum(ativos.length ? Math.round(registrados / ativos.length * 100) : 0)}% do rebanho`, false, '#/animais?registro=sim')}
         </div>
-        <div class="kpi-grupo kpi-mini">
-          ${kpi('Matrizes', grupo('matriz'), 'heart', [plural(prenhes, 'prenhe', 'prenhes'), posParto && `${fmtNum(posParto)} pós-parto`, cobertas && `${fmtNum(cobertas)} aguardando diagnóstico`, plural(vazias, 'vazia', 'vazias')].filter(Boolean).join(' · '), false, linkCats('matriz'))}
-          ${kpi('Novilhas', grupo('novilha'), 'sprout', novilhasPrenhes ? plural(novilhasPrenhes, 'prenhe', 'prenhes') : '', false, linkCats('novilha'))}
-          ${kpi('Bezerros', grupo('bezerro'), 'baby', porSexo((a) => a.categoria_grupo === 'bezerro'), false, linkCats('bezerro'))}
-          ${kpi('Touros', grupo('touro'), 'shield', '', false, linkCats('touro'))}
-          ${kpi('Outros (garrotes, bois…)', conta((a) => ['garrote', 'boi', 'outro'].includes(a.categoria_grupo)), 'layers', '', false, linkCats('garrote', 'boi', 'outro'))}
-          ${kpi(`Nascimentos em ${nomeMes}`, nascMes, 'sunrise', '', false, '#/reproducao')}
-          ${kpi(`Mortes em ${nomeMes}`, mortesMes, 'circle-x', '', false, '#/animais?situacao=st:morto')}
-          ${kpi(`Vendidos em ${nomeMes}`, vendMes, 'handshake', `${fmtNum(vendAno)} no ano`, false, '#/animais?situacao=st:vendido')}
-          ${kpi('Em tratamento', emTratamento.size, 'stethoscope', '', false, '#/sanidade')}
-          ${kpi('Manejos pendentes', manejosPend.length, 'calendar-clock', `próximos ${param('dias_alerta_manejo')} dias e atrasados`, false, '#/sanidade')}
+        <div class="kpi-grupo kpi-mini" style="--cols:${colsMini}">
+          ${miniCards.join('')}
         </div>
       </div>
 
@@ -181,6 +197,7 @@ export async function render(el) {
       desenharComp();
     });
   }
+  ligarBusca(el, animais);
   ligarAtalhos(el.querySelector('#atalhos'));
   ligarInstalar(el);
   icones();
@@ -221,4 +238,64 @@ async function mostrarMercado(sec) {
   </div>`;
   sec.hidden = false;
   icones();
+}
+
+// Busca rápida de animal pelo brinco ou apelido (inclui vendidos e mortos)
+function ligarBusca(el, animais) {
+  const input = el.querySelector('#busca-animal');
+  const lista = el.querySelector('#busca-sugestoes');
+  if (!input) return;
+  if (window.innerWidth <= 720) input.placeholder = 'Buscar animal (nº ou apelido)';
+  const norm = (t) => (t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+  let achados = [];
+  let marcado = -1;
+  const fechar = () => { lista.classList.add('oculto'); input.setAttribute('aria-expanded', 'false'); marcado = -1; };
+  const abrir = (a) => { location.hash = `#/animais/${a.id}`; };
+  const procurar = () => {
+    const t = norm(input.value);
+    if (!t) { achados = []; fechar(); return; }
+    const nota = (a) => {
+      const b = norm(a.brinco), n = norm(a.nome);
+      if (b === t || n === t) return 0;
+      if (b.startsWith(t) || n.startsWith(t)) return 1;
+      return (b.includes(t) || n.includes(t)) ? 2 : 9;
+    };
+    achados = animais.map((a) => ({ a, n: nota(a) })).filter((x) => x.n < 9)
+      .sort((x, y) => x.n - y.n || (y.a.conta_no_rebanho - x.a.conta_no_rebanho) || x.a.brinco.localeCompare(y.a.brinco, 'pt-BR', { numeric: true }))
+      .map((x) => x.a);
+    marcado = -1;
+    lista.innerHTML = achados.length
+      ? achados.slice(0, 8).map((a, i) => `<li role="option" data-i="${i}"><b>${esc(a.brinco)}</b>${a.nome ? ` <span>${esc(a.nome)}</span>` : ''}
+          <small>${esc(a.categoria_nome || '')}${a.conta_no_rebanho ? '' : ` · ${esc((a.status_nome || '').toLowerCase())}`}</small></li>`).join('')
+        + (achados.length > 8 ? `<li class="mais" data-todos>Ver todos os ${achados.length} resultados no Rebanho</li>` : '')
+      : '<li class="vazia">Nenhum animal encontrado.</li>';
+    lista.classList.remove('oculto');
+    input.setAttribute('aria-expanded', 'true');
+  };
+  const verTodos = () => { location.hash = `#/animais?busca=${encodeURIComponent(input.value.trim())}&situacao=todos`; };
+  const marcar = (i) => {
+    const itens = [...lista.querySelectorAll('[data-i]')];
+    if (!itens.length) return;
+    marcado = (i + itens.length) % itens.length;
+    itens.forEach((li, k) => li.classList.toggle('marcado', k === marcado));
+  };
+  input.addEventListener('input', procurar);
+  input.addEventListener('focus', () => { if (input.value.trim()) procurar(); });
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); marcar(marcado + 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); marcar(marcado - 1); }
+    else if (e.key === 'Escape') fechar();
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (marcado >= 0 && achados[marcado]) abrir(achados[marcado]);
+      else if (achados.length === 1 || (achados[0] && norm(achados[0].brinco) === norm(input.value))) abrir(achados[0]);
+      else if (input.value.trim()) verTodos();
+    }
+  });
+  lista.addEventListener('mousedown', (e) => {
+    e.preventDefault();   // não perde o foco antes do clique
+    const li = e.target.closest('[data-i], [data-todos]'); if (!li) return;
+    if (li.dataset.todos !== undefined) verTodos(); else abrir(achados[Number(li.dataset.i)]);
+  });
+  input.addEventListener('blur', () => setTimeout(fechar, 120));
 }
