@@ -120,7 +120,7 @@ export async function render(el) {
     <div class="boas-vindas">
       <div><h1>${saudacao}${primeiroNome ? `, ${esc(primeiroNome)}` : ''}!</h1>
         <p>${esc(store.prop.nome.toUpperCase())}</p></div>
-      <div class="bv-data"><b>${esc(dataExtenso)}</b><span>Situação do rebanho em ${fmtData(hoje)}</span></div>
+      <div class="bv-data"><b>${esc(dataExtenso)}</b></div>
     </div>
 
     <div class="painel-busca">
