@@ -266,35 +266,73 @@ export async function render(el) {
     const ia = doTipo('inseminacao', 'iatf'), te = doTipo('tetf');
     const nIatf = doTipo('iatf').length, nIa = doTipo('inseminacao').length;
     const conferir = te.filter((c) => c.situacao === 'aguardando_diagnostico').length;
-    const resultado = (lista) => {
+    const resultado = (lista, proc) => {
       const prenhes = lista.filter((c) => ['prenhe', 'parida'].includes(c.situacao)).length;
       const abortos = lista.filter((c) => c.situacao === 'aborto').length;
-      return `<span class="cob-result"><span class="badge ativo">${fmtNum(prenhes)} ${prenhes === 1 ? 'prenhe' : 'prenhes'}</span><span class="badge perigo">${fmtNum(abortos)} ${abortos === 1 ? 'aborto' : 'abortos'}</span></span>`;
+      return `<span class="cob-result"><button type="button" class="badge ativo badge-filtro" data-f-res="prenhe" data-proc="${proc}" title="Mostrar só estas na tabela">${fmtNum(prenhes)} ${prenhes === 1 ? 'prenhe' : 'prenhes'}</button><button type="button" class="badge perigo badge-filtro" data-f-res="aborto" data-proc="${proc}" title="Mostrar só estas na tabela">${fmtNum(abortos)} ${abortos === 1 ? 'aborto' : 'abortos'}</button></span>`;
     };
     const resumo = coberturas.length ? `<div class="cob-resumo">
-        <div class="card kpi"><span class="rotulo"><i data-lucide="syringe"></i>Inseminação artificial (IA)</span><span class="valor">${fmtNum(ia.length)}</span>
+        <div class="card kpi clicavel" role="button" tabindex="0" data-f-proc="ia" title="Filtrar a tabela"><span class="rotulo"><i data-lucide="syringe"></i>Inseminação artificial (IA)</span><span class="valor">${fmtNum(ia.length)}</span>
           <span class="detalhe">${[nIatf && `${fmtNum(nIatf)} IATF`, nIa && `${fmtNum(nIa)} IA convencional`].filter(Boolean).join(' · ') || 'Nenhuma registrada'}</span>
-          ${resultado(ia)}</div>
-        <div class="card kpi"><span class="rotulo"><i data-lucide="microscope"></i>Transferência de embrião (TE)</span><span class="valor">${fmtNum(te.length)}</span>
+          ${resultado(ia, 'ia')}</div>
+        <div class="card kpi clicavel" role="button" tabindex="0" data-f-proc="te" title="Filtrar a tabela"><span class="rotulo"><i data-lucide="microscope"></i>Transferência de embrião (TE)</span><span class="valor">${fmtNum(te.length)}</span>
           <span class="detalhe">${conferir ? `${fmtNum(conferir)} aguardando confirmação` : te.length ? 'Todas conferidas' : 'Nenhuma registrada'}</span>
-          ${resultado(te)}</div>
+          ${resultado(te, 'te')}</div>
         <div class="card cob-pizza"><span class="rotulo-card">Coberturas por touro / sêmen</span><div class="cob-pizza-area"><canvas id="g-touros" aria-label="Gráfico: coberturas por touro ou sêmen"></canvas></div></div>
       </div>` : '';
-    painel.innerHTML = `${resumo}<div class="card">${coberturas.length ? '<div id="t-cob"></div>' : vazio({ icone: 'heart', titulo: 'Nenhuma cobertura registrada', texto: 'Registre montas naturais, inseminações e IATF para acompanhar a previsão de parto e a taxa de prenhez.', acao: editar ? '<button class="btn btn-primario" data-novo>Registrar cobertura</button>' : '' })}</div>`;
+    painel.innerHTML = `${resumo}<div id="c-filtro" class="small filtro-ativo" hidden></div><div class="card">${coberturas.length ? '<div id="t-cob"></div>' : vazio({ icone: 'heart', titulo: 'Nenhuma cobertura registrada', texto: 'Registre montas naturais, inseminações e IATF para acompanhar a previsão de parto e a taxa de prenhez.', acao: editar ? '<button class="btn btn-primario" data-novo>Registrar cobertura</button>' : '' })}</div>`;
     painel.querySelector('[data-novo]')?.addEventListener('click', () => F.abrirCobertura(null, recarregar));
     if (!coberturas.length) return;
     // pizza: coberturas por touro/sêmen, do maior para o menor (até 7 fatias + "Outros")
     const porTouro = new Map();
     validas.forEach((c) => { const k = c.reprodutor_id ? nomeRep(c.reprodutor_id) : 'Não informado'; porTouro.set(k, (porTouro.get(k) || 0) + 1); });
     let fatias = [...porTouro].sort((a, b) => b[1] - a[1]);
-    if (fatias.length > 8) fatias = [...fatias.slice(0, 7), ['Outros', fatias.slice(7).reduce((s2, f) => s2 + f[1], 0)]];
+    const nomesOutros = new Set();
+    if (fatias.length > 8) { fatias.slice(7).forEach(([t]) => nomesOutros.add(t)); fatias = [...fatias.slice(0, 7), ['Outros', fatias.slice(7).reduce((s2, f) => s2 + f[1], 0)]]; }
+    // Filtros: procedimento (IA/TE), resultado (prenhe/aborto) e touro — clicar de novo tira
+    const PROC = { ia: ['IA', ['inseminacao', 'iatf']], te: ['TE', ['tetf']] };
+    const RES = { prenhe: ['prenhes', ['prenhe', 'parida']], aborto: ['abortos', ['aborto']] };
+    const filtro = { proc: null, res: null, touro: null };
+    const touroDe = (c) => (c.reprodutor_id ? nomeRep(c.reprodutor_id) : 'Não informado');
+    const linhas = () => coberturas.filter((c) => (!filtro.proc || PROC[filtro.proc][1].includes(c.tipo))
+      && (!filtro.res || RES[filtro.res][1].includes(c.situacao))
+      && (!filtro.touro || (filtro.touro === 'Outros' ? nomesOutros.has(touroDe(c)) : touroDe(c) === filtro.touro)));
+    let tabela;
+    const aviso = painel.querySelector('#c-filtro');
+    const aplicar = () => {
+      painel.querySelectorAll('[data-f-proc]').forEach((q) => q.classList.toggle('selecionado', q.dataset.fProc === filtro.proc && !filtro.res));
+      painel.querySelectorAll('[data-f-res]').forEach((q) => q.classList.toggle('selecionado', q.dataset.fRes === filtro.res && q.dataset.proc === filtro.proc));
+      const partes = [filtro.proc && PROC[filtro.proc][0], filtro.res && RES[filtro.res][0], filtro.touro && `touro/sêmen ${filtro.touro}`].filter(Boolean);
+      aviso.hidden = !partes.length;
+      aviso.innerHTML = partes.length ? `<span>Mostrando: <b>${esc(partes.join(' · '))}</b></span> <button type="button" class="btn btn-texto btn-sm" data-limpar-filtro><i data-lucide="x"></i> Tirar filtro</button>` : '';
+      tabela?.atualizar(linhas());
+      icones();
+    };
+    const clicar = (alvo) => {
+      const r = alvo.closest('[data-f-res]');
+      if (r) {
+        const mesmo = filtro.res === r.dataset.fRes && filtro.proc === r.dataset.proc;
+        filtro.res = mesmo ? null : r.dataset.fRes; filtro.proc = mesmo ? null : r.dataset.proc;
+        return aplicar();
+      }
+      const q = alvo.closest('[data-f-proc]');
+      if (q) { filtro.proc = filtro.proc === q.dataset.fProc && !filtro.res ? null : q.dataset.fProc; filtro.res = null; return aplicar(); }
+      if (alvo.closest('[data-limpar-filtro]')) { filtro.proc = null; filtro.res = null; filtro.touro = null; aplicar(); }
+    };
+    painel.querySelector('.cob-resumo').addEventListener('click', (e) => clicar(e.target));
+    painel.querySelector('.cob-resumo').addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-f-proc]')) { e.preventDefault(); clicar(e.target); } });
+    aviso.addEventListener('click', (e) => clicar(e.target));
     grafico(painel.querySelector('#g-touros'), {
       type: 'pie',
       data: { labels: fatias.map(([t, n]) => `${t}: ${fmtNum(n)}`), datasets: [{ data: fatias.map((f) => f[1]), backgroundColor: fatias.map(([t], k) => (t === 'Não informado' ? '#c9ccc4' : CORES[k % CORES.length])), borderColor: '#fff', borderWidth: 2 }] },
-      options: { plugins: { legend: { display: true, position: innerWidth < 720 ? 'bottom' : 'right', labels: { boxWidth: 12, boxHeight: 12, padding: 8 } },
+      options: {
+        onClick: (_e, els) => { if (!els.length) return; const nome = fatias[els[0].index][0]; filtro.touro = filtro.touro === nome ? null : nome; aplicar(); },
+        onHover: (e, els) => { e.native.target.style.cursor = els.length ? 'pointer' : 'default'; },
+        plugins: { legend: { display: true, position: innerWidth < 720 ? 'bottom' : 'right', labels: { boxWidth: 12, boxHeight: 12, padding: 8 },
+          onClick: (_e, item) => { const nome = fatias[item.index][0]; filtro.touro = filtro.touro === nome ? null : nome; aplicar(); } },
         tooltip: { backgroundColor: '#1b3524', padding: 10, cornerRadius: 6, callbacks: { label: (c) => ` ${fmtNum(c.raw)} (${fmtNum((c.raw / validas.length) * 100, 0)}%)` } } } },
     });
-    montarTabela(painel.querySelector('#t-cob'), {
+    tabela = montarTabela(painel.querySelector('#t-cob'), {
       colunas: [
         { chave: 'data_cobertura', titulo: 'Data', primaria: true, render: (c) => `${fmtData(c.data_cobertura)}${c.data_fim ? ` a ${fmtData(c.data_fim)}` : ''}` },
         { chave: 'matriz', titulo: 'Vaca', valor: (c) => porId.get(c.matriz_id)?.brinco, render: (c) => linkAnimal(c.matriz_id) },
@@ -305,7 +343,7 @@ export async function render(el) {
         { chave: 'resp', titulo: 'Responsável', render: (c) => esc(c.responsavel_nome || '—') },
         ...(editar || excluir ? [{ chave: 'acao', titulo: '', render: (c) => `<span class="acoes">${editar && c.situacao === 'aguardando_diagnostico' && porId.get(c.matriz_id)?.conta_no_rebanho ? `<button class="btn btn-sm" data-diag="${c.matriz_id}">Diagnóstico</button>` : ''}${excluir && !['parida', 'aborto'].includes(c.situacao) ? `<button class="btn btn-sm btn-texto" data-excluir-cob="${c.id}" title="Excluir cobertura" aria-label="Excluir cobertura"><i data-lucide="trash-2"></i></button>` : ''}</span>` }] : []),
       ],
-      linhas: coberturas,
+      linhas: linhas(),
     });
     painel.querySelector('#t-cob').addEventListener('click', (e) => {
       const x = e.target.closest('[data-excluir-cob]');
