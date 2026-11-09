@@ -823,5 +823,16 @@ button.ficha-foto { border: 0; padding: 0; font: inherit; }
 .tabela .col-acao { width: 1%; white-space: nowrap; }
 
 /* Reprodução › Coberturas: quadros IA e TE */
-.cob-resumo { display: grid; grid-template-columns: repeat(2, minmax(0, 260px)); gap: 16px; margin-bottom: 16px; }
-@media (max-width: 720px) { .cob-resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
+.cob-resumo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.8fr); gap: 16px; margin-bottom: 16px; }
+.cob-result { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.cob-pizza { padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.cob-pizza .rotulo-card { font-size: .8rem; color: var(--texto-2); }
+.cob-pizza-area { position: relative; height: 130px; }
+@media (max-width: 900px) {
+  .cob-resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .cob-pizza { grid-column: 1 / -1; }
+  .cob-pizza-area { height: 150px; }
+}
+@media (max-width: 719px) {
+  .cob-pizza-area { height: 230px; }
+}

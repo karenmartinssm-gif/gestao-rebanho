@@ -72,7 +72,7 @@ export async function carregarAvisos(forcar = false) {
   const limTE = addDias(hoje, -param('dias_conferir_te'));
   cobs.filter((c) => c.tipo === 'tetf' && c.situacao === 'aguardando_diagnostico' && c.data_cobertura <= limTE && ativo(c.matriz_id)).forEach((c) => add({
     chave: `te:${c.id}`, grupo: 'reproducao', nivel: 'aviso', data: addDias(c.data_cobertura, param('dias_conferir_te')),
-    titulo: `Conferir TE — vaca ${brinco(c.matriz_id)}`, texto: `transferência em ${fmtData(c.data_cobertura)}`, link: `#/animais/${c.matriz_id}` }));
+    titulo: `Confirmação de prenhez (TE) — vaca ${brinco(c.matriz_id)}`, texto: `transferência em ${fmtData(c.data_cobertura)}`, link: `#/animais/${c.matriz_id}` }));
   cobs.filter((c) => c.tipo !== 'tetf' && c.situacao === 'aguardando_diagnostico' && c.data_cobertura <= limDiag && ativo(c.matriz_id)).forEach((c) => add({
     chave: `diag:${c.id}`, grupo: 'reproducao', nivel: 'aviso', data: addDias(c.data_cobertura, param('dias_diagnostico_gestacao')),
     titulo: `Diagnóstico de gestação — vaca ${brinco(c.matriz_id)}`, texto: `coberta em ${fmtData(c.data_cobertura)}`, link: `#/animais/${c.matriz_id}` }));
