@@ -8,6 +8,7 @@ import { listarAnimais } from '../components/animais-comum.js';
 import { htmlAtalhos, ligarAtalhos } from '../components/atalhos.js';
 import { todos } from '../components/consulta.js';
 import { htmlInstalar, ligarInstalar } from '../components/instalar.js';
+import { grafico, CORES } from '../components/graficos.js';
 import { consultasPendencias, montarPendencias, htmlPendencias } from '../components/pendencias.js';
 
 const plural = (n, um, varios) => `${fmtNum(n)} ${n === 1 ? um : varios}`;
@@ -80,12 +81,24 @@ export async function render(el) {
     </${link ? 'a' : 'div'}>`);
 
   const nomeMes = new Date().toLocaleDateString('pt-BR', { month: 'long' });
+  const agora = new Date();
+  const saudacao = agora.getHours() < 12 ? 'Bom dia' : agora.getHours() < 18 ? 'Boa tarde' : 'Boa noite';
+  const primeiroNome = (store.perfil?.nome || '').trim().split(/\s+/)[0];
+  const dataExtenso = agora.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  // Composição do rebanho: categorias dos animais ativos, da maior para a menor (as menores viram "Outros")
+  const porCat = store.base.categorias.map((c) => ({ nome: c.nome, n: conta((a) => a.categoria_id === c.id) }))
+    .concat([{ nome: 'Sem categoria', n: conta((a) => !a.categoria_id) }])
+    .filter((x) => x.n).sort((x, y) => y.n - x.n);
+  const composicao = porCat.length > 6 ? [...porCat.slice(0, 5), { nome: 'Outros', n: porCat.slice(5).reduce((t, x) => t + x.n, 0) }] : porCat;
+  const pctDe = (n) => { const v = (n / (ativos.length || 1)) * 100; return v > 0 && v < 1 ? '<1' : String(Math.round(v)); };
 
   el.innerHTML = `
-    <div class="cabecalho-pagina">
-      <div><h1>${esc(store.prop.nome)}</h1><p>Situação do rebanho em ${fmtData(hoje)}</p></div>
-      <div class="acoes"><a class="btn" href="#/animais"><i data-lucide="tag"></i> Ver rebanho</a>
-        <a class="btn btn-primario" href="#/animais/novo"><i data-lucide="plus"></i> Cadastrar animal</a></div>
+    <div class="boas-vindas">
+      <div><h1>${saudacao}${primeiroNome ? `, ${esc(primeiroNome)}` : ''}!</h1>
+        <p>${esc(store.prop.nome.toUpperCase())} · decisões do dia em um só lugar.</p></div>
+      <div class="bv-data"><b>${esc(dataExtenso)}</b><span>Situação do rebanho em ${fmtData(hoje)}</span></div>
+      <span class="bv-marca" aria-hidden="true">${esc(store.prop.nome)}</span>
     </div>
 
     ${!animais.length ? `<div class="card" style="margin-bottom:20px">${vazio({ icone: 'tag', titulo: 'Nenhum animal cadastrado ainda',
@@ -93,38 +106,59 @@ export async function render(el) {
       acao: '<a class="btn btn-primario" href="#/animais/novo"><i data-lucide="plus"></i> Cadastrar primeiro animal</a>' })}</div>` : ''}
 
     ${htmlInstalar()}
-    <div class="kpi-faixa">
-      <div class="kpi-grupo kpi-principal">
-        ${kpi('Animais ativos', ativos.length, 'tag', porSexo(() => true), true, '#/animais?situacao=ativos')}
-        ${kpi('Animais registrados', registrados, 'badge-check', `${fmtNum(ativos.length ? Math.round(registrados / ativos.length * 100) : 0)}% do rebanho`, false, '#/animais?registro=sim')}
+    <div class="painel-topo">
+      <div class="painel-kpis">
+        <div class="kpi-grupo kpi-principal">
+          ${kpi('Animais ativos', ativos.length, 'tag', porSexo(() => true), true, '#/animais?situacao=ativos')}
+          ${kpi('Animais registrados', registrados, 'badge-check', `${fmtNum(ativos.length ? Math.round(registrados / ativos.length * 100) : 0)}% do rebanho`, false, '#/animais?registro=sim')}
+        </div>
+        <div class="kpi-grupo kpi-mini">
+          ${kpi('Matrizes', grupo('matriz'), 'heart', [plural(prenhes, 'prenhe', 'prenhes'), posParto && `${fmtNum(posParto)} pós-parto`, cobertas && `${fmtNum(cobertas)} aguardando diagnóstico`, plural(vazias, 'vazia', 'vazias')].filter(Boolean).join(' · '), false, linkCats('matriz'))}
+          ${kpi('Novilhas', grupo('novilha'), 'sprout', novilhasPrenhes ? plural(novilhasPrenhes, 'prenhe', 'prenhes') : '', false, linkCats('novilha'))}
+          ${kpi('Bezerros', grupo('bezerro'), 'baby', porSexo((a) => a.categoria_grupo === 'bezerro'), false, linkCats('bezerro'))}
+          ${kpi('Touros', grupo('touro'), 'shield', '', false, linkCats('touro'))}
+          ${kpi('Outros (garrotes, bois…)', conta((a) => ['garrote', 'boi', 'outro'].includes(a.categoria_grupo)), 'layers', '', false, linkCats('garrote', 'boi', 'outro'))}
+          ${kpi(`Nascimentos em ${nomeMes}`, nascMes, 'sunrise', '', false, '#/reproducao')}
+          ${kpi(`Mortes em ${nomeMes}`, mortesMes, 'circle-x', '', false, '#/animais?situacao=st:morto')}
+          ${kpi(`Vendidos em ${nomeMes}`, vendMes, 'handshake', `${fmtNum(vendAno)} no ano`, false, '#/animais?situacao=st:vendido')}
+          ${kpi('Em tratamento', emTratamento.size, 'stethoscope', '', false, '#/sanidade')}
+          ${kpi('Manejos pendentes', manejosPend.length, 'calendar-clock', `próximos ${param('dias_alerta_manejo')} dias e atrasados`, false, '#/sanidade')}
+        </div>
       </div>
-      <div class="kpi-divisor" aria-hidden="true"></div>
-      <div class="kpi-grupo">
-        ${kpi('Matrizes', grupo('matriz'), 'heart', [plural(prenhes, 'prenhe', 'prenhes'), posParto && `${fmtNum(posParto)} pós-parto`, cobertas && `${fmtNum(cobertas)} aguardando diagnóstico`, plural(vazias, 'vazia', 'vazias')].filter(Boolean).join(' · '), false, linkCats('matriz'))}
-        ${kpi('Novilhas', grupo('novilha'), 'sprout', novilhasPrenhes ? plural(novilhasPrenhes, 'prenhe', 'prenhes') : '', false, linkCats('novilha'))}
-        ${kpi('Bezerros', grupo('bezerro'), 'baby', porSexo((a) => a.categoria_grupo === 'bezerro'), false, linkCats('bezerro'))}
-        ${kpi('Touros', grupo('touro'), 'shield', '', false, linkCats('touro'))}
-        ${kpi('Outros (garrotes, bois…)', conta((a) => ['garrote', 'boi', 'outro'].includes(a.categoria_grupo)), 'layers', '', false, linkCats('garrote', 'boi', 'outro'))}
-        ${kpi(`Nascimentos em ${nomeMes}`, nascMes, 'sunrise', '', false, '#/reproducao')}
-        ${kpi(`Mortes em ${nomeMes}`, mortesMes, 'circle-x', '', false, '#/animais?situacao=st:morto')}
-        ${kpi(`Vendidos em ${nomeMes}`, vendMes, 'handshake', `${fmtNum(vendAno)} no ano`, false, '#/animais?situacao=st:vendido')}
-        ${kpi('Em tratamento', emTratamento.size, 'stethoscope', '', false, '#/sanidade')}
-        ${kpi('Manejos pendentes', manejosPend.length, 'calendar-clock', `próximos ${param('dias_alerta_manejo')} dias e atrasados`, false, '#/sanidade')}
-      </div>
+
+      ${composicao.length ? `<a class="card composicao" href="#/graficos">
+        <h3>Composição do rebanho</h3><span class="small muted">Animais ativos por categoria</span>
+        <div class="comp-corpo">
+          <div class="comp-rosca"><canvas id="g-composicao" aria-label="Composição do rebanho por categoria"></canvas>
+            <div class="comp-centro"><b>${fmtNum(ativos.length)}</b><span>animais</span></div></div>
+          <ul class="comp-legenda">${composicao.map((x, i) => `<li><i style="background:${CORES[i % CORES.length]}"></i><span>${esc(x.nome)}</span><b>${fmtNum(x.n)} · ${pctDe(x.n)}%</b></li>`).join('')}</ul>
+        </div>
+      </a>` : ''}
+
+      <section id="mercado" class="painel-mercado" hidden></section>
     </div>
 
-    <section class="secao" id="mercado" hidden></section>
+    <div class="painel-baixo ${comPendencia.length ? '' : 'sem-pend'}">
+      ${comPendencia.length ? `<section id="pendencias">
+        <div class="painel-sec-titulo"><h2><i data-lucide="bell-ring"></i> Atenção e pendências</h2>
+          <a class="btn btn-sm" href="#/pendencias">Ver todas as pendências</a></div>
+        ${htmlPendencias(comPendencia)}
+      </section>` : ''}
+      <section class="painel-atalhos"><div class="painel-sec-titulo"><h2><i data-lucide="zap"></i> Atalhos</h2></div>
+        <div id="atalhos" class="card">${htmlAtalhos()}</div></section>
+    </div>
 
     ${racasPainel.length ? `<section class="secao"><h2><i data-lucide="dna"></i> Raças</h2><div class="grade grade-kpi">
       ${racasPainel.map((r) => kpi(r.nome, r.total, 'dna', porSexo(r.filtro), false, `#/animais?raca=${r.id || '__sem'}`)).join('')}
-    </div></section>` : ''}
-
-    <section class="secao"><h2><i data-lucide="zap"></i> Atalhos</h2><div id="atalhos">${htmlAtalhos()}</div></section>
-
-    ${comPendencia.length ? `<section class="secao" id="pendencias"><div class="cabecalho-pagina" style="margin-bottom:10px"><h2 style="margin:0"><i data-lucide="bell-ring"></i> Atenção e pendências</h2>
-      <a class="btn btn-sm" href="#/pendencias">Ver todas as pendências</a></div>
-      ${htmlPendencias(comPendencia)}
-    </section>` : ''}`;
+    </div></section>` : ''}`;
+  if (composicao.length) {
+    grafico(el.querySelector('#g-composicao'), {
+      type: 'doughnut',
+      data: { labels: composicao.map((x) => x.nome), datasets: [{ data: composicao.map((x) => x.n), backgroundColor: composicao.map((x, i) => CORES[i % CORES.length]), borderWidth: 2, borderColor: '#fff' }] },
+      options: { cutout: '64%', plugins: { legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => ` ${composicao[ctx.dataIndex].nome}: ${ctx.raw} (${pctDe(ctx.raw)}%)` } } } },
+    });
+  }
   ligarAtalhos(el.querySelector('#atalhos'));
   ligarInstalar(el);
   icones();
