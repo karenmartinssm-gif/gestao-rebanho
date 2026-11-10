@@ -106,9 +106,13 @@ export function desempenhoMatriz(id, { nascimentos, desmames, animais }) {
   };
 }
 
-/** Situação exibida: refina a situação gravada com prazos (aguardando diagnóstico / próxima do parto). */
-export function situacaoExibida(situacao, cobAberta, { diasDiag, diasAlertaParto }) {
+/**
+ * Situação exibida: refina a situação gravada com prazos (aguardando diagnóstico / próxima do parto).
+ * Pós-parto: depois de "diasPosParto" dias da data da situação (o parto), a vaca passa a ser mostrada como vazia.
+ */
+export function situacaoExibida(situacao, cobAberta, { diasDiag, diasAlertaParto, dataSituacao = null, diasPosParto = 0 }) {
   const hoje = hojeISO();
+  if (situacao === 'pos_parto' && Number(diasPosParto) > 0 && dataSituacao && dataSituacao <= addDias(hoje, -Number(diasPosParto))) return 'vazia';
   // TETF ainda sem diagnóstico: aguarda a confirmação da prenhez
   if (['coberta', 'aguardando_diagnostico'].includes(situacao) && cobAberta?.tipo === 'tetf' && cobAberta.situacao === 'aguardando_diagnostico') return 'aguardando_confirmacao_te';
   if (situacao === 'coberta' && cobAberta && cobAberta.data_cobertura <= addDias(hoje, -diasDiag)) return 'aguardando_diagnostico';

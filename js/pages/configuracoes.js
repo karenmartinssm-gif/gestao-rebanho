@@ -14,6 +14,7 @@ const PARAMS = [
   ['dias_diagnostico_gestacao', 'Dias após a cobertura para o diagnóstico', 'A partir de quantos dias a cobertura aparece como "diagnóstico pendente".'],
   ['dias_conferir_te', 'Dias após a TE para confirmar a prenhez', 'Data da "Confirmação de prenhez" das vacas com transferência de embrião (TETF), em Pendências e no Painel.'],
   ['dias_alerta_parto', 'Alerta de parto (dias de antecedência)', ''],
+  ['dias_pos_parto', 'Dias de recuperação pós-parto', 'Depois desse número de dias do parto, a vaca que não foi coberta de novo passa a aparecer como vazia.'],
   ['idade_desmame_dias', 'Idade prevista de desmame (dias)', 'Usada só para o alerta de desmame previsto.'],
   ['dias_alerta_desmame', 'Alerta de desmame (dias de antecedência)', ''],
   ['dias_alerta_manejo', 'Alerta de manejos (dias de antecedência)', 'Vacinas, vermifugações e retornos.'],

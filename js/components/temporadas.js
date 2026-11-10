@@ -42,7 +42,7 @@ export const dataEtapa = (t, e) => addDias(t.data_inicio, Number(e.dia) || 0);
  * a que falta mostra a data (o diagnóstico aparece como "aberto").
  * feitas: { chave: texto } marca etapas como feitas para uma vaca (ex.: o diagnóstico dela já saiu).
  */
-export function htmlEtapasResumo(t, { feitas = {}, saiuEtapa = null } = {}) {
+export function htmlEtapasResumo(t, { feitas = {}, datas = {}, saiuEtapa = null } = {}) {
   let saiu = false;
   return `<ul class="etapas-mini">${(t.etapas || []).map((e) => {
     const extra = feitas[e.chave];
@@ -56,12 +56,12 @@ export function htmlEtapasResumo(t, { feitas = {}, saiuEtapa = null } = {}) {
     let curto;
     const jaSaiu = saiu;
     if (jaSaiu) curto = '<span class="badge inativo">não participou</span>';
-    else if (e.feito_em || extra) curto = '<span class="badge ativo"><i data-lucide="check"></i> ok</span>';
+    else if (e.feito_em || extra) curto = `<span class="badge ativo"><i data-lucide="check"></i> ${esc(extra || 'ok')}</span>`;
     else if (t.encerrada) curto = '<span class="badge inativo">não feito</span>';
     else if (e.chave === 'diagnostico') curto = '<span class="badge aviso">aberto</span>';
     else curto = '<span class="badge">previsto</span>';
     if (saiuEtapa && e.chave === saiuEtapa) { status = '<span class="badge perigo">saiu do protocolo</span>'; curto = status; saiu = true; }
-    const dataCurta = fmtData(e.feito_em || dataEtapa(t, e));
+    const dataCurta = fmtData(datas[e.chave] || e.feito_em || dataEtapa(t, e));
     return `<li class="${(e.feito_em || extra) && !saiu ? 'feito' : ''}"><span class="etapa-dia">${rotuloDia(t, e)}</span><span class="etapa-nome">${esc(nomeEtapa(t, e))}</span>${status}<span class="etapa-curto">${curto}${jaSaiu ? '' : `<span class="etapa-data">${dataCurta}</span>`}</span></li>`;
   }).join('')}</ul>`;
 }

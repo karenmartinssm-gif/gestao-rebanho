@@ -2,7 +2,7 @@
 // PAINEL — indicadores calculados a partir dos registros reais
 // =====================================================================
 import { sb } from '../supabase.js';
-import { store, nomePasto } from '../store.js';
+import { store, nomePasto, param } from '../store.js';
 import { esc, icones, fmtNum, fmtMoeda, fmtData, hojeISO, addDias, ultimosMeses, rotuloMes, fimDoMes, vazio, erroCarga, diasEntre } from '../ui.js';
 import { listarAnimais } from '../components/animais-comum.js';
 import { htmlAtalhos, ligarAtalhos } from '../components/atalhos.js';
@@ -30,7 +30,7 @@ export async function render(el) {
   try { animais = await listarAnimais(); } catch (e) { el.innerHTML = erroCarga(e); icones(); return; }
 
   const [matr, manejos, cobs, desm, estq, nasc, temp] = await Promise.all([
-    consulta(sb.from('matrizes').select('animal_id, situacao_reprodutiva').eq('propriedade_id', p)),
+    consulta(sb.from('matrizes').select('animal_id, situacao_reprodutiva, data_situacao').eq('propriedade_id', p)),
     ...consultasPendencias(p, hoje),
   ]);
 
@@ -44,7 +44,15 @@ export async function render(el) {
 
   // Quadro "Vacas" = categorias do grupo matriz (vacas e primíparas); novilhas contam à parte
   const doGrupo = (g) => matr.data.filter((m) => ativo(m.animal_id) && porId.get(m.animal_id)?.categoria_grupo === g);
-  const contaSit = (lista, sits) => lista.filter((m) => sits.includes(m.situacao_reprodutiva)).length;
+  // Pós-parto há mais de "dias_pos_parto" dias (sem nova cobertura) conta como vazia
+  const fimPosParto = addDias(hoje, -Number(param('dias_pos_parto') || 0));
+  const ultParto = new Map();
+  nasc.data.forEach((n) => { if (!ultParto.has(n.matriz_id) || ultParto.get(n.matriz_id) < n.data_nascimento) ultParto.set(n.matriz_id, n.data_nascimento); });
+  const sitDe = (m) => {
+    const d = m.data_situacao || ultParto.get(m.animal_id);
+    return m.situacao_reprodutiva === 'pos_parto' && Number(param('dias_pos_parto')) > 0 && d && d <= fimPosParto ? 'vazia' : m.situacao_reprodutiva;
+  };
+  const contaSit = (lista, sits) => lista.filter((m) => sits.includes(sitDe(m))).length;
   const matrizesAtivas = doGrupo('matriz');
   const prenhes = contaSit(matrizesAtivas, ['prenhe', 'proxima_parto']);
   const posParto = contaSit(matrizesAtivas, ['pos_parto']);

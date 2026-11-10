@@ -93,8 +93,8 @@ export const RELATORIOS = [
       const lista = matrizes.map((m) => ({ m, a: porId.get(m.animal_id) })).filter((x) => x.a?.conta_no_rebanho && filtraAnimal(x.a, f));
       const linhas = lista.map(({ m, a }) => {
         const cob = coberturas.filter((c) => c.matriz_id === a.id && ['prenhe', 'aguardando_diagnostico'].includes(c.situacao)).sort((x, y) => y.data_cobertura.localeCompare(x.data_cobertura))[0];
-        const sit = situacaoExibida(m.situacao_reprodutiva, cob, { diasDiag: param('dias_diagnostico_gestacao'), diasAlertaParto: param('dias_alerta_parto') });
         const d = desempenhoMatriz(a.id, dados);
+        const sit = situacaoExibida(m.situacao_reprodutiva, cob, { diasDiag: param('dias_diagnostico_gestacao'), diasAlertaParto: param('dias_alerta_parto'), diasPosParto: param('dias_pos_parto'), dataSituacao: m.data_situacao || d.ultimoParto });
         return [a.brinco, a.categoria_nome, a.idade_meses, ROTULO_SITUACAO_REPRO[sit] || sit, cob?.situacao === 'prenhe' ? cob.data_prevista_parto : null, d.partos, d.vivos, d.abortos, d.ultimoParto, d.iep, d.pesoDesmameMedio, m.apta_reproducao ? 'Sim' : 'Descarte'];
       });
       const cont = (s) => linhas.filter((l) => l[3] === s).length;

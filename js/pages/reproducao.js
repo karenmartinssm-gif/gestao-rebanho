@@ -50,7 +50,7 @@ export async function render(el) {
   const linkAnimal = (id, txt) => (id && porId.get(id) ? `<a href="#/animais/${id}">${esc(txt ?? porId.get(id).brinco)}</a>` : esc(txt ?? '—'));
   const cobAberta = new Map();
   [...coberturas].reverse().forEach((c) => { if (['aguardando_diagnostico', 'prenhe'].includes(c.situacao)) cobAberta.set(c.matriz_id, c); });
-  const prazos = { diasDiag: param('dias_diagnostico_gestacao'), diasAlertaParto: param('dias_alerta_parto') };
+  const prazos = { diasDiag: param('dias_diagnostico_gestacao'), diasAlertaParto: param('dias_alerta_parto'), diasPosParto: param('dias_pos_parto') };
   const desmamados = new Set(desmames.map((d) => d.bezerro_id));
   const editar = pode('reproducao');
   const recarregar = () => render(el).then(icones);
@@ -60,7 +60,8 @@ export async function render(el) {
     const a = porId.get(m.animal_id);
     if (!a) return null;
     const cob = cobAberta.get(m.animal_id);
-    return { ...m, a, cob, sit: situacaoExibida(m.situacao_reprodutiva, cob, prazos), d: desempenhoMatriz(m.animal_id, dados) };
+    const d = desempenhoMatriz(m.animal_id, dados);
+    return { ...m, a, cob, sit: situacaoExibida(m.situacao_reprodutiva, cob, { ...prazos, dataSituacao: m.data_situacao || d.ultimoParto }), d };
   }).filter(Boolean);
   const ativas = listaMatrizes.filter((m) => m.a.conta_no_rebanho);
 

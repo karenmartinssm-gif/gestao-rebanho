@@ -282,7 +282,7 @@ export async function render(el, [id]) {
           <button class="btn" data-repro="diagnostico"><i data-lucide="scan-search"></i> Diagnóstico</button>
           <button class="btn btn-primario" data-repro="nascimento"><i data-lucide="baby"></i> Registrar parto</button>`)}
         <div class="dados-lista">
-          ${dado('Situação reprodutiva', matrizRow ? `<span class="badge">${esc(ROTULO_SITUACAO_REPRO[situacaoExibida(matrizRow.situacao_reprodutiva, coberturas.find((c) => ['aguardando_diagnostico', 'prenhe'].includes(c.situacao)), { diasDiag: param('dias_diagnostico_gestacao'), diasAlertaParto: param('dias_alerta_parto') })])}</span>${!matrizRow.apta_reproducao ? ' <span class="badge perigo">descarte</span>' : ''}` : '—')}
+          ${dado('Situação reprodutiva', matrizRow ? `<span class="badge">${esc(ROTULO_SITUACAO_REPRO[situacaoExibida(matrizRow.situacao_reprodutiva, coberturas.find((c) => ['aguardando_diagnostico', 'prenhe'].includes(c.situacao)), { diasDiag: param('dias_diagnostico_gestacao'), diasAlertaParto: param('dias_alerta_parto'), diasPosParto: param('dias_pos_parto'), dataSituacao: matrizRow.data_situacao || ultimo?.data_nascimento })])}</span>${!matrizRow.apta_reproducao ? ' <span class="badge perigo">descarte</span>' : ''}` : '—')}
           ${aberta ? dado('Touro da gestação', esc(nomeTouro(aberta.reprodutor_id) || 'não informado')) : ''}
           ${aberta?.tipo === 'tetf' ? dado('Vaca doadora (TE)', esc(doadoraTxt(aberta) || 'não informada')) : ''}
           ${aberta?.situacao === 'prenhe' ? dado('Previsão de parto', fmtData(aberta.data_prevista_parto)) : ''}
@@ -292,15 +292,19 @@ export async function render(el, [id]) {
         </div>
         ${temporadasVaca.length ? `<h3 style="margin:18px 0 8px">Temporadas IATF/TETF</h3>${temporadasVaca.map(({ temporada: t, saiu_etapa: saiu, motivo_saida: motivo }) => {
           const cob = coberturas.find((c) => c.temporada_id === t.id && c.situacao !== 'cancelada');
-          const feitas = {};
-          if (cob) feitas.cobertura = `ok · ${fmtData(cob.data_cobertura)}`;
-          if (cob && !['aguardando_diagnostico'].includes(cob.situacao)) feitas.diagnostico = rotuloSitCob(cob);
+          const feitas = {}; const datas = {};
+          if (cob) { feitas.cobertura = 'ok'; datas.cobertura = cob.data_cobertura; }
+          if (cob && !['aguardando_diagnostico'].includes(cob.situacao)) {
+            feitas.diagnostico = rotuloSitCob(cob);
+            const dg = diagnosticos.find((x) => x.cobertura_id === cob.id);
+            if (dg) datas.diagnostico = dg.data_diagnostico;
+          }
           return `<div class="card" style="margin-bottom:12px"><div class="card-corpo">
             <div style="display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;justify-content:space-between;margin-bottom:6px">
               <a href="#/reproducao?aba=temporadas&t=${t.id}"><b>${esc(t.nome)}</b></a>
               <span class="small muted"><span class="badge info">${ROTULO_TIPO_TEMP[t.tipo] || ''}</span> D0 ${fmtData(t.data_inicio)}${t.encerrada ? ' · encerrada' : ''}${cob ? ` · ${esc(rotuloSitCob(cob))}` : ''}</span></div>
             ${saiu ? `<p class="small" style="margin:0 0 6px"><span class="badge perigo">Saiu do protocolo</span> ${esc(motivo || 'sem motivo informado')}</p>` : ''}
-            ${htmlEtapasResumo(t, { feitas, saiuEtapa: saiu })}</div></div>`;
+            ${htmlEtapasResumo(t, { feitas, datas, saiuEtapa: saiu })}</div></div>`;
         }).join('')}` : ''}
         ${!coberturas.length && !nascimentos.length ? `<div style="margin-top:16px">${vazio({ icone: 'heart', titulo: 'Sem histórico reprodutivo', texto: 'Registre coberturas, diagnósticos e partos pelos botões acima ou em Reprodução e cria.' })}</div>` : `
         <h3 style="margin:18px 0 8px">Linha do tempo</h3><ul class="linha-tempo">${[

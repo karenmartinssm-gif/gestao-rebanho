@@ -891,21 +891,19 @@ label.ca-foto:hover { background: var(--verde-50); }
 /* Temporadas: versão curta da etapa (só aparece no Painel pelo celular) */
 .temp-rodape { display: none; justify-content: space-between; align-items: center; gap: 10px; margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--borda); font-size: .9rem; color: var(--texto-2); }
 .temp-rodape a { color: var(--verde-700); font-weight: 600; text-decoration: underline; }
-.etapas-mini .etapa-curto { display: none; }
 .etapa-curto { align-items: center; gap: 8px; flex-wrap: wrap; }
 .etapa-curto .etapa-data { font-size: .85rem; color: var(--texto-2); font-variant-numeric: tabular-nums; }
-/* Painel no computador: sem "D0 · N vacas" no topo; status com a data ao lado, à direita */
+/* Etapas (Painel e ficha da vaca): status com a data ao lado, à direita; no Painel sem "D0 · N vacas" no topo */
 .painel-temporadas .temp-topo-info { display: none; }
-.painel-temporadas .etapas-mini li > .badge { display: none; }
-.painel-temporadas .etapas-mini .etapa-curto { display: flex; justify-content: flex-end; }
+.etapas-mini li > .badge { display: none; }
+.etapas-mini .etapa-curto { display: flex; justify-content: flex-end; }
 @media (max-width: 720px) {
   .painel-temporadas .temp-ver, .painel-temporadas .temp-topo-info { display: none; }
   .painel-temporadas .temp-rodape { display: flex; }
-  .painel-temporadas .etapas-mini li { grid-template-columns: 62px minmax(0, 1fr); row-gap: 4px; align-items: start; }
-  .painel-temporadas .etapas-mini li > .badge { display: none; }
-  .painel-temporadas .etapas-mini .etapa-curto { display: flex; grid-column: 2; grid-row: 1; justify-content: flex-start; }
-  .painel-temporadas .etapas-mini .etapa-dia { grid-row: 1 / span 2; }
-  .painel-temporadas .etapas-mini .etapa-nome { grid-column: 2; grid-row: 2; }
+  .etapas-mini li { grid-template-columns: 62px minmax(0, 1fr); row-gap: 4px; align-items: start; }
+  .etapas-mini .etapa-curto { display: flex; grid-column: 2; grid-row: 1; justify-content: flex-start; }
+  .etapas-mini .etapa-dia { grid-row: 1 / span 2; }
+  .etapas-mini .etapa-nome { grid-column: 2; grid-row: 2; }
 }
 
 /* Celular: na temporada, Vacas e lápis à esquerda (lixeira continua à direita) */
