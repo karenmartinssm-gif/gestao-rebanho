@@ -10,7 +10,7 @@ import {
   numOuNulo, textoOuNulo, opcoes, ativarWizard, icones, ROTULO_SITUACAO_REPRO, confirmar,
 } from '../ui.js';
 import { incluir, chamar, exigirConexao } from '../sync.js';
-import { listarAnimais, campoAnimal } from './animais-comum.js';
+import { listarAnimais, campoAnimal, promoverPrimiparas } from './animais-comum.js';
 
 /** Situação da cobertura em texto (TETF sem diagnóstico = aguardando confirmação). */
 export const rotuloSitCob = (c) => (c.tipo === 'tetf' && c.situacao === 'aguardando_diagnostico' ? 'Aguardando confirmação TETF' : ROTULO_SIT_COB[c.situacao]);
@@ -414,6 +414,8 @@ export async function abrirNascimento(matrizFixa = null, aoSalvar) {
       avisoResultado(r, vivo ? 'Nascimento' : 'Registro');
       fechar();
       if (vivo && r.sincronizado) toast(`Ficha do bezerro ${dados.brinco} criada.`, 'info');
+      // Segundo parto de uma primípara: ela passa a ser Vaca
+      if (r.sincronizado && resultado !== 'aborto' && await promoverPrimiparas([mae.id])) toast(`${mae.brinco} teve o segundo parto e passou de Primípara para Vaca.`, 'info');
       aoSalvar?.(vivo && r.sincronizado ? bezerroId : null);
     } catch (err) { toast(traduzirErro(err), 'erro', 8000); btn.disabled = false; }
   });

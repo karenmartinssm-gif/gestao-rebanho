@@ -69,3 +69,33 @@ export async function promoverBezerras() {
     return data.length;
   } catch (e) { console.warn(e); return 0; }
 }
+
+/**
+ * Primípara que já teve 2 partos (sem contar aborto) passa a ser Vaca.
+ * ids: confere só estes animais (ex.: logo depois de registrar um parto); sem ids, confere todas as primíparas.
+ * Só para quem pode editar o rebanho e com internet. Retorna quantas mudaram.
+ */
+export async function promoverPrimiparas(ids = null) {
+  if (!store.prop || !pode('rebanho_editar') || !navigator.onLine) return 0;
+  const nome = (c) => c.nome.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const doGrupo = store.base.categorias.filter((c) => c.ativo && c.grupo === 'matriz' && (!c.sexo || c.sexo === 'F'));
+  const prim = doGrupo.find((c) => nome(c) === 'primipara');
+  const vaca = doGrupo.find((c) => nome(c) === 'vaca');
+  if (!prim || !vaca) return 0;
+  try {
+    let q = sb.from('vw_animais').select('id').eq('propriedade_id', store.prop.id).eq('categoria_id', prim.id).eq('conta_no_rebanho', true);
+    if (ids) q = q.in('id', ids);
+    const { data: prims, error } = await q;
+    if (error || !prims?.length) return 0;
+    const { data: nasc, error: e1 } = await sb.from('nascimentos').select('matriz_id, resultado').in('matriz_id', prims.map((x) => x.id));
+    if (e1) return 0;
+    const partos = new Map();
+    (nasc || []).filter((n) => n.resultado !== 'aborto').forEach((n) => partos.set(n.matriz_id, (partos.get(n.matriz_id) || 0) + 1));
+    const viram = prims.map((x) => x.id).filter((id) => (partos.get(id) || 0) >= 2);
+    if (!viram.length) return 0;
+    const { error: e2 } = await sb.from('animais').update({ categoria_id: vaca.id }).in('id', viram);
+    if (e2) { console.warn(e2); return 0; }
+    try { localStorage.removeItem(chaveCache()); } catch { /* ignora */ }
+    return viram.length;
+  } catch (e) { console.warn(e); return 0; }
+}

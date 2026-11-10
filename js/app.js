@@ -6,7 +6,7 @@ import { store, carregarVinculos, selecionarPropriedade, pode, ehProprietario, l
 import { esc, icones, toast, traduzirErro, abrirModal, carregando, fmtDataHora } from './ui.js';
 import * as sync from './sync.js';
 import { registrarAplicativo } from './components/instalar.js';
-import { promoverBezerras } from './components/animais-comum.js';
+import { promoverBezerras, promoverPrimiparas } from './components/animais-comum.js';
 
 const raiz = document.getElementById('raiz');
 
@@ -320,10 +320,14 @@ function telaSemPropriedade() {
   }, 30000);
 }
 
-// Bezerras que completaram a idade de novilha mudam de categoria (em segundo plano)
+// Mudanças automáticas de categoria (em segundo plano):
+// bezerra que completou a idade → Novilha; primípara com 2 partos → Vaca
 async function verificarBezerras() {
   const n = await promoverBezerras();
-  if (n) { toast(`${n} bezerra${n > 1 ? 's' : ''} completou${n > 1 ? 'ram' : ''} a idade e passou${n > 1 ? 'ram' : ''} para Novilha.`); rotear(); }
+  if (n) toast(`${n} bezerra${n > 1 ? 's' : ''} completou${n > 1 ? 'ram' : ''} a idade e passou${n > 1 ? 'ram' : ''} para Novilha.`);
+  const v = await promoverPrimiparas();
+  if (v) toast(`${v} primípara${v > 1 ? 's' : ''} com 2 partos passou${v > 1 ? 'ram' : ''} para Vaca.`);
+  if (n || v) rotear();
 }
 
 // ---------- Sessão ----------
