@@ -878,3 +878,25 @@ label.ca-foto:hover { background: var(--verde-50); }
   .etapas-temp .etapa-status, .etapas-temp .etapa-acao { grid-column: 2; text-align: left; }
 }
 
+/* Painel no celular: mercado pecuário fechado, abre ao tocar */
+.mercado-dobra > summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
+.mercado-dobra > summary::-webkit-details-marker { display: none; }
+.mercado-dobra > summary h3 { margin-bottom: 2px; }
+.mercado-dobra > summary svg { flex: none; width: 20px; height: 20px; color: var(--texto-2); transition: transform .15s; }
+.mercado-dobra[open] > summary svg { transform: rotate(180deg); }
+.mercado-dobra-corpo { margin-top: 14px; }
+.mercado-dobra .mercado-rodape { align-items: center; margin-bottom: 0; font-size: .8rem; }
+.mercado-link-texto { color: var(--verde-700); font-weight: 600; text-decoration: underline; white-space: nowrap; }
+
+/* Temporadas: versão curta da etapa (só aparece no Painel pelo celular) */
+.etapas-mini .etapa-curto { display: none; }
+.etapa-curto { align-items: center; gap: 8px; flex-wrap: wrap; }
+.etapa-curto .etapa-data { font-size: .85rem; color: var(--texto-2); font-variant-numeric: tabular-nums; }
+@media (max-width: 720px) {
+  .painel-temporadas .temp-ver, .painel-temporadas .temp-d0 { display: none; }
+  .painel-temporadas .etapas-mini li { grid-template-columns: 62px minmax(0, 1fr); row-gap: 4px; align-items: start; }
+  .painel-temporadas .etapas-mini li > .badge { display: none; }
+  .painel-temporadas .etapas-mini .etapa-curto { display: flex; grid-column: 2; grid-row: 1; }
+  .painel-temporadas .etapas-mini .etapa-dia { grid-row: 1 / span 2; }
+  .painel-temporadas .etapas-mini .etapa-nome { grid-column: 2; grid-row: 2; }
+}

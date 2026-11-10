@@ -52,8 +52,17 @@ export function htmlEtapasResumo(t, { feitas = {}, saiuEtapa = null } = {}) {
     else if (t.encerrada) status = '<span class="badge inativo">não feito</span>';
     else if (e.chave === 'diagnostico') status = `<span class="badge aviso">aberto · ${fmtData(dataEtapa(t, e))}</span>`;
     else status = `<span class="badge">${fmtData(dataEtapa(t, e))}</span>`;
-    if (saiuEtapa && e.chave === saiuEtapa) { status = '<span class="badge perigo">saiu do protocolo</span>'; saiu = true; }
-    return `<li class="${(e.feito_em || extra) && !saiu ? 'feito' : ''}"><span class="etapa-dia">${rotuloDia(t, e)}</span><span class="etapa-nome">${esc(nomeEtapa(t, e))}</span>${status}</li>`;
+    // Versão curta (Painel no celular): status primeiro e a data ao lado
+    let curto;
+    const jaSaiu = saiu;
+    if (jaSaiu) curto = '<span class="badge inativo">não participou</span>';
+    else if (e.feito_em || extra) curto = '<span class="badge ativo"><i data-lucide="check"></i> ok</span>';
+    else if (t.encerrada) curto = '<span class="badge inativo">não feito</span>';
+    else if (e.chave === 'diagnostico') curto = '<span class="badge aviso">aberto</span>';
+    else curto = '<span class="badge">previsto</span>';
+    if (saiuEtapa && e.chave === saiuEtapa) { status = '<span class="badge perigo">saiu do protocolo</span>'; curto = status; saiu = true; }
+    const dataCurta = fmtData(e.feito_em || dataEtapa(t, e));
+    return `<li class="${(e.feito_em || extra) && !saiu ? 'feito' : ''}"><span class="etapa-dia">${rotuloDia(t, e)}</span><span class="etapa-nome">${esc(nomeEtapa(t, e))}</span>${status}<span class="etapa-curto">${curto}${jaSaiu ? '' : `<span class="etapa-data">${dataCurta}</span>`}</span></li>`;
   }).join('')}</ul>`;
 }
 /** "D9", e para o diagnóstico "D9+30" (dias contados a partir da inseminação/transferência). */

@@ -64,13 +64,13 @@ export async function render(el) {
     return `<div class="card"><div class="card-titulo"><h3><i data-lucide="calendar-range"></i>${rotulo}</h3><span class="contador">${lista.length}</span></div>
       <div class="card-corpo">${lista.length ? lista.map((t) => `<div class="temp-item">
         <div class="temp-item-topo"><a href="#/reproducao?aba=temporadas&t=${t.id}">${esc(t.nome)}</a>
-          <span class="small muted">D0 ${fmtData(t.data_inicio)} · ${plural(vacas(t), 'vaca', 'vacas')}</span></div>
+          <span class="small muted"><span class="temp-d0">D0 ${fmtData(t.data_inicio)} · </span>${plural(vacas(t), 'vaca', 'vacas')}</span></div>
         ${htmlEtapasResumo(t)}</div>`).join('')
       : `<p class="muted small" style="margin:0">Nenhuma temporada de ${rotulo.split(' ').pop()} aberta. <a href="#/reproducao?aba=temporadas">Criar temporada</a></p>`}</div></div>`;
   };
   const htmlTemporadas = `<section class="painel-temporadas">
       <div class="painel-sec-titulo"><h2><i data-lucide="calendar-range"></i> Temporadas TETF/IATF</h2>
-        <a class="btn btn-sm" href="#/reproducao?aba=temporadas">Ver temporadas</a></div>
+        <a class="btn btn-sm temp-ver" href="#/reproducao?aba=temporadas">Ver temporadas</a></div>
       <div class="temp-quadros">${quadroTemp('tetf', 'Temporadas de TETF')}${quadroTemp('iatf', 'Temporadas de IATF')}</div>
     </section>`;
 
@@ -237,21 +237,36 @@ async function mostrarMercado(sec) {
   const preco = (x) => `${fmtMoeda(x.valor)}${x.unidade === 'arroba' ? '<small>/@</small>' : ''}`;
   const barras = itens.filter((x) => x.unidade === 'arroba').sort((a, b) => b.valor - a.valor);
   const maior = Math.max(...barras.map((x) => x.valor));
-  sec.innerHTML = `<div class="card mercado">
-    <div class="mercado-topo">
-      <div><h3>Mercado pecuário · ${esc(m.regiao || 'SP')}</h3><span class="small muted">Fechamento ${fmtData(fech)}</span></div>
-      <a class="btn btn-sm mercado-link" href="${esc(m.link || 'https://www.noticiasagricolas.com.br/cotacoes/boi-gordo')}" target="_blank" rel="noopener noreferrer">Ver mercado <i data-lucide="arrow-right"></i></a>
-    </div>
-    <div class="mercado-grade">${itens.map((x) => `
+  const link = esc(m.link || 'https://www.noticiasagricolas.com.br/cotacoes/boi-gordo');
+  const grade = `<div class="mercado-grade">${itens.map((x) => `
       <div class="mercado-item"><span class="rotulo">${esc(x.nome)}</span>
         <span class="valor">${preco(x)}</span>
         <span class="detalhe">${x.unidade === 'arroba' ? 'por arroba' : 'por cabeça'}${x.fechamento !== fech ? ` · ${ddmm(x.fechamento)}` : ''}</span></div>`).join('')}
+    </div>`;
+  const titulo = `<h3>Mercado pecuário · ${esc(m.regiao || 'SP')}</h3><span class="small muted">Fechamento ${fmtData(fech)}</span>`;
+  // Celular: quadro fechado (abre ao tocar), sem as barras, e "Ver mercado" só como link de texto
+  const celular = window.matchMedia('(max-width: 720px)');
+  const desenhar = () => {
+    sec.innerHTML = celular.matches ? `<details class="card mercado mercado-dobra">
+      <summary><div>${titulo}</div><i data-lucide="chevron-down"></i></summary>
+      <div class="mercado-dobra-corpo">${grade}
+        <div class="mercado-rodape"><span>Fonte: ${esc(m.fonte || 'Scot Consultoria')}</span><a class="mercado-link-texto" href="${link}" target="_blank" rel="noopener noreferrer">Ver mercado</a></div></div>
+    </details>` : `<div class="card mercado">
+    <div class="mercado-topo">
+      <div>${titulo}</div>
+      <a class="btn btn-sm mercado-link" href="${link}" target="_blank" rel="noopener noreferrer">Ver mercado <i data-lucide="arrow-right"></i></a>
     </div>
+    ${grade}
     <div class="mercado-rodape"><span>Fonte: ${esc(m.fonte || 'Scot Consultoria')}</span><span>Preço de referência</span></div>
     ${barras.map((x) => `<div class="mercado-barra"><span>${esc(x.nome)}</span>
       <div class="trilho"><div style="width:${Math.max(4, (x.valor / maior) * 100).toFixed(1)}%"></div></div>
       <b>${fmtMoeda(x.valor)}</b></div>`).join('')}
   </div>`;
+    icones();
+  };
+  desenhar();
+  const aoMudar = () => { if (sec.isConnected) desenhar(); else celular.removeEventListener('change', aoMudar); };
+  celular.addEventListener('change', aoMudar);
   sec.hidden = false;
   icones();
 }
