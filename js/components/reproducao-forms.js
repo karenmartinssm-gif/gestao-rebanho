@@ -42,23 +42,39 @@ function semPermissao() {
 }
 
 // Lista de seleção múltipla com busca (registro em lote)
-export function listaMultipla(container, animais, { detalhe = () => '', marcados = [] } = {}) {
+export function listaMultipla(container, animais, { detalhe = () => '', marcados = [], botoes = '', mostrarSelecionadas = false, marcarVisiveis = true } = {}) {
   const marc = new Set(marcados);
+  const porId = new Map(animais.map((a) => [a.id, a]));
   container.innerHTML = `
+    ${mostrarSelecionadas ? '<div class="chips selecionadas-lista" data-selecionadas style="margin-bottom:10px"></div>' : ''}
     <div class="busca-wrap" style="margin-bottom:8px"><i data-lucide="search"></i><input type="search" placeholder="Filtrar por brinco ou lote" data-filtro></div>
-    <div class="acoes small" style="margin-bottom:6px"><button type="button" class="btn btn-sm" data-todos>Marcar visíveis</button>
+    <div class="acoes small" style="margin-bottom:6px">${botoes}${marcarVisiveis ? '<button type="button" class="btn btn-sm" data-todos>Marcar visíveis</button>' : ''}
       <button type="button" class="btn btn-sm" data-nenhum>Desmarcar todos</button><span class="muted" data-cont style="align-self:center">0 selecionadas</span></div>
     <div class="lista-selecao">${animais.map((a) => `<label class="check" data-busca="${esc(`${a.brinco} ${a.nome || ''} ${a.lote_nome || ''}`.toLowerCase())}">
       <input type="checkbox" value="${a.id}" ${marc.has(a.id) ? 'checked' : ''}> <b>${esc(a.brinco)}</b> <span class="small muted">${esc(detalhe(a))}</span></label>`).join('')
       || '<p class="muted small">Nenhum animal disponível.</p>'}</div>`;
   const caixas = [...container.querySelectorAll('input[type=checkbox]')];
   const cont = container.querySelector('[data-cont]');
-  const atualizar = () => { const n = caixas.filter((c) => c.checked).length; cont.textContent = `${n} selecionada${n === 1 ? '' : 's'}`; };
+  const caixaSel = container.querySelector('[data-selecionadas]');
+  const atualizar = () => {
+    const sel = caixas.filter((c) => c.checked);
+    cont.textContent = `${sel.length} selecionada${sel.length === 1 ? '' : 's'}`;
+    if (caixaSel) {
+      caixaSel.innerHTML = sel.length
+        ? sel.map((c) => `<span class="chip"><b>${esc(porId.get(c.value)?.brinco || '')}</b><button type="button" class="btn-texto" data-tirar="${c.value}" title="Tirar da seleção" aria-label="Tirar ${esc(porId.get(c.value)?.brinco || '')} da seleção"><i data-lucide="x"></i></button></span>`).join('')
+        : '<span class="small muted">Nenhuma vaca selecionada ainda. Marque na lista abaixo.</span>';
+      icones();
+    }
+  };
+  caixaSel?.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-tirar]'); if (!b) return;
+    const c = caixas.find((x) => x.value === b.dataset.tirar); if (c) { c.checked = false; atualizar(); }
+  });
   container.querySelector('[data-filtro]').addEventListener('input', (e) => {
     const t = e.target.value.toLowerCase().trim();
     container.querySelectorAll('label[data-busca]').forEach((l) => { l.style.display = !t || l.dataset.busca.includes(t) ? '' : 'none'; });
   });
-  container.querySelector('[data-todos]').addEventListener('click', () => { caixas.forEach((c) => { if (c.closest('label').style.display !== 'none') c.checked = true; }); atualizar(); });
+  container.querySelector('[data-todos]')?.addEventListener('click', () => { caixas.forEach((c) => { if (c.closest('label').style.display !== 'none') c.checked = true; }); atualizar(); });
   container.querySelector('[data-nenhum]').addEventListener('click', () => { caixas.forEach((c) => { c.checked = false; }); atualizar(); });
   caixas.forEach((c) => c.addEventListener('change', atualizar));
   atualizar();

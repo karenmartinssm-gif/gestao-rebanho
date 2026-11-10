@@ -251,7 +251,6 @@ export function abrirTemporada(existente, ctx) {
         <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Dia</th><th>Etapa</th><th>Data</th></tr></thead><tbody id="t-etapas"></tbody></table></div>
         <span class="ajuda">Datas calculadas a partir do D0, pelo protocolo da fazenda.</span></div>
       ${existente ? '' : `<div class="campo"><label>Vacas e novilhas que entram <span class="obrig">*</span></label>
-        <div class="acoes small" style="margin-bottom:6px"><button type="button" class="btn btn-sm" data-vazias>Marcar só as vazias</button></div>
         <div id="t-sel"></div></div>`}
       <div class="campo"><label for="t-obs">Observações</label><textarea id="t-obs" rows="2" placeholder="Ex.: veterinário, protocolo hormonal usado">${esc(ed.observacoes || '')}</textarea></div>
     </form>`,
@@ -281,9 +280,10 @@ export function abrirTemporada(existente, ctx) {
   let selecionadas = () => [];
   if (!existente) {
     const sit = (a) => ctx.sitPorId?.get(a.id);
-    selecionadas = F.listaMultipla(f.querySelector('#t-sel'), femeas, { detalhe: (a) => [a.categoria_nome, sit(a), a.lote_nome && `lote ${a.lote_nome}`].filter(Boolean).join(' · ') });
+    selecionadas = F.listaMultipla(f.querySelector('#t-sel'), femeas, { detalhe: (a) => [a.categoria_nome, sit(a), a.lote_nome && `lote ${a.lote_nome}`].filter(Boolean).join(' · '),
+      botoes: '<button type="button" class="btn btn-sm" data-vazias>Marcar só as vazias</button>', mostrarSelecionadas: true, marcarVisiveis: false });
     f.querySelector('[data-vazias]').addEventListener('click', () => {
-      f.querySelectorAll('#t-sel input[type=checkbox]').forEach((c) => { c.checked = ctx.sitChave?.get(c.value) === 'vazia'; c.dispatchEvent(new Event('change')); });
+      f.querySelectorAll('#t-sel .lista-selecao input[type=checkbox]').forEach((c) => { c.checked = ctx.sitChave?.get(c.value) === 'vazia'; c.dispatchEvent(new Event('change')); });
     });
   }
 
