@@ -6,31 +6,31 @@
     {
       "chave": "boi",
       "nome": "Boi gordo",
-      "valor": 383.0,
+      "valor": 386.0,
       "unidade": "arroba",
-      "fechamento": "2026-11-05"
+      "fechamento": "2026-11-06"
     },
     {
       "chave": "vaca",
       "nome": "Vaca gorda",
       "valor": 358.0,
       "unidade": "arroba",
-      "fechamento": "2026-11-05"
+      "fechamento": "2026-11-06"
     },
     {
       "chave": "bezerro",
       "nome": "Bezerro",
       "valor": 4151.11,
       "unidade": "cabeca",
-      "fechamento": "2026-11-06"
+      "fechamento": "2026-11-09"
     },
     {
       "chave": "novilha",
       "nome": "Novilha",
       "valor": 3716.05,
       "unidade": "cabeca",
-      "fechamento": "2026-11-06"
+      "fechamento": "2026-11-09"
     }
   ],
-  "atualizado_em": "2026-11-09T10:53:48Z"
+  "atualizado_em": "2026-11-10T03:16:11Z"
 }
