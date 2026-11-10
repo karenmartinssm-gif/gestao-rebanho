@@ -10,6 +10,7 @@ import { todos } from '../components/consulta.js';
 import { htmlInstalar, ligarInstalar } from '../components/instalar.js';
 import { grafico, CORES } from '../components/graficos.js';
 import { consultasPendencias, montarPendencias, htmlPendencias } from '../components/pendencias.js';
+import { htmlEtapasResumo } from '../components/temporadas.js';
 
 const plural = (n, um, varios) => `${fmtNum(n)} ${n === 1 ? um : varios}`;
 
@@ -52,7 +53,26 @@ export async function render(el) {
   const novilhasPrenhes = contaSit(doGrupo('novilha'), ['prenhe', 'proxima_parto']);
 
   const { pend } = montarPendencias({ animais, manejos, cobs, desm, estq, nasc, temp });
-  const comPendencia = pend.filter((b) => b.itens.length).sort((x, y) => y.itens.length - x.itens.length);
+  // No Painel, a confirmação de prenhez e as etapas das temporadas ficam no quadro "Temporadas TETF/IATF"
+  const FORA_DO_PAINEL = ['Confirmação de prenhez', 'Temporadas IATF/TETF'];
+  const comPendencia = pend.filter((b) => b.itens.length && !FORA_DO_PAINEL.includes(b.titulo)).sort((x, y) => y.itens.length - x.itens.length);
+
+  // Quadros das temporadas abertas: TETF em cima, IATF embaixo
+  const quadroTemp = (tipo, rotulo) => {
+    const lista = temp.data.filter((t) => t.tipo === tipo).sort((a, b) => b.data_inicio.localeCompare(a.data_inicio));
+    const vacas = (t) => (t.temporada_animais || []).filter((x) => !x.saiu_etapa && ativo(x.animal_id)).length;
+    return `<div class="card"><div class="card-titulo"><h3><i data-lucide="calendar-range"></i>${rotulo}</h3><span class="contador">${lista.length}</span></div>
+      <div class="card-corpo">${lista.length ? lista.map((t) => `<div class="temp-item">
+        <div class="temp-item-topo"><a href="#/reproducao?aba=temporadas&t=${t.id}">${esc(t.nome)}</a>
+          <span class="small muted">D0 ${fmtData(t.data_inicio)} · ${plural(vacas(t), 'vaca', 'vacas')}</span></div>
+        ${htmlEtapasResumo(t)}</div>`).join('')
+      : `<p class="muted small" style="margin:0">Nenhuma temporada de ${rotulo.split(' ').pop()} aberta. <a href="#/reproducao?aba=temporadas">Criar temporada</a></p>`}</div></div>`;
+  };
+  const htmlTemporadas = `<section class="painel-temporadas">
+      <div class="painel-sec-titulo"><h2><i data-lucide="calendar-range"></i> Temporadas TETF/IATF</h2>
+        <a class="btn btn-sm" href="#/reproducao?aba=temporadas">Ver temporadas</a></div>
+      <div class="temp-quadros">${quadroTemp('tetf', 'Temporadas de TETF')}${quadroTemp('iatf', 'Temporadas de IATF')}</div>
+    </section>`;
 
   // Link para o Rebanho com as categorias do grupo já marcadas (ex.: Vacas = Vaca e Primípara)
   const linkCats = (...grupos) => `#/animais?categoria=${store.base.categorias.filter((c) => grupos.includes(c.grupo)).map((c) => c.id).join(',')}`;
@@ -158,6 +178,8 @@ export async function render(el) {
 
       <section id="mercado" class="painel-mercado" hidden></section>
     </div>
+
+    ${htmlTemporadas}
 
     <div class="painel-baixo ${comPendencia.length ? '' : 'sem-pend'}">
       ${comPendencia.length ? `<section id="pendencias" style="--pc3:${Math.min(comPendencia.length, 3)};--pc2:${Math.min(comPendencia.length, 2)}">

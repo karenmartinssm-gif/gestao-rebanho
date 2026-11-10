@@ -8,6 +8,7 @@ import {
   vazio, erroCarga, badgeStatus, montarTabela, confirmar, abrirModal, ROTULO_SEXO, ROTULO_ORIGEM, ROTULO_MOV, ROTULO_SITUACAO_REPRO,
 } from '../ui.js';
 import { rotuloSitCob } from '../components/reproducao-forms.js';
+import { htmlEtapasResumo, ROTULO_TIPO_TEMP } from '../components/temporadas.js';
 import { situacaoExibida } from '../components/reproducao-indicadores.js';
 import { grafico, CORES } from '../components/graficos.js';
 import { exigirConexao } from '../sync.js';
@@ -56,6 +57,10 @@ export async function render(el, [id]) {
   ]);
 
   // Brinco das doadoras de embrião (TETF)
+  // Temporadas de IATF/TETF de que a vaca participou (se a tabela ainda não existir, fica vazio)
+  const temporadasVaca = a.sexo === 'F' ? (await (async () => {
+    try { const { data, error } = await sb.from('temporada_animais').select('saiu_etapa, motivo_saida, temporada:temporadas(id, nome, tipo, data_inicio, etapas, encerrada)').eq('animal_id', id); if (error) throw error; return data || []; } catch (e) { console.warn(e); return []; }
+  })()).filter((x) => x.temporada).sort((x, y) => y.temporada.data_inicio.localeCompare(x.temporada.data_inicio)) : [];
   const idsDoadora = [...new Set(coberturas.map((c) => c.doadora_id).filter(Boolean))];
   const brincoDoadora = new Map(idsDoadora.length ? (await q(sb.from('animais').select('id, brinco').in('id', idsDoadora))).map((x) => [x.id, x.brinco]) : []);
   const doadoraTxt = (c) => (c.doadora_id ? brincoDoadora.get(c.doadora_id) || '' : c.doadora_externa || '');
@@ -285,6 +290,18 @@ export async function render(el, [id]) {
           ${dado('Abortos', fmtNum(abortos.length))}${dado('Último parto', ultimo ? fmtData(ultimo.data_nascimento) : '—')}
           ${dado('Coberturas registradas', fmtNum(coberturas.length))}${dado('Diagnósticos', fmtNum(diagnosticos.length))}
         </div>
+        ${temporadasVaca.length ? `<h3 style="margin:18px 0 8px">Temporadas IATF/TETF</h3>${temporadasVaca.map(({ temporada: t, saiu_etapa: saiu, motivo_saida: motivo }) => {
+          const cob = coberturas.find((c) => c.temporada_id === t.id && c.situacao !== 'cancelada');
+          const feitas = {};
+          if (cob) feitas.cobertura = `ok · ${fmtData(cob.data_cobertura)}`;
+          if (cob && !['aguardando_diagnostico'].includes(cob.situacao)) feitas.diagnostico = rotuloSitCob(cob);
+          return `<div class="card" style="margin-bottom:12px"><div class="card-corpo">
+            <div style="display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline;justify-content:space-between;margin-bottom:6px">
+              <a href="#/reproducao?aba=temporadas&t=${t.id}"><b>${esc(t.nome)}</b></a>
+              <span class="small muted"><span class="badge info">${ROTULO_TIPO_TEMP[t.tipo] || ''}</span> D0 ${fmtData(t.data_inicio)}${t.encerrada ? ' · encerrada' : ''}${cob ? ` · ${esc(rotuloSitCob(cob))}` : ''}</span></div>
+            ${saiu ? `<p class="small" style="margin:0 0 6px"><span class="badge perigo">Saiu do protocolo</span> ${esc(motivo || 'sem motivo informado')}</p>` : ''}
+            ${htmlEtapasResumo(t, { feitas, saiuEtapa: saiu })}</div></div>`;
+        }).join('')}` : ''}
         ${!coberturas.length && !nascimentos.length ? `<div style="margin-top:16px">${vazio({ icone: 'heart', titulo: 'Sem histórico reprodutivo', texto: 'Registre coberturas, diagnósticos e partos pelos botões acima ou em Reprodução e cria.' })}</div>` : `
         <h3 style="margin:18px 0 8px">Linha do tempo</h3><ul class="linha-tempo">${[
           ...coberturas.map((c) => ({ d: c.data_cobertura, cob: c.id, t: `Cobertura (${({ monta_natural: 'monta natural', iatf: 'IATF', tetf: 'TETF', inseminacao: 'inseminação' })[c.tipo] || c.tipo}${nomeTouro(c.reprodutor_id) ? ` · ${nomeTouro(c.reprodutor_id)}` : ''}${c.acasalamento ? ` · ${c.acasalamento}` : ''}${doadoraTxt(c) ? ` · doadora ${doadoraTxt(c)}` : ''}) · ${rotuloSitCob(c)}${c.data_prevista_parto && ['prenhe', 'aguardando_diagnostico'].includes(c.situacao) ? ` · parto previsto ${fmtData(c.data_prevista_parto)}` : ''}` })),

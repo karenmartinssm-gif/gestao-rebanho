@@ -859,6 +859,19 @@ label.ca-foto:hover { background: var(--verde-50); }
 .etapas-temp li.feito .etapa-nome b { color: var(--texto-2); }
 .etapas-temp .etapa-acao { text-align: right; }
 .temporada .card-titulo { flex-wrap: wrap; }
+.etapas-mini { list-style: none; padding: 0; margin: 0; }
+.etapas-mini li { display: grid; grid-template-columns: 62px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--borda); font-size: .92rem; }
+.etapas-mini li:last-child { border-bottom: 0; }
+.etapas-mini .etapa-dia { font-weight: 700; color: var(--verde-900); font-variant-numeric: tabular-nums; }
+.etapas-mini li.feito .etapa-nome { color: var(--texto-2); }
+.etapas-mini .badge { white-space: nowrap; }
+.painel-temporadas { margin-top: 24px; }
+.painel-temporadas .temp-quadros { display: grid; gap: 16px; }
+.painel-temporadas .temp-item + .temp-item { margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--borda); }
+.painel-temporadas .temp-item-topo { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+.painel-temporadas .temp-item-topo a { font-weight: 700; color: var(--verde-900); text-decoration: none; }
+.painel-temporadas .temp-item-topo a:hover { text-decoration: underline; }
+@media (max-width: 720px) { .etapas-mini li { grid-template-columns: 52px minmax(0, 1fr); row-gap: 4px; } .etapas-mini .badge { grid-column: 2; justify-self: start; } }
 .temporada .card-titulo .acoes { display: flex; gap: 4px; align-items: center; margin-left: auto; }
 @media (max-width: 720px) {
   .etapas-temp li { grid-template-columns: 56px minmax(0, 1fr); row-gap: 6px; }

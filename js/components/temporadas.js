@@ -35,7 +35,27 @@ export const ETAPAS_PADRAO = {
 
 /** Nome da etapa: sempre o do protocolo atual (assim temporadas já criadas acompanham mudanças de nome). */
 export const nomeEtapa = (t, e) => ETAPAS_PADRAO[t.tipo]?.find((x) => x.chave === e.chave)?.nome || e.nome;
-const dataEtapa = (t, e) => addDias(t.data_inicio, Number(e.dia) || 0);
+export const dataEtapa = (t, e) => addDias(t.data_inicio, Number(e.dia) || 0);
+
+/**
+ * Lista curta das etapas (Painel e ficha da vaca): etapa feita = "ok";
+ * a que falta mostra a data (o diagnóstico aparece como "aberto").
+ * feitas: { chave: texto } marca etapas como feitas para uma vaca (ex.: o diagnóstico dela já saiu).
+ */
+export function htmlEtapasResumo(t, { feitas = {}, saiuEtapa = null } = {}) {
+  let saiu = false;
+  return `<ul class="etapas-mini">${(t.etapas || []).map((e) => {
+    const extra = feitas[e.chave];
+    let status;
+    if (saiu) status = '<span class="badge inativo">não participou</span>';
+    else if (e.feito_em || extra) status = `<span class="badge ativo"><i data-lucide="check"></i> ${esc(extra || 'ok')}</span>`;
+    else if (t.encerrada) status = '<span class="badge inativo">não feito</span>';
+    else if (e.chave === 'diagnostico') status = `<span class="badge aviso">aberto · ${fmtData(dataEtapa(t, e))}</span>`;
+    else status = `<span class="badge">${fmtData(dataEtapa(t, e))}</span>`;
+    if (saiuEtapa && e.chave === saiuEtapa) { status = '<span class="badge perigo">saiu do protocolo</span>'; saiu = true; }
+    return `<li class="${(e.feito_em || extra) && !saiu ? 'feito' : ''}"><span class="etapa-dia">${rotuloDia(t, e)}</span><span class="etapa-nome">${esc(nomeEtapa(t, e))}</span>${status}</li>`;
+  }).join('')}</ul>`;
+}
 /** "D9", e para o diagnóstico "D9+30" (dias contados a partir da inseminação/transferência). */
 export function rotuloDia(t, e) {
   const cob = (t.etapas || []).find((x) => x.chave === 'cobertura');
