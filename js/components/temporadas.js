@@ -109,7 +109,7 @@ export function abaTemporadas(painel, ctx) {
     if (!editar || t.encerrada) return '';
     if (e.feito_em) return `<button class="btn btn-sm btn-texto" data-desfazer="${t.id}|${e.chave}" title="Desmarcar">desfazer</button>`;
     if (e.chave === 'cobertura') return `<button class="btn btn-sm btn-primario" data-cobrir="${t.id}"><i data-lucide="heart"></i> ${t.tipo === 'tetf' ? 'Registrar transferência' : 'Registrar inseminação'}</button>`;
-    if (e.chave === 'diagnostico') return `<button class="btn btn-sm btn-primario" data-diag-temp="${t.id}"><i data-lucide="scan-search"></i> Confirmar prenhez</button>`;
+    if (e.chave === 'diagnostico') return `<button class="btn btn-sm btn-primario" data-diag-temp="${t.id}"><i data-lucide="scan-search"></i> Diagnóstico</button>`;
     return `<button class="btn btn-sm" data-feito="${t.id}|${e.chave}"><i data-lucide="check"></i> Marcar como feito</button>`;
   };
 

@@ -128,7 +128,7 @@ export const ARTIGOS = [
       'Escolha IATF ou TETF, a data do D0 (colocação do implante) e marque as vacas e novilhas que entram.',
       'O sistema monta as etapas com as datas (D0, D7, D9...). Quando fizer cada uma, toque em <b>Marcar como feito</b>.',
       'Na inseminação ou na transferência, toque em <b>Registrar inseminação</b> / <b>Registrar transferência</b>: as coberturas de todas as vacas são registradas de uma vez.',
-      'No ultrassom, toque em <b>Confirmar prenhez</b>: a lista já vem com as vacas da temporada.',
+      'No ultrassom, toque em <b>Diagnóstico</b>: a lista já vem com as vacas da temporada.',
     ],
     dica: 'Vaca que perdeu o implante ou saiu do protocolo: toque em <b>Vacas</b> e marque "Saiu do protocolo". As etapas aparecem em Pendências, no Painel e no sininho.',
     link: ['reproducao', 'Ir para Reprodução'],
@@ -137,7 +137,7 @@ export const ARTIGOS = [
     id: 'diagnostico', assunto: 'reproducao', titulo: 'Como registrar o diagnóstico de prenhez (toque ou ultrassom)',
     chaves: 'vaca diagnostico prenhe prenha prenhez gestacao toque ultrassom ultrasom vazia emprenhou confirmar',
     passos: [
-      'Abra a ficha da vaca e toque em <b>Confirmar prenhez</b>. Também dá em <b>Reprodução e cria</b> › <b>Confirmar prenhez</b>.',
+      'Abra a ficha da vaca e toque em <b>Diagnóstico</b>. Também dá em <b>Reprodução e cria</b> › <b>Diagnóstico</b>.',
       'Informe a data e o resultado: prenhe ou vazia.',
       'Toque em <b>Salvar</b>.',
     ],

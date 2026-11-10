@@ -274,7 +274,7 @@ export async function render(el, [id]) {
       const aberta = coberturas.find((c) => ['prenhe', 'aguardando_diagnostico'].includes(c.situacao));
       const matriz = ehMatriz ? '' : '<div class="alerta small" style="margin-bottom:12px"><i data-lucide="info"></i><div>Esta fêmea ainda não está na categoria novilha ou vaca.</div></div>';
       return `${matriz}${botoes(`<button class="btn" data-repro="cobertura"><i data-lucide="heart"></i> Registrar cobertura</button>
-          <button class="btn" data-repro="diagnostico"><i data-lucide="scan-search"></i> Confirmar prenhez</button>
+          <button class="btn" data-repro="diagnostico"><i data-lucide="scan-search"></i> Diagnóstico</button>
           <button class="btn btn-primario" data-repro="nascimento"><i data-lucide="baby"></i> Registrar parto</button>`)}
         <div class="dados-lista">
           ${dado('Situação reprodutiva', matrizRow ? `<span class="badge">${esc(ROTULO_SITUACAO_REPRO[situacaoExibida(matrizRow.situacao_reprodutiva, coberturas.find((c) => ['aguardando_diagnostico', 'prenhe'].includes(c.situacao)), { diasDiag: param('dias_diagnostico_gestacao'), diasAlertaParto: param('dias_alerta_parto') })])}</span>${!matrizRow.apta_reproducao ? ' <span class="badge perigo">descarte</span>' : ''}` : '—')}

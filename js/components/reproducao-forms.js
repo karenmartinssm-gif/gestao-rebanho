@@ -254,7 +254,7 @@ export async function abrirDiagnostico(matrizFixa = null, aoSalvar, idsFixos = n
     : [...ultima.values()].filter((c) => c.situacao === 'aguardando_diagnostico' && porId.get(c.matriz_id)?.conta_no_rebanho).map((c) => c.matriz_id);
 
   const { el, fechar } = abrirModal({
-    titulo: 'Confirmar prenhez',
+    titulo: 'Diagnóstico',
     largo: true,
     html: `<form id="f-diag" class="grade" style="gap:14px">
       <div class="grade grade-3" style="gap:14px">

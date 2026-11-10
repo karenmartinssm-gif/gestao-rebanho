@@ -77,7 +77,7 @@ export async function render(el) {
       <div><h1>Reprodução e cria</h1><p>Vacas, coberturas, partos e desmames com indicadores calculados a partir dos registros.</p></div>
       ${editar ? `<div class="acoes">
         <button class="btn" data-acao="cobertura"><i data-lucide="heart"></i> Cobertura</button>
-        <button class="btn" data-acao="diagnostico"><i data-lucide="scan-search"></i> Confirmar prenhez</button>
+        <button class="btn" data-acao="diagnostico"><i data-lucide="scan-search"></i> Diagnóstico</button>
         <button class="btn btn-primario" data-acao="nascimento"><i data-lucide="baby"></i> Nascimento</button>
         <button class="btn" data-acao="desmame"><i data-lucide="milk-off"></i> Desmame</button></div>` : ''}
     </div>
@@ -353,7 +353,7 @@ export async function render(el) {
         { chave: 'prev', titulo: 'Previsão de parto', valor: (c) => c.data_prevista_parto, render: (c) => `${fmtData(c.data_prevista_parto)}${c.previsao_manual ? ' <span class="badge" title="Corrigida manualmente ou pelo diagnóstico">ajustada</span>' : ''}` },
         { chave: 'situacao', titulo: 'Situação', valor: (c) => F.rotuloSitCob(c), render: (c) => `<span class="badge ${{ prenhe: 'ativo', vazia: 'inativo', parida: 'sucesso', aborto: 'perigo', aguardando_diagnostico: 'info' }[c.situacao] ?? ''}">${esc(F.rotuloSitCob(c))}</span>` },
         { chave: 'resp', titulo: 'Responsável', render: (c) => esc(c.responsavel_nome || '—') },
-        ...(editar || excluir ? [{ chave: 'acao', titulo: '', render: (c) => `<span class="acoes">${editar && c.situacao !== 'cancelada' ? `<button class="btn btn-sm btn-texto" data-editar-cob="${c.id}" title="Editar cobertura" aria-label="Editar cobertura"><i data-lucide="pencil"></i></button>` : ''}${editar && c.situacao === 'aguardando_diagnostico' && porId.get(c.matriz_id)?.conta_no_rebanho ? `<button class="btn btn-sm" data-diag="${c.matriz_id}">Confirmar prenhez</button>` : ''}${excluir && !['parida', 'aborto'].includes(c.situacao) ? `<button class="btn btn-sm btn-texto" data-excluir-cob="${c.id}" title="Excluir cobertura" aria-label="Excluir cobertura"><i data-lucide="trash-2"></i></button>` : ''}</span>` }] : []),
+        ...(editar || excluir ? [{ chave: 'acao', titulo: '', render: (c) => `<span class="acoes">${editar && c.situacao !== 'cancelada' ? `<button class="btn btn-sm btn-texto" data-editar-cob="${c.id}" title="Editar cobertura" aria-label="Editar cobertura"><i data-lucide="pencil"></i></button>` : ''}${editar && c.situacao === 'aguardando_diagnostico' && porId.get(c.matriz_id)?.conta_no_rebanho ? `<button class="btn btn-sm" data-diag="${c.matriz_id}">Diagnóstico</button>` : ''}${excluir && !['parida', 'aborto'].includes(c.situacao) ? `<button class="btn btn-sm btn-texto" data-excluir-cob="${c.id}" title="Excluir cobertura" aria-label="Excluir cobertura"><i data-lucide="trash-2"></i></button>` : ''}</span>` }] : []),
       ],
       linhas: linhas(),
     });
