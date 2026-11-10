@@ -134,11 +134,28 @@ export function abaTemporadas(painel, ctx) {
     if (n === 0) return '<span class="badge aviso">hoje</span>';
     return `<span class="badge">em ${n} dia${n > 1 ? 's' : ''}</span>`;
   };
+  // Vacas ativas da temporada que ainda não têm inseminação/transferência registrada por ela
+  // (permite registrar em mais de uma vez, ex.: grupos com touros/sêmens diferentes).
+  const semCob = (t) => {
+    const com = new Set(cobsDa(t).map((c) => c.matriz_id));
+    return ativasDa(t).map((x) => x.animal_id).filter((id) => !com.has(id) && porId.get(id)?.conta_no_rebanho);
+  };
+  const aguardDa = (t) => resumo(t).aguard.map((c) => c.matriz_id).filter((id) => porId.get(id)?.conta_no_rebanho);
   const botaoEtapa = (t, e) => {
     if (!editar || t.encerrada) return '';
-    if (e.feito_em) return `<button class="btn btn-sm btn-texto" data-desfazer="${t.id}|${e.chave}" title="Desmarcar">desfazer</button>`;
-    if (e.chave === 'cobertura') return `<button class="btn btn-sm btn-primario" data-cobrir="${t.id}"><i data-lucide="heart"></i> ${t.tipo === 'tetf' ? 'Registrar transferência' : 'Registrar inseminação'}</button>`;
-    if (e.chave === 'diagnostico') return `<button class="btn btn-sm btn-primario" data-diag-temp="${t.id}"><i data-lucide="scan-search"></i> Diagnóstico</button>`;
+    const desfazer = `<button class="btn btn-sm btn-texto" data-desfazer="${t.id}|${e.chave}" title="Desmarcar">desfazer</button>`;
+    if (e.chave === 'cobertura') {
+      const faltam = semCob(t).length;
+      const rot = t.tipo === 'tetf' ? 'Registrar transferência' : 'Registrar inseminação';
+      if (e.feito_em && !faltam) return desfazer;
+      return `<button class="btn btn-sm btn-primario" data-cobrir="${t.id}"><i data-lucide="heart"></i> ${e.feito_em ? `${rot} (faltam ${faltam})` : rot}</button>`;
+    }
+    if (e.chave === 'diagnostico') {
+      const faltam = aguardDa(t).length;
+      if (e.feito_em && !faltam) return desfazer;
+      return `<button class="btn btn-sm btn-primario" data-diag-temp="${t.id}"><i data-lucide="scan-search"></i> ${e.feito_em ? `Diagnóstico (faltam ${faltam})` : 'Diagnóstico'}</button>`;
+    }
+    if (e.feito_em) return desfazer;
     return `<button class="btn btn-sm" data-feito="${t.id}|${e.chave}"><i data-lucide="check"></i> Marcar como feito</button>`;
   };
 
@@ -203,18 +220,18 @@ export function abaTemporadas(painel, ctx) {
       try { await gravarEtapas(t, t.etapas.map((e) => (e.chave === ch ? { ...e, feito_em: null } : e))); toast('Etapa desmarcada.'); recarregar(); } catch (e) { toast(traduzirErro(e), 'erro', 8000); }
     } else if (d.cobrir) {
       const t = porTemp(d.cobrir); const e = t.etapas.find((x) => x.chave === 'cobertura');
-      const ids = ativasDa(t).map((x) => x.animal_id).filter((id) => porId.get(id)?.conta_no_rebanho);
-      if (!ids.length) return toast('Não há vacas ativas nesta temporada.', 'aviso');
+      const ids = semCob(t);
+      if (!ids.length) return toast(ativasDa(t).length ? `Todas as vacas desta temporada já têm ${t.tipo === 'tetf' ? 'transferência' : 'inseminação'} registrada.` : 'Não há vacas ativas nesta temporada.', 'aviso');
       F.abrirCobertura(null, async (info) => {
-        try { await gravarEtapas(t, t.etapas.map((x) => (x.chave === 'cobertura' ? { ...x, feito_em: info?.data || hojeISO() } : x))); } catch (err) { toast(traduzirErro(err), 'erro', 8000); }
+        try { await gravarEtapas(t, t.etapas.map((x) => (x.chave === 'cobertura' ? { ...x, feito_em: x.feito_em || info?.data || hojeISO() } : x))); } catch (err) { toast(traduzirErro(err), 'erro', 8000); }
         recarregar();
       }, null, { id: t.id, nome: t.nome, tipo: t.tipo, ids, data: dataEtapa(t, e) });
     } else if (d.diagTemp) {
       const t = porTemp(d.diagTemp);
-      const ids = resumo(t).aguard.map((c) => c.matriz_id).filter((id) => porId.get(id)?.conta_no_rebanho);
+      const ids = aguardDa(t);
       if (!ids.length) return toast(`Nenhuma vaca desta temporada aguardando confirmação. Registre antes a ${t.tipo === 'tetf' ? 'transferência' : 'inseminação'}.`, 'aviso', 7000);
       F.abrirDiagnostico(null, async (info) => {
-        try { await gravarEtapas(t, t.etapas.map((x) => (x.chave === 'diagnostico' ? { ...x, feito_em: info?.data || hojeISO() } : x))); } catch (err) { toast(traduzirErro(err), 'erro', 8000); }
+        try { await gravarEtapas(t, t.etapas.map((x) => (x.chave === 'diagnostico' ? { ...x, feito_em: x.feito_em || info?.data || hojeISO() } : x))); } catch (err) { toast(traduzirErro(err), 'erro', 8000); }
         recarregar();
       }, ids);
     } else if (d.encerrar) {

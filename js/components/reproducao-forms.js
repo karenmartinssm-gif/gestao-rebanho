@@ -107,7 +107,7 @@ export async function abrirCobertura(matrizFixa = null, aoSalvar, existente = nu
     html: `<form id="f-cob" class="grade" style="gap:14px">
       ${matrizFixa ? `<div class="alerta"><i data-lucide="heart"></i><div>Vaca <b>${esc(matrizFixa.brinco)}</b>${matrizFixa.nome ? ` — ${esc(matrizFixa.nome)}` : ''}</div></div>`
         : `<div class="campo"><label>Vacas cobertas <span class="obrig">*</span></label><div id="sel-matrizes"></div>
-            <span class="ajuda">${temporada ? 'Vacas da temporada (as que saíram do protocolo não aparecem). Desmarque as que não foram feitas.' : 'Marque uma ou várias (ex.: lote de IATF no mesmo dia).'}</span></div>`}
+            <span class="ajuda">${temporada ? 'Vacas da temporada ainda sem registro (as que saíram do protocolo não aparecem). Se houver touros ou sêmens diferentes, marque só um grupo, salve e depois registre as que faltam.' : 'Marque uma ou várias (ex.: lote de IATF no mesmo dia).'}</span></div>`}
       <div class="campo"><label>Tipo <span class="obrig">*</span></label><div class="opcoes-radio">
         ${Object.entries(ROTULO_TIPO_COB).map(([k, r], i) => `<label><input type="radio" name="tipo" value="${k}" ${(existente ? ed.tipo === k : temporada ? temporada.tipo === k : i === 0) ? 'checked' : ''} ${temporada && temporada.tipo !== k ? 'disabled' : ''} required> ${esc(r)}</label>`).join('')}</div></div>
       <div class="grade grade-2" style="gap:14px">
