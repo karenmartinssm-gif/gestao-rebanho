@@ -903,3 +903,17 @@ label.ca-foto:hover { background: var(--verde-50); }
   .painel-temporadas .etapas-mini .etapa-dia { grid-row: 1 / span 2; }
   .painel-temporadas .etapas-mini .etapa-nome { grid-column: 2; grid-row: 2; }
 }
+
+/* Celular: na temporada, Vacas e lápis à esquerda (lixeira continua à direita) */
+@media (max-width: 720px) {
+  .temporada .card-titulo .acoes { width: 100%; margin-left: 0; justify-content: flex-start; }
+  .temporada .card-titulo .acoes [data-excluir-temp] { margin-left: auto; }
+}
+/* Celular: na etapa da temporada, o botão (Diagnóstico, desfazer...) fica na frente do status, à direita */
+@media (max-width: 720px) {
+  .etapas-temp li { grid-template-columns: 56px minmax(0, 1fr) auto; }
+  .etapas-temp .etapa-dia { grid-row: 1 / span 2; }
+  .etapas-temp .etapa-nome { grid-column: 2 / span 2; grid-row: 1; }
+  .etapas-temp .etapa-status { grid-column: 2; grid-row: 2; align-self: center; }
+  .etapas-temp .etapa-acao { grid-column: 3; grid-row: 2; text-align: right; align-self: center; }
+}
