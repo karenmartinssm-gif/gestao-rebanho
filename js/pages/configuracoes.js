@@ -28,7 +28,7 @@ const CADASTROS = {
   racas: { titulo: 'Raças', tabela: 'racas', base: 'racas', campos: [{ k: 'nome', r: 'Nome', obrig: true }] },
   categorias: {
     titulo: 'Categorias de animais', tabela: 'categorias_animais', base: 'categorias', ordem: true,
-    ajuda: 'O "grupo" define como a categoria entra nos indicadores (ex.: Vaca, Bezerro). As faixas de idade servem apenas para sugerir a categoria no cadastro.',
+    ajuda: 'O "grupo" define como a categoria entra nos indicadores (ex.: Vaca, Bezerro). As faixas de idade sugerem a categoria no cadastro. A bezerra muda sozinha para Novilha quando completa a idade mínima da categoria Novilha.',
     campos: [
       { k: 'nome', r: 'Nome', obrig: true },
       { k: 'grupo', r: 'Grupo para indicadores', tipo: 'select', opcoes: GRUPOS, obrig: true },

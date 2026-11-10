@@ -1,6 +1,6 @@
 // Consultas e seletor de animais reutilizados por várias telas
 import { sb } from '../supabase.js';
-import { store } from '../store.js';
+import { store, pode } from '../store.js';
 import { esc } from '../ui.js';
 import { ehErroDeRede } from '../sync.js';
 import { todos } from './consulta.js';
@@ -41,4 +41,31 @@ export function campoAnimal(container, animais, { id = 'sel-animal', rotulo = 'A
     container.dispatchEvent(new CustomEvent('animal', { detail: a }));
   });
   return achar;
+}
+
+/**
+ * Bezerra que completou a idade de novilha passa a ser Novilha.
+ * A idade é a "idade mínima" da categoria Novilha (Configurações › Categorias; padrão 12 meses).
+ * Roda ao abrir o sistema, só para quem pode editar o rebanho e com internet. Retorna quantas mudaram.
+ */
+export async function promoverBezerras() {
+  if (!store.prop || !pode('rebanho_editar') || !navigator.onLine) return 0;
+  const novilha = store.base.categorias
+    .filter((c) => c.ativo && c.grupo === 'novilha' && (!c.sexo || c.sexo === 'F'))
+    .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))[0];
+  if (!novilha) return 0;
+  const meses = Number(novilha.idade_min_meses ?? 12);
+  if (!(meses > 0)) return 0;
+  const d = new Date(); d.setMonth(d.getMonth() - meses);
+  const limite = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  try {
+    const { data, error } = await sb.from('vw_animais').select('id').eq('propriedade_id', store.prop.id)
+      .eq('categoria_grupo', 'bezerro').eq('sexo', 'F').eq('conta_no_rebanho', true)
+      .not('data_nascimento', 'is', null).lte('data_nascimento', limite);
+    if (error || !data?.length) return 0;
+    const { error: e2 } = await sb.from('animais').update({ categoria_id: novilha.id }).in('id', data.map((x) => x.id));
+    if (e2) { console.warn(e2); return 0; }
+    try { localStorage.removeItem(chaveCache()); } catch { /* ignora */ }
+    return data.length;
+  } catch (e) { console.warn(e); return 0; }
 }

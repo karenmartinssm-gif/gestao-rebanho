@@ -6,6 +6,7 @@ import { store, carregarVinculos, selecionarPropriedade, pode, ehProprietario, l
 import { esc, icones, toast, traduzirErro, abrirModal, carregando, fmtDataHora } from './ui.js';
 import * as sync from './sync.js';
 import { registrarAplicativo } from './components/instalar.js';
+import { promoverBezerras } from './components/animais-comum.js';
 
 const raiz = document.getElementById('raiz');
 
@@ -171,7 +172,7 @@ function renderLayout() {
   };
   document.getElementById('troca-prop')?.addEventListener('change', async (e) => {
     await selecionarPropriedade(e.target.value);
-    renderLayout(); rotear();
+    renderLayout(); rotear(); verificarBezerras();
   });
   document.getElementById('fab').onclick = () => import('./components/atalhos.js').then((m) => m.abrirAtalhos());
   document.getElementById('conexao').onclick = abrirPainelSync;
@@ -319,6 +320,12 @@ function telaSemPropriedade() {
   }, 30000);
 }
 
+// Bezerras que completaram a idade de novilha mudam de categoria (em segundo plano)
+async function verificarBezerras() {
+  const n = await promoverBezerras();
+  if (n) { toast(`${n} bezerra${n > 1 ? 's' : ''} completou${n > 1 ? 'ram' : ''} a idade e passou${n > 1 ? 'ram' : ''} para Novilha.`); rotear(); }
+}
+
 // ---------- Sessão ----------
 let sessaoIniciada; // undefined até o primeiro evento de autenticação
 async function iniciarSessao() {
@@ -331,6 +338,7 @@ async function iniciarSessao() {
     sync.iniciarMonitor();
     renderLayout();
     rotear();
+    verificarBezerras();
     if (estadoCarga.offline) toast('Sem internet: o sistema abriu com os dados guardados neste aparelho. Registros novos ficam na fila até a conexão voltar.', 'aviso', 9000);
   } catch (e) {
     raiz.innerHTML = `<div class="conteudo"><div class="alerta perigo"><i data-lucide="alert-triangle"></i><div>
