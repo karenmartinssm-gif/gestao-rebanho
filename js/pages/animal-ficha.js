@@ -8,7 +8,7 @@ import {
   vazio, erroCarga, badgeStatus, montarTabela, confirmar, abrirModal, ROTULO_SEXO, ROTULO_ORIGEM, ROTULO_MOV, ROTULO_SITUACAO_REPRO,
 } from '../ui.js';
 import { rotuloSitCob } from '../components/reproducao-forms.js';
-import { htmlEtapasResumo, ROTULO_TIPO_TEMP } from '../components/temporadas.js';
+import { htmlEtapasResumo, ROTULO_TIPO_TEMP, tirarDaTemporada } from '../components/temporadas.js';
 import { situacaoExibida } from '../components/reproducao-indicadores.js';
 import { grafico, CORES } from '../components/graficos.js';
 import { exigirConexao } from '../sync.js';
@@ -59,7 +59,7 @@ export async function render(el, [id]) {
   // Brinco das doadoras de embrião (TETF)
   // Temporadas de IATF/TETF de que a vaca participou (se a tabela ainda não existir, fica vazio)
   const temporadasVaca = a.sexo === 'F' ? (await (async () => {
-    try { const { data, error } = await sb.from('temporada_animais').select('saiu_etapa, motivo_saida, temporada:temporadas(id, nome, tipo, data_inicio, etapas, encerrada)').eq('animal_id', id); if (error) throw error; return data || []; } catch (e) { console.warn(e); return []; }
+    try { const { data, error } = await sb.from('temporada_animais').select('id, animal_id, saiu_etapa, motivo_saida, temporada:temporadas(id, nome, tipo, data_inicio, etapas, encerrada)').eq('animal_id', id); if (error) throw error; return data || []; } catch (e) { console.warn(e); return []; }
   })()).filter((x) => x.temporada).sort((x, y) => y.temporada.data_inicio.localeCompare(x.temporada.data_inicio)) : [];
   const idsDoadora = [...new Set(coberturas.map((c) => c.doadora_id).filter(Boolean))];
   const brincoDoadora = new Map(idsDoadora.length ? (await q(sb.from('animais').select('id, brinco').in('id', idsDoadora))).map((x) => [x.id, x.brinco]) : []);
@@ -290,7 +290,7 @@ export async function render(el, [id]) {
           ${dado('Abortos', fmtNum(abortos.length))}${dado('Último parto', ultimo ? fmtData(ultimo.data_nascimento) : '—')}
           ${dado('Coberturas registradas', fmtNum(coberturas.length))}${dado('Diagnósticos', fmtNum(diagnosticos.length))}
         </div>
-        ${temporadasVaca.length ? `<h3 style="margin:18px 0 8px">Temporadas IATF/TETF</h3>${temporadasVaca.map(({ temporada: t, saiu_etapa: saiu, motivo_saida: motivo }) => {
+        ${temporadasVaca.length ? `<h3 style="margin:18px 0 8px">Temporadas IATF/TETF</h3>${temporadasVaca.map(({ id: tvId, temporada: t, saiu_etapa: saiu, motivo_saida: motivo }) => {
           const cob = coberturas.find((c) => c.temporada_id === t.id && c.situacao !== 'cancelada');
           const feitas = {}; const datas = {};
           if (cob) { feitas.cobertura = 'ok'; datas.cobertura = cob.data_cobertura; }
@@ -304,7 +304,8 @@ export async function render(el, [id]) {
               <a href="#/reproducao?aba=temporadas&t=${t.id}"><b>${esc(t.nome)}</b></a>
               <span class="small muted"><span class="badge info">${ROTULO_TIPO_TEMP[t.tipo] || ''}</span> D0 ${fmtData(t.data_inicio)}${t.encerrada ? ' · encerrada' : ''}${cob ? ` · ${esc(rotuloSitCob(cob))}` : ''}</span></div>
             ${saiu ? `<p class="small" style="margin:0 0 6px"><span class="badge perigo">Saiu do protocolo</span> ${esc(motivo || 'sem motivo informado')}</p>` : ''}
-            ${htmlEtapasResumo(t, { feitas, datas, saiuEtapa: saiu })}</div></div>`;
+            ${htmlEtapasResumo(t, { feitas, datas, saiuEtapa: saiu })}
+            ${podeExcluir('reproducao') ? `<div style="text-align:right;margin-top:8px"><button type="button" class="btn btn-sm btn-texto" data-tirar-temp="${tvId}"><i data-lucide="trash-2"></i> Tirar desta temporada</button></div>` : ''}</div></div>`;
         }).join('')}` : ''}
         ${!coberturas.length && !nascimentos.length ? `<div style="margin-top:16px">${vazio({ icone: 'heart', titulo: 'Sem histórico reprodutivo', texto: 'Registre coberturas, diagnósticos e partos pelos botões acima ou em Reprodução e cria.' })}</div>` : `
         <h3 style="margin:18px 0 8px">Linha do tempo</h3><ul class="linha-tempo">${[
@@ -348,6 +349,10 @@ export async function render(el, [id]) {
       painel.querySelectorAll('[data-editar-cob]').forEach((btn) => btn.addEventListener('click', () => import('../components/reproducao-forms.js').then((m) => {
         m.abrirCobertura(a, recarregar, coberturas.find((c) => c.id === btn.dataset.editarCob));
       })));
+      painel.querySelectorAll('[data-tirar-temp]').forEach((btn) => btn.addEventListener('click', async () => {
+        const x = temporadasVaca.find((y) => y.id === btn.dataset.tirarTemp);
+        if (x && await tirarDaTemporada(x.temporada, x, a.brinco)) recarregar();
+      }));
     },
     genealogia: () => filhos.length && montarTabela(painel.querySelector('#t-filhos'), {
       colunas: [{ chave: 'brinco', titulo: 'Brinco', primaria: true, render: linkAnimal }, { chave: 'sexo', titulo: 'Sexo', render: (x) => ROTULO_SEXO[x.sexo] },

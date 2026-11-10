@@ -1,5 +1,5 @@
 {
-  "gerado_em": "2026-11-10T19:41:20",
+  "gerado_em": "2026-11-10T20:00:24",
   "arquivos": {
     "css/styles.css": "ee5c7c78c4",
     "js/app.js": "9f65db4a7d",
@@ -24,13 +24,13 @@
     "js/components/reproducao-indicadores.js": "66f85aac1f",
     "js/components/saida.js": "7fd1a1d180",
     "js/components/sanidade-forms.js": "3f51b2e5e4",
-    "js/components/temporadas.js": "f5bccab6b0",
+    "js/components/temporadas.js": "57feee3466",
     "js/components/transferencia.js": "636d139989",
     "js/config.js": "abc61473f7",
     "js/pages/ajuda.js": "06a09fec33",
     "js/pages/alimentacao.js": "2b9c993349",
     "js/pages/animais.js": "816f3500ce",
-    "js/pages/animal-ficha.js": "293221686b",
+    "js/pages/animal-ficha.js": "72218777ba",
     "js/pages/animal-form.js": "12c151aedc",
     "js/pages/configuracoes.js": "f520adcf71",
     "js/pages/equipe.js": "6f8d8b1162",

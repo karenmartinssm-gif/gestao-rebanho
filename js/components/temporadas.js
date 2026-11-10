@@ -359,18 +359,23 @@ function abrirVacas(t, ctx) {
     titulo: `${t.nome} — vacas`,
     largo: true,
     html: `<form id="f-tv" class="grade" style="gap:14px">
-      <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Vaca</th><th>Situação no protocolo</th><th>Etapa em que saiu</th><th>Motivo</th></tr></thead><tbody>
+      <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Vaca</th><th>Situação no protocolo</th><th>Etapa em que saiu</th><th>Motivo</th>${podeExcluir('reproducao') ? '<th></th>' : ''}</tr></thead><tbody>
         ${linhas.map((x) => { const a = porId.get(x.animal_id); return `<tr data-id="${x.id}">
           <td><b>${esc(a.brinco)}</b><div class="small muted">${esc(a.categoria_nome || '')}</div></td>
           <td><select data-sit><option value="dentro" ${x.saiu_etapa ? '' : 'selected'}>No protocolo</option><option value="saiu" ${x.saiu_etapa ? 'selected' : ''}>Saiu do protocolo</option></select></td>
           <td><select data-etapa ${x.saiu_etapa ? '' : 'disabled'}>${opcEtapa(x.saiu_etapa)}</select></td>
-          <td><input data-motivo placeholder="Ex.: perdeu o implante" value="${esc(x.motivo_saida || '')}" ${x.saiu_etapa ? '' : 'disabled'}></td></tr>`; }).join('')
+          <td><input data-motivo placeholder="Ex.: perdeu o implante" value="${esc(x.motivo_saida || '')}" ${x.saiu_etapa ? '' : 'disabled'}></td>
+          ${podeExcluir('reproducao') ? `<td><button type="button" class="btn btn-sm btn-texto" data-tirar="${x.id}" title="Tirar ${esc(a.brinco)} da temporada (cadastrada por engano)" aria-label="Tirar ${esc(a.brinco)} da temporada"><i data-lucide="trash-2"></i></button></td>` : ''}</tr>`; }).join('')
           || '<tr><td colspan="4" class="muted">Nenhuma vaca nesta temporada.</td></tr>'}
       </tbody></table></div>
       ${outras.length && !t.encerrada ? '<div class="campo"><label>Adicionar vacas</label><div id="tv-add"></div></div>' : ''}
     </form>`,
     rodape: '<button class="btn" data-fechar>Cancelar</button><button class="btn btn-primario" type="submit" form="f-tv">Salvar</button>',
   });
+  el.querySelectorAll('[data-tirar]').forEach((b) => b.addEventListener('click', async () => {
+    const x = linhas.find((y) => y.id === b.dataset.tirar);
+    if (await tirarDaTemporada(t, x, porId.get(x.animal_id)?.brinco)) { fechar(); ctx.recarregar(); }
+  }));
   el.querySelectorAll('tr[data-id]').forEach((tr) => tr.querySelector('[data-sit]').addEventListener('change', (ev) => {
     const saiu = ev.target.value === 'saiu';
     tr.querySelector('[data-etapa]').disabled = !saiu; tr.querySelector('[data-motivo]').disabled = !saiu;
@@ -398,6 +403,32 @@ function abrirVacas(t, ctx) {
     } catch (err) { btn.disabled = false; toast(traduzirErro(err), 'erro', 8000); }
   });
   icones();
+}
+
+/**
+ * Tira uma vaca da temporada (cadastrada por engano). A cobertura dela registrada por esta temporada
+ * (e o diagnóstico ligado) também é excluída, e a situação da vaca é recalculada pelo servidor.
+ * x = linha de temporada_animais ({ id, animal_id }). Retorna true se tirou.
+ */
+export async function tirarDaTemporada(t, x, brinco) {
+  if (!podeExcluir('reproducao')) { toast('Você não tem permissão para excluir registros da reprodução.', 'erro'); return false; }
+  try { exigirConexao(); } catch (e) { toast(e.message, 'aviso', 7000); return false; }
+  const { data: cobs, error: e1 } = await sb.from('coberturas').select('id, data_cobertura').eq('temporada_id', t.id).eq('matriz_id', x.animal_id);
+  if (e1) { toast(traduzirErro(e1), 'erro', 8000); return false; }
+  const n = (cobs || []).length;
+  const ok = await confirmar({ titulo: 'Tirar da temporada', botao: 'Tirar da temporada', perigo: true,
+    mensagem: `Tirar a vaca <b>${esc(brinco || '')}</b> da temporada <b>${esc(t.nome)}</b>?<br><br>Use quando ela foi colocada por engano. ${n
+      ? `A ${t.tipo === 'tetf' ? 'transferência' : 'inseminação'} dela registrada por esta temporada (${fmtData(cobs[0].data_cobertura)}) e o diagnóstico ligado também serão excluídos, e a situação reprodutiva dela volta a ser calculada pelos outros registros.`
+      : 'Ela não tem cobertura registrada por esta temporada.'} Se ela participou e saiu do protocolo (ex.: perdeu o implante), use "Saiu do protocolo" em vez de tirar. Esta ação não pode ser desfeita.` });
+  if (!ok) return false;
+  for (const c of cobs || []) {
+    const { error } = await sb.rpc('excluir_cobertura', { p_id: c.id });
+    if (error) { toast(`A vaca não foi tirada da temporada: ${traduzirErro(error)}`, 'erro', 10000); return false; }
+  }
+  const { error } = await sb.from('temporada_animais').delete().eq('id', x.id);
+  if (error) { toast(traduzirErro(error), 'erro', 8000); return false; }
+  toast(`${brinco || 'Vaca'} tirada da temporada ${t.nome}.`);
+  return true;
 }
 
 async function excluirTemporada(t, ctx) {
