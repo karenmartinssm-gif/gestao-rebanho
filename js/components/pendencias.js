@@ -6,7 +6,7 @@
 import { sb } from '../supabase.js';
 import { store, param } from '../store.js';
 import { esc, fmtNum, fmtData, hojeISO, addDias, diasEntre, abrirModal, icones } from '../ui.js';
-import { consultaTemporadasAbertas, etapasPendentes, rotuloDia } from './temporadas.js';
+import { consultaTemporadasAbertas, etapasPendentes, rotuloDia, nomeEtapa } from './temporadas.js';
 
 async function consulta(promessa) {
   const { data, error } = await promessa;
@@ -75,7 +75,7 @@ export function montarPendencias({ animais, manejos, cobs, desm, estq, nasc = { 
   const tempAbertas = new Set(temp.data.map((t) => t.id));
   const daTemporada = (c) => c.temporada_id && tempAbertas.has(c.temporada_id);
   const etapasTemp = etapasPendentes(temp.data, limiteManejo).map(({ t, e, data }) => [
-    `${t.nome} · ${rotuloDia(t, e)} ${e.nome}`, quando(data),
+    `${t.nome} · ${rotuloDia(t, e)} ${nomeEtapa(t, e)}`, quando(data),
     (t.temporada_animais || []).filter((x) => !x.saiu_etapa && ativo(x.animal_id)).map((x) => ({ id: x.animal_id, brinco: porId.get(x.animal_id).brinco })),
     data < hoje, `#/reproducao?aba=temporadas&t=${t.id}`]);
 

@@ -22,17 +22,19 @@ export const ETAPAS_PADRAO = {
     { chave: 'implante', nome: 'Colocação do implante de progesterona', dia: 0 },
     { chave: 'retirada', nome: 'Retirada do implante + aplicação hormonal', dia: 7 },
     { chave: 'cobertura', nome: 'Inseminação artificial', dia: 9 },
-    { chave: 'diagnostico', nome: 'Confirmar prenhez (ultrassom)', dia: 39 },
+    { chave: 'diagnostico', nome: 'Confirmar prenhez', dia: 39 },
   ],
   tetf: [
     { chave: 'implante', nome: 'Colocação do implante de progesterona', dia: 0 },
     { chave: 'retirada', nome: 'Retirada do implante + aplicação hormonal', dia: 7 },
-    { chave: 'embrioes', nome: 'Seleção, avaliação e identificação dos embriões', dia: 9 },
+    { chave: 'embrioes', nome: 'Inseminação', dia: 9 },
     { chave: 'cobertura', nome: 'Transferência do embrião', dia: 16 },
-    { chave: 'diagnostico', nome: 'Confirmar prenhez (ultrassom)', dia: 46 },
+    { chave: 'diagnostico', nome: 'Confirmar prenhez', dia: 46 },
   ],
 };
 
+/** Nome da etapa: sempre o do protocolo atual (assim temporadas já criadas acompanham mudanças de nome). */
+export const nomeEtapa = (t, e) => ETAPAS_PADRAO[t.tipo]?.find((x) => x.chave === e.chave)?.nome || e.nome;
 const dataEtapa = (t, e) => addDias(t.data_inicio, Number(e.dia) || 0);
 /** "D9", e para o diagnóstico "D9+30" (dias contados a partir da inseminação/transferência). */
 export function rotuloDia(t, e) {
@@ -126,7 +128,7 @@ export function abaTemporadas(painel, ctx) {
         <p class="small muted" style="margin:0 0 10px">Início (D0): <b>${fmtData(t.data_inicio)}</b> · ${pl(dentro, 'vaca', 'vacas')} no protocolo${sairam ? ` · ${pl(sairam, 'saiu', 'saíram')}` : ''}${t.observacoes ? ` · ${esc(t.observacoes)}` : ''}</p>
         <ul class="etapas-temp">${(t.etapas || []).map((e) => `<li class="${e.feito_em ? 'feito' : ''}">
           <span class="etapa-dia">${rotuloDia(t, e)}</span>
-          <span class="etapa-nome"><b>${esc(e.nome)}</b><span class="small muted">${fmtData(dataEtapa(t, e))}</span></span>
+          <span class="etapa-nome"><b>${esc(nomeEtapa(t, e))}</b><span class="small muted">${fmtData(dataEtapa(t, e))}</span></span>
           <span class="etapa-status">${statusEtapa(t, e)}</span>
           <span class="etapa-acao">${botaoEtapa(t, e)}</span></li>`).join('')}</ul>
         <div class="grade grade-kpi" style="margin-top:14px">
@@ -207,7 +209,7 @@ function marcarFeito(t, chave, ctx) {
   const e = t.etapas.find((x) => x.chave === chave);
   const prev = dataEtapa(t, e);
   const { el, fechar } = abrirModal({
-    titulo: `${rotuloDia(t, e)} — ${e.nome}`,
+    titulo: `${rotuloDia(t, e)} — ${nomeEtapa(t, e)}`,
     html: `<form id="f-feito" class="grade" style="gap:14px">
       <p class="small muted" style="margin:0">${esc(t.nome)} · ${pl(ativasDa(t).length, 'vaca', 'vacas')} no protocolo. Data prevista: ${fmtData(prev)}.</p>
       <div class="campo"><label for="fe-data">Data em que foi feito <span class="obrig">*</span></label><input id="fe-data" type="date" required max="${hojeISO()}" value="${prev < hojeISO() ? prev : hojeISO()}"></div>
@@ -247,7 +249,7 @@ export function abrirTemporada(existente, ctx) {
       </div>
       <div class="campo"><label>Etapas e dias</label>
         <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Dia</th><th>Etapa</th><th>Data</th></tr></thead><tbody id="t-etapas"></tbody></table></div>
-        <span class="ajuda">Os dias já vêm do protocolo da fazenda. Mude só se o veterinário mudar o protocolo desta temporada.</span></div>
+        <span class="ajuda">Datas calculadas a partir do D0, pelo protocolo da fazenda.</span></div>
       ${existente ? '' : `<div class="campo"><label>Vacas e novilhas que entram <span class="obrig">*</span></label>
         <div class="acoes small" style="margin-bottom:6px"><button type="button" class="btn btn-sm" data-vazias>Marcar só as vazias</button></div>
         <div id="t-sel"></div></div>`}
@@ -262,16 +264,11 @@ export function abrirTemporada(existente, ctx) {
   const corpo = f.querySelector('#t-etapas');
   const desenhar = () => {
     const tFake = { data_inicio: d0.value || hojeISO(), etapas };
-    corpo.innerHTML = etapas.map((e, i) => `<tr><td><span class="small muted">D</span><input data-dia="${i}" inputmode="numeric" value="${esc(e.dia)}" style="width:62px" aria-label="Dia da etapa ${esc(e.nome)}"></td>
-      <td>${esc(e.nome)}${e.feito_em ? ' <span class="badge ativo">feito</span>' : ''}</td><td class="small">${d0.value ? fmtData(dataEtapa(tFake, e)) : '—'}<div class="muted">${rotuloDia(tFake, e)}</div></td></tr>`).join('');
+    const tF = { ...tFake, tipo };
+    corpo.innerHTML = etapas.map((e) => `<tr><td><b>${rotuloDia(tF, e)}</b></td>
+      <td>${esc(nomeEtapa(tF, e))}${e.feito_em ? ' <span class="badge ativo">feito</span>' : ''}</td><td class="small">${d0.value ? fmtData(dataEtapa(tF, e)) : '—'}</td></tr>`).join('');
   };
   desenhar();
-  corpo.addEventListener('change', (ev) => {
-    const i = ev.target.dataset.dia; if (i == null) return;
-    const n = parseInt(ev.target.value, 10);
-    if (!Number.isFinite(n) || n < 0) { ev.target.value = etapas[i].dia; return toast('Informe um número de dias (0 ou mais).', 'erro'); }
-    etapas[i].dia = n; desenhar();
-  });
   d0.addEventListener('input', () => { if (!nomeMexido) nome.value = nomeSugerido(tipo, d0.value); desenhar(); });
   f.querySelectorAll('input[name=tipo]').forEach((r) => r.addEventListener('change', () => {
     tipo = f.querySelector('input[name=tipo]:checked').value;
@@ -296,6 +293,7 @@ export function abrirTemporada(existente, ctx) {
     const ids = selecionadas();
     if (!existente && !ids.length) return toast('Escolha ao menos uma vaca ou novilha.', 'erro');
     const btn = el.querySelector('[type=submit]'); btn.disabled = true;
+    etapas = etapas.map((e) => ({ ...e, nome: nomeEtapa({ tipo }, e) }));
     const dados = { nome: nome.value.trim(), data_inicio: d0.value, etapas, observacoes: textoOuNulo(f.querySelector('#t-obs').value) };
     try {
       if (existente) {
@@ -327,7 +325,7 @@ function abrirVacas(t, ctx) {
   const dentro = new Set(linhas.map((x) => x.animal_id));
   const outras = [...porId.values()].filter((a) => a.sexo === 'F' && a.conta_no_rebanho && ['novilha', 'matriz'].includes(a.categoria_grupo) && !dentro.has(a.id))
     .sort((a, b) => String(a.brinco).localeCompare(String(b.brinco), 'pt-BR', { numeric: true }));
-  const opcEtapa = (sel) => (t.etapas || []).map((e) => `<option value="${esc(e.chave)}" ${sel === e.chave ? 'selected' : ''}>${esc(`${rotuloDia(t, e)} · ${e.nome}`)}</option>`).join('');
+  const opcEtapa = (sel) => (t.etapas || []).map((e) => `<option value="${esc(e.chave)}" ${sel === e.chave ? 'selected' : ''}>${esc(`${rotuloDia(t, e)} · ${nomeEtapa(t, e)}`)}</option>`).join('');
   const { el, fechar } = abrirModal({
     titulo: `${t.nome} — vacas`,
     largo: true,

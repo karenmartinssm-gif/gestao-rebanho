@@ -9,7 +9,7 @@ import { ultimoBackup } from './backup.js';
 import { esc, hojeISO, addDias, diasEntre, fmtData, fmtNum, fmtMoeda, abrirModal, icones, vazio } from '../ui.js';
 import { listarAnimais } from './animais-comum.js';
 import { todos } from './consulta.js';
-import { consultaTemporadasAbertas, etapasPendentes, rotuloDia } from './temporadas.js';
+import { consultaTemporadasAbertas, etapasPendentes, rotuloDia, nomeEtapa } from './temporadas.js';
 
 const chaveVistos = () => `rebanho.avisos.vistos.${store.usuario?.id}.${store.prop?.id}`;
 function lerVistos() { try { return new Set(JSON.parse(localStorage.getItem(chaveVistos()) || '[]')); } catch { return new Set(); } }
@@ -68,7 +68,7 @@ export async function carregarAvisos(forcar = false) {
   // Reprodução: etapas das temporadas de IATF/TETF
   etapasPendentes(temps, limManejo).forEach(({ t, e, data, n }) => add({
     chave: `temp:${t.id}:${e.chave}:${data}`, grupo: 'reproducao', nivel: data < hoje ? 'perigo' : 'aviso', data,
-    titulo: `${t.nome} — ${rotuloDia(t, e)} ${e.nome}`, texto: `${prazo(data)} · ${n} vaca(s)`, link: `#/reproducao?aba=temporadas&t=${t.id}` }));
+    titulo: `${t.nome} — ${rotuloDia(t, e)} ${nomeEtapa(t, e)}`, texto: `${prazo(data)} · ${n} vaca(s)`, link: `#/reproducao?aba=temporadas&t=${t.id}` }));
   const tempAbertas = new Set(temps.map((t) => t.id));
   const daTemporada = (c) => c.temporada_id && tempAbertas.has(c.temporada_id);
 
