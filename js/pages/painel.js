@@ -64,8 +64,9 @@ export async function render(el) {
     return `<div class="card"><div class="card-titulo"><h3><i data-lucide="calendar-range"></i>${rotulo}</h3><span class="contador">${lista.length}</span></div>
       <div class="card-corpo">${lista.length ? lista.map((t) => `<div class="temp-item">
         <div class="temp-item-topo"><a href="#/reproducao?aba=temporadas&t=${t.id}">${esc(t.nome)}</a>
-          <span class="small muted"><span class="temp-d0">D0 ${fmtData(t.data_inicio)} · </span>${plural(vacas(t), 'vaca', 'vacas')}</span></div>
-        ${htmlEtapasResumo(t)}</div>`).join('')
+          <span class="small muted temp-topo-info">D0 ${fmtData(t.data_inicio)} · ${plural(vacas(t), 'vaca', 'vacas')}</span></div>
+        ${htmlEtapasResumo(t)}
+        <div class="temp-rodape"><span>${plural(vacas(t), 'vaca', 'vacas')}</span><a href="#/reproducao?aba=temporadas&t=${t.id}">Ver temporada</a></div></div>`).join('')
       : `<p class="muted small" style="margin:0">Nenhuma temporada de ${rotulo.split(' ').pop()} aberta. <a href="#/reproducao?aba=temporadas">Criar temporada</a></p>`}</div></div>`;
   };
   const htmlTemporadas = `<section class="painel-temporadas">
