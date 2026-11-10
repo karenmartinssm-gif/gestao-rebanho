@@ -9,7 +9,7 @@ import { htmlAtalhos, ligarAtalhos } from '../components/atalhos.js';
 import { todos } from '../components/consulta.js';
 import { htmlInstalar, ligarInstalar } from '../components/instalar.js';
 import { grafico, CORES } from '../components/graficos.js';
-import { consultasPendencias, montarPendencias, htmlPendencias } from '../components/pendencias.js';
+import { consultasPendencias, montarPendencias, abrirListaPendencia } from '../components/pendencias.js';
 import { htmlEtapasResumo } from '../components/temporadas.js';
 
 const plural = (n, um, varios) => `${fmtNum(n)} ${n === 1 ? um : varios}`;
@@ -68,6 +68,23 @@ export async function render(el) {
         ${htmlEtapasResumo(t)}</div>`).join('')
       : `<p class="muted small" style="margin:0">Nenhuma temporada de ${rotulo.split(' ').pop()} aberta. <a href="#/reproducao?aba=temporadas">Criar temporada</a></p>`}</div></div>`;
   };
+  // Pendências compactas: cada quadro junta os itens da mesma data (ex.: "8 vacas · 22/11/2026")
+  const NOMES_PEND = {
+    'Previsões de parto': ['vaca', 'vacas'], 'Partos sem registro': ['vaca', 'vacas'], 'Diagnósticos de gestação pendentes': ['vaca', 'vacas'],
+    'Desmames previstos': ['bezerro', 'bezerros'], 'Suplementos com estoque baixo': ['suplemento', 'suplementos'],
+  };
+  const MAX_GRUPOS = 3;
+  const htmlPendCompactas = comPendencia.map((b, i) => {
+    const [um, varios] = NOMES_PEND[b.titulo] || ['animal', 'animais'];
+    const grupos = new Map();
+    b.itens.forEach(([, detalhe, animais]) => grupos.set(detalhe, (grupos.get(detalhe) || 0) + (animais?.length || 1)));
+    const lista = [...grupos.entries()];
+    return `<div class="card pend-mini"><div class="card-titulo"><h3><i data-lucide="${b.icone}"></i>${esc(b.titulo)}</h3>
+        <span class="contador alerta-c">${b.itens.length}</span></div>
+      <ul class="pend-grupos">${lista.slice(0, MAX_GRUPOS).map(([detalhe, n]) => `<li><span class="pend-qtd">${plural(n, um, varios)}</span>${detalhe}</li>`).join('')}</ul>
+      <button type="button" class="pend-ver" data-pend-painel="${i}">Ver todos</button></div>`;
+  }).join('');
+
   const htmlTemporadas = `<section class="painel-temporadas">
       <div class="painel-sec-titulo"><h2><i data-lucide="calendar-range"></i> Temporadas TETF/IATF</h2>
         <a class="btn btn-sm" href="#/reproducao?aba=temporadas">Ver temporadas</a></div>
@@ -179,19 +196,21 @@ export async function render(el) {
       <section id="mercado" class="painel-mercado" hidden></section>
     </div>
 
-    ${htmlTemporadas}
-
-    <div class="painel-baixo ${comPendencia.length ? '' : 'sem-pend'}">
-      ${comPendencia.length ? `<section id="pendencias" style="--pc3:${Math.min(comPendencia.length, 3)};--pc2:${Math.min(comPendencia.length, 2)}">
-        <div class="painel-sec-titulo"><h2><i data-lucide="bell-ring"></i> Atenção e pendências</h2>
-          <a class="btn btn-sm" href="#/pendencias">Ver todas as pendências</a></div>
-        ${htmlPendencias(comPendencia)}
+    <div class="painel-baixo v2 ${comPendencia.length ? '' : 'sem-pend'}">
+      ${htmlTemporadas}
+      ${comPendencia.length ? `<section id="pendencias">
+        <div class="painel-sec-titulo"><h2><i data-lucide="bell-ring"></i> Atenção e pendências</h2></div>
+        <div class="pend-lista">${htmlPendCompactas}</div>
+        <a class="btn btn-sm" href="#/pendencias" style="margin-top:10px;align-self:flex-start">Ver todas as pendências</a>
       </section>` : ''}
       <section class="painel-atalhos"><div class="painel-sec-titulo"><h2><i data-lucide="zap"></i> Atalhos</h2></div>
         <div id="atalhos" class="card">${htmlAtalhos()}</div></section>
     </div>
 
 `;
+  el.querySelector('#pendencias')?.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-pend-painel]'); if (b) abrirListaPendencia(comPendencia[Number(b.dataset.pendPainel)]);
+  });
   const desenharComp = () => {
     const v = visoes[visao];
     el.querySelectorAll('[data-visao]').forEach((b) => { b.classList.toggle('ativo', b.dataset.visao === visao); b.setAttribute('aria-selected', b.dataset.visao === visao); });

@@ -877,3 +877,33 @@ label.ca-foto:hover { background: var(--verde-50); }
   .etapas-temp li { grid-template-columns: 56px minmax(0, 1fr); row-gap: 6px; }
   .etapas-temp .etapa-status, .etapas-temp .etapa-acao { grid-column: 2; text-align: left; }
 }
+
+/* Painel (v2): pendências compactas à esquerda, temporadas no meio, atalhos à direita */
+.painel-baixo.v2 { grid-template-columns: minmax(0, 2fr) minmax(250px, 1fr) 250px; align-items: start; }
+.painel-baixo.v2.sem-pend { grid-template-columns: minmax(0, 1fr) 250px; }
+.painel-baixo.v2 .painel-temporadas { margin-top: 0; }
+.painel-temporadas .temp-quadros { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+.pend-lista { display: grid; gap: 12px; }
+.pend-mini .card-titulo { padding: 12px 16px; }
+.pend-mini .card-titulo h3 { font-size: .95rem; }
+.pend-grupos { list-style: none; margin: 0; padding: 0 16px; }
+.pend-grupos li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--borda); }
+.pend-grupos li:last-child { border-bottom: 0; }
+.pend-qtd { font-weight: 600; font-size: 1rem; }
+.pend-grupos .badge { white-space: nowrap; flex-shrink: 0; }
+.pend-ver { display: block; border: 0; background: none; font: inherit; font-size: .88rem; color: var(--verde-700); text-decoration: underline; cursor: pointer; padding: 6px 16px 12px; text-align: left; }
+.pend-ver:hover { color: var(--verde-900); }
+@media (max-width: 1279px) {
+  .painel-baixo.v2 { grid-template-columns: minmax(0, 2fr) minmax(240px, 1fr); }
+  .painel-baixo.v2.sem-pend { grid-template-columns: minmax(0, 1fr); }
+  .painel-baixo.v2 > .painel-atalhos { grid-column: 1 / -1; }
+  .painel-baixo.v2:not(.sem-pend) .atalhos { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+}
+@media (max-width: 900px) {
+  .painel-baixo.v2, .painel-baixo.v2.sem-pend { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 620px) {
+  .painel-temporadas .temp-quadros { grid-template-columns: minmax(0, 1fr); }
+}
+.painel-temporadas .etapas-mini li { grid-template-columns: 52px minmax(0, 1fr); row-gap: 4px; align-items: start; }
+.painel-temporadas .etapas-mini .badge { grid-column: 2; justify-self: start; }

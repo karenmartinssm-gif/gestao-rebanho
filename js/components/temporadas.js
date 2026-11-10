@@ -22,14 +22,14 @@ export const ETAPAS_PADRAO = {
     { chave: 'implante', nome: 'Colocação do implante de progesterona', dia: 0 },
     { chave: 'retirada', nome: 'Retirada do implante + aplicação hormonal', dia: 7 },
     { chave: 'cobertura', nome: 'Inseminação artificial', dia: 9 },
-    { chave: 'diagnostico', nome: 'Confirmar prenhez', dia: 39 },
+    { chave: 'diagnostico', nome: 'Diagnóstico', dia: 39 },
   ],
   tetf: [
     { chave: 'implante', nome: 'Colocação do implante de progesterona', dia: 0 },
     { chave: 'retirada', nome: 'Retirada do implante + aplicação hormonal', dia: 7 },
     { chave: 'embrioes', nome: 'Inseminação', dia: 9 },
     { chave: 'cobertura', nome: 'Transferência do embrião', dia: 16 },
-    { chave: 'diagnostico', nome: 'Confirmar prenhez', dia: 46 },
+    { chave: 'diagnostico', nome: 'Diagnóstico', dia: 46 },
   ],
 };
 
