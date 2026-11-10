@@ -402,10 +402,26 @@ function abrirVacas(t, ctx) {
 
 async function excluirTemporada(t, ctx) {
   try { exigirConexao(); } catch (e) { return toast(e.message, 'aviso', 7000); }
+  // Coberturas (inseminação/transferência) registradas por esta temporada
+  const { data: cobs, error: e1 } = await sb.from('coberturas').select('id, matriz_id, data_cobertura').eq('temporada_id', t.id);
+  if (e1) return toast(traduzirErro(e1), 'erro', 8000);
+  const n = (cobs || []).length;
   const ok = await confirmar({ titulo: 'Excluir temporada', botao: 'Excluir', perigo: true,
-    mensagem: `Excluir a temporada <b>${esc(t.nome)}</b>?<br><br>As coberturas e confirmações de prenhez já registradas continuam no sistema (só deixam de estar ligadas à temporada). Esta ação não pode ser desfeita.` });
+    mensagem: `Excluir a temporada <b>${esc(t.nome)}</b>?<br><br>${n
+      ? `${n === 1 ? 'A cobertura registrada' : `As ${n} coberturas registradas`} por esta temporada (${t.tipo === 'tetf' ? 'transferências' : 'inseminações'}) e os diagnósticos ligados a ${n === 1 ? 'ela' : 'elas'} também serão excluídos, e a situação reprodutiva das vacas volta a ser calculada pelos registros que ficarem.`
+      : 'Nenhuma cobertura foi registrada por esta temporada.'} Esta ação não pode ser desfeita.` });
   if (!ok) return;
+  // Exclui uma a uma pelo servidor (ele desfaz os efeitos em cada vaca). Se alguma não puder sair (ex.: já tem parto), a temporada fica.
+  const falhas = [];
+  for (const c of cobs || []) {
+    const { error } = await sb.rpc('excluir_cobertura', { p_id: c.id });
+    if (error) falhas.push(traduzirErro(error));
+  }
+  if (falhas.length) {
+    toast(`A temporada não foi excluída: ${falhas.length} cobertura(s) não puderam ser excluídas. ${falhas[0]}`, 'erro', 12000);
+    return ctx.recarregar();
+  }
   const { error } = await sb.from('temporadas').delete().eq('id', t.id);
   if (error) return toast(traduzirErro(error), 'erro', 8000);
-  toast('Temporada excluída.'); ctx.recarregar();
+  toast(n ? `Temporada excluída, com ${n} cobertura${n > 1 ? 's' : ''}.` : 'Temporada excluída.'); ctx.recarregar();
 }
