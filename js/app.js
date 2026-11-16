@@ -27,6 +27,7 @@ const MENU = [
   { grupo: 'Gestão' },
   { rota: 'financeiro', titulo: 'Financeiro', icone: 'wallet', perm: 'financeiro' },
   { rota: 'relatorios', titulo: 'Relatórios', icone: 'file-text' },
+  { rota: 'calculadora', titulo: 'Calculadora', icone: 'calculator' },
   { rota: 'equipe', titulo: 'Equipe e permissões', icone: 'users', dono: true },
   { rota: 'configuracoes', titulo: 'Configurações', icone: 'settings', perm: 'configuracoes' },
   { rota: 'ajuda', titulo: 'Ajuda', icone: 'circle-help' },
@@ -51,6 +52,7 @@ const ROTAS = [
   { re: /^movimentacoes$/, pagina: () => import('./pages/movimentacoes.js'), titulo: 'Movimentações' },
   { re: /^financeiro$/, pagina: () => import('./pages/financeiro.js'), titulo: 'Financeiro', perm: 'financeiro' },
   { re: /^relatorios(?:\/([a-z]+))?$/, pagina: () => import('./pages/relatorios.js'), titulo: 'Relatórios' },
+  { re: /^calculadora$/, pagina: () => import('./pages/calculadora.js'), titulo: 'Calculadora' },
   { re: /^ajuda$/, pagina: () => import('./pages/ajuda.js'), titulo: 'Ajuda' },
 ];
 

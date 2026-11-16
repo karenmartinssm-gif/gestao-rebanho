@@ -919,3 +919,17 @@ label.ca-foto:hover { background: var(--verde-50); }
   .etapas-temp .etapa-status { grid-column: 2; grid-row: 2; align-self: center; }
   .etapas-temp .etapa-acao { grid-column: 3; grid-row: 2; text-align: right; align-self: center; }
 }
+
+/* Calculadora (preço de venda da vaca) */
+.calc-grade { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.calc-linha2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+#calc-peso { font-size: 1.25rem; }
+.calc-resultado { display: flex; flex-direction: column; gap: 10px; }
+.calc-resultado .rotulo { font-size: .9rem; color: var(--texto-2); font-weight: 600; }
+.calc-resultado .valor { font-size: 2.2rem; font-weight: 700; color: var(--verde-700); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.calc-conta { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; padding-top: 10px; border-top: 1px solid var(--borda); }
+.calc-conta dt { color: var(--texto-2); font-size: .9rem; }
+.calc-conta dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (max-width: 720px) {
+  .calc-grade, .calc-linha2 { grid-template-columns: 1fr; }
+}
